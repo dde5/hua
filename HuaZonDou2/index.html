@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>华容道游戏</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <h1>华容道</h1>
+    
+    <!-- 游戏设置界面 -->
+    <div id="game-setup">
+      <div class="mode-selection">
+        <h2>选择游戏模式</h2>
+        <div class="mode-options">
+          <button id="number-mode">数字模式</button>
+          <button id="image-mode">图片模式</button>
+        </div>
+      </div>
+      
+      <div id="image-selection" class="hidden">
+        <h2>选择图片</h2>
+        <div class="image-options">
+          <!-- 预设图片选项 -->
+        </div>
+        <div class="upload-option">
+          <label for="custom-image">上传自定义图片</label>
+          <input type="file" id="custom-image" accept="image/*">
+        </div>
+      </div>
+      
+      <div class="size-selection">
+        <h2>选择游戏尺寸</h2>
+        <div class="size-options">
+          <button data-size="5">5×5</button>
+          <button data-size="6">6×6</button>
+          <button data-size="8">8×8</button>
+          <div class="custom-size">
+            <label for="custom-size-input">自定义:</label>
+            <input type="number" id="custom-size-input" min="3" max="10" value="4">
+          </div>
+        </div>
+      </div>
+      
+      <button id="start-game">开始游戏</button>
+    </div>
+    
+    <!-- 游戏界面 -->
+    <div id="game-board" class="hidden">
+      <div class="game-stats">
+        <div class="timer">时间: <span id="time">00:00</span></div>
+        <div class="moves">移动次数: <span id="moves">0</span></div>
+      </div>
+      
+      <div class="puzzle-container">
+        <!-- 游戏方块将在这里动态生成 -->
+      </div>
+      
+      <div class="game-controls">
+        <button id="reset-game">重置游戏</button>
+        <button id="hint-button">提示</button>
+        <button id="new-game">新游戏</button>
+      </div>
+      
+      <div class="high-scores">
+        <h3>最高分</h3>
+        <div id="high-scores-list">
+          <!-- 最高分记录将在这里显示 -->
+        </div>
+      </div>
+    </div>
+    
+    <!-- 游戏完成界面 -->
+    <div id="game-complete" class="hidden">
+      <h2>恭喜完成!</h2>
+      <div class="completion-stats">
+        <p>用时: <span id="completion-time"></span></p>
+        <p>移动次数: <span id="completion-moves"></span></p>
+      </div>
+      <div class="completion-buttons">
+        <button id="play-again">再玩一次</button>
+        <button id="back-to-menu">返回主菜单</button>
+      </div>
+    </div>
+  </div>
+  
+  <script src="game.js"></script>
+  <script src="ui.js"></script>
+</body>
+</html>
