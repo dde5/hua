@@ -8,17 +8,24 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // 预设图片
   const presetImages = [
-    { name: '米奇老鼠', src: 'images/mickey.jpg' },
-    { name: '唐老鸭', src: 'images/donald.jpg' },
-    { name: '小熊维尼', src: 'images/pooh.jpg' },
-    { name: '冰雪奇缘艾莎', src: 'images/elsa.jpg' },
-    { name: '狮子王辛巴', src: 'images/simba.jpg' }
+    { name: '米老鼠', src: 'images/mickey.jpg' },
+    { name: '唐老鴨', src: 'images/donald.jpg' },
+    { name: '小熊維尼', src: 'images/pooh.jpg' },
+    { name: '愛紗', src: 'images/elsa.jpg' },
+    { name: '辛巴', src: 'images/simba.jpg' }
   ];
   
+  // 处理后的预设图片
+  let processedPresetImages = [];
+  
   // 初始化图片选择区域
-  function initImageSelection() {
+  async function initImageSelection() {
     const imageOptions = document.querySelector('.image-options');
-    presetImages.forEach(image => {
+    
+    // 预处理所有预设图片
+    processedPresetImages = await preprocessPresetImages(presetImages);
+    
+    processedPresetImages.forEach(image => {
       const img = document.createElement('img');
       img.src = image.src;
       img.alt = image.name;
@@ -70,7 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (value >= 3 && value <= 10) {
         selectedSize = value;
       } else {
-        alert('请输入3到10之间的数字');
+        alert('請輸入3~10中間數字');
         e.target.value = 4;
       }
     });
@@ -80,7 +87,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function initStartGameButton() {
     document.getElementById('start-game').addEventListener('click', () => {
       if (!selectedMode) {
-        alert('请选择游戏模式');
+        alert('請選擇遊戲模式');
         return;
       }
       
@@ -97,7 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
           };
           reader.readAsDataURL(customImage);
         } else {
-          alert('请选择一张图片');
+          alert('請選擇一張圖片');
           return;
         }
       } else {
@@ -107,16 +114,46 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   
   // 开始游戏
-  function startGame(imageSource) {
+  async function startGame(imageSource) {
     document.getElementById('game-setup').classList.add('hidden');
     document.getElementById('game-board').classList.remove('hidden');
     
-    gameInstance = new PuzzleGame(selectedSize, selectedMode, imageSource);
-    renderGameBoard();
-    gameInstance.startTimer();
-    
-    // 加载最高分
-    loadHighScores();
+    // 确保图片已经过预处理
+    try {
+      // 如果是自定义上传的图片，它已经在上传时预处理过了
+      // 如果是预设图片，确保使用处理后的版本
+      if (selectedMode === 'image' && imageSource) {
+        // 查找是否是预设图片中的一个
+        const isPreset = presetImages.some(img => img.src === imageSource);
+        
+        if (isPreset) {
+          // 找到对应的处理后的图片
+          const processedImage = processedPresetImages.find(img => {
+            const originalSrc = presetImages.find(original => original.name === img.name)?.src;
+            return originalSrc === imageSource;
+          });
+          
+          if (processedImage) {
+            imageSource = processedImage.src;
+          } else {
+            // 如果找不到处理后的图片，重新处理一次
+            imageSource = await preprocessImage(imageSource, selectedSize);
+          }
+        }
+      }
+      
+      gameInstance = new PuzzleGame(selectedSize, selectedMode, imageSource);
+      renderGameBoard();
+      gameInstance.startTimer();
+      
+      // 加载最高分
+      loadHighScores();
+    } catch (error) {
+      console.error('遊戲初始化失敗:', error);
+      alert('遊戲初始化失敗，請重試');
+      document.getElementById('game-board').classList.add('hidden');
+      document.getElementById('game-setup').classList.remove('hidden');
+    }
   }
   
   // 渲染游戏板
@@ -143,14 +180,40 @@ document.addEventListener('DOMContentLoaded', () => {
           const originalRow = Math.floor((value - 1) / selectedSize);
           
           // 计算精确的背景位置
-          // 使用准确的百分比计算，确保每个方块显示的是图片的正确部分，没有重叠
-          // 每个方块应该显示图片的 1/size 部分，所以位置应该是 0%, 100/size%, 200/size%, ...
-          const bgPositionX = (originalCol * 100) / (selectedSize - 1);
-          const bgPositionY = (originalRow * 100) / (selectedSize - 1);
+          // 使用更精确的计算方法，确保每个方块显示的是图片的正确部分，没有重叠
+          // 每个方块应该显示图片的 1/size 部分
           
-          block.style.backgroundImage = `url(${gameInstance.imageSource})`;
-          block.style.backgroundPosition = `${bgPositionX}% ${bgPositionY}%`;
-          block.style.backgroundSize = `${selectedSize * 100}%`; // 设置背景尺寸为原图的N倍，确保每个方块只显示图片的一部分
+          // 使用clip方法解决图片重叠问题
+          // 每个方块只显示图片的一个特定部分
+          
+          // 创建一个包含图片的容器
+          block.style.position = 'relative';
+          block.style.overflow = 'hidden';
+          
+          // 创建一个内部容器来放置完整图片
+          const imgContainer = document.createElement('div');
+          imgContainer.style.position = 'absolute';
+          imgContainer.style.width = `${selectedSize * 100}%`;
+          imgContainer.style.height = `${selectedSize * 100}%`;
+          imgContainer.style.backgroundImage = `url(${gameInstance.imageSource})`;
+          imgContainer.style.backgroundSize = 'cover';
+          imgContainer.style.backgroundRepeat = 'no-repeat';
+          
+          // 计算偏移量，使图片的正确部分显示在方块中
+          const offsetX = -originalCol * 100;
+          const offsetY = -originalRow * 100;
+          
+          // 设置偏移量，将图片的正确部分定位到方块中
+          imgContainer.style.left = `${offsetX}%`;
+          imgContainer.style.top = `${offsetY}%`;
+          
+          // 添加图片容器到方块中
+          block.appendChild(imgContainer);
+          
+          // 添加边框以便于区分各个方块
+          block.style.boxSizing = 'border-box';
+          block.style.border = '1px solid rgba(255,255,255,0.2)';
+          block.style.backgroundRepeat = 'no-repeat'; // 确保背景不重复
         }
         
         block.addEventListener('click', () => {
@@ -218,13 +281,13 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const scores = JSON.parse(localStorage.getItem('puzzleHighScores') || '{}');
     const key = `${selectedMode}-${selectedSize}`;
-    const modeScores = scores[key] || { time: '无记录', moves: '无记录' };
+    const modeScores = scores[key] || { time: '無紀錄', moves: '無紀錄' };
     
     const timeScore = document.createElement('div');
-    timeScore.innerHTML = `<strong>最短时间:</strong> ${modeScores.time}`;
+    timeScore.innerHTML = `<strong>最短時間:</strong> ${modeScores.time}`;
     
     const movesScore = document.createElement('div');
-    movesScore.innerHTML = `<strong>最少步数:</strong> ${modeScores.moves}`;
+    movesScore.innerHTML = `<strong>最少步數:</strong> ${modeScores.moves}`;
     
     highScoresList.appendChild(timeScore);
     highScoresList.appendChild(movesScore);
@@ -280,26 +343,35 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('custom-image').addEventListener('change', (e) => {
       if (e.target.files && e.target.files[0]) {
         const reader = new FileReader();
-        reader.onload = (event) => {
-          selectedImage = event.target.result;
-          
-          // 显示预览
-          const preview = document.createElement('img');
-          preview.src = selectedImage;
-          preview.alt = '自定义图片';
-          preview.classList.add('selected');
-          
-          const imageOptions = document.querySelector('.image-options');
-          document.querySelectorAll('.image-options img').forEach(img => img.classList.remove('selected'));
-          
-          // 移除之前的自定义图片预览
-          const existingPreview = document.querySelector('.image-options .custom-preview');
-          if (existingPreview) {
-            imageOptions.removeChild(existingPreview);
+        reader.onload = async (event) => {
+          // 预处理上传的图片
+          try {
+            // 使用当前选择的尺寸或默认尺寸4进行预处理
+            const size = selectedSize || 4;
+            const processedImage = await preprocessImage(event.target.result, size);
+            selectedImage = processedImage;
+            
+            // 显示预览
+            const preview = document.createElement('img');
+            preview.src = selectedImage;
+            preview.alt = '自定義圖片';
+            preview.classList.add('selected');
+            
+            const imageOptions = document.querySelector('.image-options');
+            document.querySelectorAll('.image-options img').forEach(img => img.classList.remove('selected'));
+            
+            // 移除之前的自定义图片预览
+            const existingPreview = document.querySelector('.image-options .custom-preview');
+            if (existingPreview) {
+              imageOptions.removeChild(existingPreview);
+            }
+            
+            preview.classList.add('custom-preview');
+            imageOptions.appendChild(preview);
+          } catch (error) {
+            console.error('處理圖片失敗:', error);
+            alert('處理圖片失敗，請嘗試其他圖片');
           }
-          
-          preview.classList.add('custom-preview');
-          imageOptions.appendChild(preview);
         };
         reader.readAsDataURL(e.target.files[0]);
       }
