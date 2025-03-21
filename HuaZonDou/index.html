@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>华容道游戏</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>华容道游戏</h1>
+        </header>
+        
+        <main>
+            <!-- 主菜单界面 -->
+            <div id="main-menu">
+                <div class="menu-section">
+                    <h2>游戏模式</h2>
+                    <div class="mode-selection">
+                        <button id="number-mode" class="mode-btn selected">数字模式</button>
+                        <button id="picture-mode" class="mode-btn">图片模式</button>
+                    </div>
+                    
+                    <!-- 图片选择区域，默认隐藏 -->
+                    <div id="picture-selection" class="hidden">
+                        <h3>选择图片</h3>
+                        <div class="preset-images">
+                            <div class="image-option" data-image="mickey">
+                                <img src="images/mickey.jpg" alt="米奇老鼠">
+                                <span>米奇老鼠</span>
+                            </div>
+                            <div class="image-option" data-image="donald">
+                                <img src="images/donald.jpg" alt="唐老鸭">
+                                <span>唐老鸭</span>
+                            </div>
+                            <div class="image-option" data-image="pooh">
+                                <img src="images/pooh.jpg" alt="小熊维尼">
+                                <span>小熊维尼</span>
+                            </div>
+                            <div class="image-option" data-image="elsa">
+                                <img src="images/elsa.jpg" alt="冰雪奇缘艾莎">
+                                <span>冰雪奇缘艾莎</span>
+                            </div>
+                            <div class="image-option" data-image="simba">
+                                <img src="images/simba.jpg" alt="狮子王辛巴">
+                                <span>狮子王辛巴</span>
+                            </div>
+                        </div>
+                        <div class="custom-image">
+                            <h3>或上传自定义图片</h3>
+                            <input type="file" id="custom-image-upload" accept="image/*" aria-label="上传自定义图片">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="menu-section">
+                    <h2>游戏尺寸</h2>
+                    <div class="size-selection">
+                        <button class="size-btn selected" data-size="5">5×5</button>
+                        <button class="size-btn" data-size="6">6×6</button>
+                        <button class="size-btn" data-size="8">8×8</button>
+                        <div class="custom-size">
+                            <label for="custom-size-input">自定义尺寸:</label>
+                            <input type="number" id="custom-size-input" min="3" max="10" value="4">
+                            <button id="custom-size-btn" class="size-btn">确定</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <button id="start-game" class="primary-btn">开始游戏</button>
+            </div>
+            
+            <!-- 游戏界面，默认隐藏 -->
+            <div id="game-screen" class="hidden">
+                <div class="game-info">
+                    <div class="timer">时间: <span id="timer">00:00</span></div>
+                    <div class="moves">移动次数: <span id="moves-count">0</span></div>
+                </div>
+                
+                <div id="game-board"></div>
+                
+                <div class="game-controls">
+                    <button id="reset-game" class="control-btn">重置游戏</button>
+                    <button id="new-game" class="control-btn">新游戏</button>
+                    <button id="hint" class="control-btn">提示</button>
+                </div>
+            </div>
+            
+            <!-- 游戏完成界面，默认隐藏 -->
+            <div id="game-complete" class="hidden">
+                <h2>恭喜你完成了游戏！</h2>
+                <div class="stats">
+                    <p>完成时间: <span id="completion-time"></span></p>
+                    <p>移动次数: <span id="completion-moves"></span></p>
+                    <p id="record-message" class="hidden">新纪录！</p>
+                </div>
+                <div class="complete-controls">
+                    <button id="play-again" class="primary-btn">再玩一次</button>
+                    <button id="back-to-menu" class="secondary-btn">返回主菜单</button>
+                </div>
+            </div>
+        </main>
+        
+        <footer>
+            <div class="high-scores">
+                <h3>最高分</h3>
+                <div id="high-scores-list"></div>
+            </div>
+        </footer>
+    </div>
+    
+    <script src="js/app.js"></script>
+</body>
+</html> 
