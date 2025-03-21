@@ -175,16 +175,12 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
           block.classList.add('image-block');
           // 設置背景圖片位置 - 將整張圖片切割成小塊
-          // 計算這個值對應的原始位置
+          // 計算這個值對應的原始位置 - 使用固定的網格位置而不是方塊的值
+          // 這樣可以確保無論方塊如何移動，顯示的圖片部分都保持不變
+          
+          // 獲取方塊的值，這個值表示方塊在完成狀態下應該在的位置
           const originalCol = (value - 1) % selectedSize;
           const originalRow = Math.floor((value - 1) / selectedSize);
-          
-          // 計算精確的背景位置
-          // 使用更精確的計算方法，確保每個方塊顯示的是圖片的正確部分，沒有重疊
-          // 每個方塊應該顯示圖片的 1/size 部分
-          
-          // 使用clip方法解決圖片重疊問題
-          // 每個方塊只顯示圖片的一個特定部分
           
           // 創建一個包含圖片的容器
           block.style.position = 'relative';
@@ -200,6 +196,8 @@ document.addEventListener('DOMContentLoaded', () => {
           imgContainer.style.backgroundRepeat = 'no-repeat';
           
           // 計算偏移量，使圖片的正確部分顯示在方塊中
+          // 這裡使用方塊的值來確定應該顯示的圖片部分
+          // 這確保了無論方塊移動到哪個位置，它顯示的圖片部分都是固定的
           const offsetX = -originalCol * 100;
           const offsetY = -originalRow * 100;
           

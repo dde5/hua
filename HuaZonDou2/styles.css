@@ -169,17 +169,30 @@ button.selected {
 .puzzle-block.empty {
   background-color: transparent;
   cursor: default;
-  box-shadow: 0 0 20px rgba(52, 152, 219, 0.9);
-  border: 3px solid rgba(52, 152, 219, 0.8);
-  animation: glow 1.5s infinite alternate;
+  position: relative;
+  box-sizing: border-box;
 }
 
-@keyframes glow {
+.puzzle-block.empty::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border: 1px solid rgba(52, 152, 219, 0.8);
+  pointer-events: none;
+  z-index: 1;
+  box-shadow: inset 0 0 15px rgba(52, 152, 219, 0.8);
+  animation: glow-border 1.5s infinite alternate;
+}
+
+@keyframes glow-border {
   from {
-    box-shadow: 0 0 15px rgba(52, 152, 219, 0.8);
+    box-shadow: inset 0 0 10px rgba(52, 152, 219, 0.6);
   }
   to {
-    box-shadow: 0 0 25px rgba(52, 152, 219, 1);
+    box-shadow: inset 0 0 20px rgba(52, 152, 219, 0.9);
   }
 }
 
