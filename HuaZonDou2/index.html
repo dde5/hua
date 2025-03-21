@@ -10,7 +10,7 @@
   <div class="container">
     <h1>燒腦華榮道</h1>
     
-    <!-- 游戏设置界面 -->
+    <!-- 遊戲設置界面 -->
     <div id="game-setup">
       <div class="mode-selection">
         <h2>選擇遊戲模式</h2>
@@ -23,31 +23,31 @@
       <div id="image-selection" class="hidden">
         <h2>選擇圖片</h2>
         <div class="image-options">
-          <!-- 预设图片选项 -->
+          <!-- 預設圖片選項 -->
         </div>
         <div class="upload-option">
-          <label for="custom-image">上傳圖片</label>
+          <label for="custom-image">上傳自定義圖片</label>
           <input type="file" id="custom-image" accept="image/*">
         </div>
       </div>
       
       <div class="size-selection">
-        <h2>選擇難度</h2>
+        <h2>選擇遊戲尺寸</h2>
         <div class="size-options">
           <button data-size="5">5×5</button>
           <button data-size="6">6×6</button>
           <button data-size="8">8×8</button>
-          <div class="custom-size">
-            <label for="custom-size-input">自定義:</label>
-            <input type="number" id="custom-size-input" min="3" max="10" value="4">
-          </div>
+        </div>
+        <div class="custom-size">
+          <label for="custom-size-input">自定義:</label>
+          <input type="number" id="custom-size-input" min="3" max="10" value="4">
         </div>
       </div>
       
       <button id="start-game">開始遊戲</button>
     </div>
     
-    <!-- 游戏界面 -->
+    <!-- 遊戲界面 -->
     <div id="game-board" class="hidden">
       <div class="game-stats">
         <div class="timer">時間: <span id="time">00:00</span></div>
@@ -55,7 +55,7 @@
       </div>
       
       <div class="puzzle-container">
-        <!-- 游戏方块将在这里动态生成 -->
+        <!-- 遊戲方塊將在這裡動態生成 -->
       </div>
       
       <div class="game-controls">
@@ -67,12 +67,12 @@
       <div class="high-scores">
         <h3>最高分</h3>
         <div id="high-scores-list">
-          <!-- 最高分记录将在这里显示 -->
+          <!-- 最高分記錄將在這裡顯示 -->
         </div>
       </div>
     </div>
     
-    <!-- 游戏完成界面 -->
+    <!-- 遊戲完成界面 -->
     <div id="game-complete" class="hidden">
       <h2>恭喜完成!</h2>
       <div class="completion-stats">

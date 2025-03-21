@@ -1,4 +1,4 @@
-// 游戏核心逻辑
+// 遊戲核心邏輯
 class PuzzleGame {
   constructor(size, mode, imageSource) {
     this.size = size;
@@ -14,18 +14,18 @@ class PuzzleGame {
   }
   
   initializeGame() {
-    // 创建有序的游戏板
+    // 創建有序的遊戲板
     this.board = [];
     let value = 1;
     
-    // 重置空白方块位置到右下角
+    // 重置空白方塊位置到右下角
     this.emptyPos = { row: this.size - 1, col: this.size - 1 };
     
     for (let row = 0; row < this.size; row++) {
       const rowArray = [];
       for (let col = 0; col < this.size; col++) {
         if (row === this.size - 1 && col === this.size - 1) {
-          rowArray.push(0); // 空白方块
+          rowArray.push(0); // 空白方塊
         } else {
           rowArray.push(value++);
         }
@@ -33,36 +33,36 @@ class PuzzleGame {
       this.board.push(rowArray);
     }
     
-    // 随机打乱游戏板
+    // 隨機打亂遊戲板
     this.shuffleBoard();
     
-    // 重置游戏状态
+    // 重置遊戲狀態
     this.moves = 0;
     document.getElementById('moves').textContent = '0';
   }
   
   shuffleBoard() {
-    // 执行随机移动来打乱游戏板
-    // 通常需要1000次以上的随机移动来确保充分打乱
+    // 執行隨機移動來打亂遊戲板
+    // 通常需要1000次以上的隨機移動來確保充分打亂
     const moves = 1000 + Math.floor(Math.random() * 1000);
     
     for (let i = 0; i < moves; i++) {
-      // 获取空白方块的相邻方块
+      // 獲取空白方塊的相鄰方塊
       const adjacentBlocks = this.getAdjacentBlocks();
       
       if (adjacentBlocks.length > 0) {
-        // 随机选择一个相邻方块进行移动
+        // 隨機選擇一個相鄰方塊進行移動
         const randomIndex = Math.floor(Math.random() * adjacentBlocks.length);
         const { row, col } = adjacentBlocks[randomIndex];
         
-        // 交换位置
+        // 交換位置
         this.swapBlocks(row, col);
       }
     }
     
-    // 确保生成的谜题可解
+    // 確保生成的謎題可解
     if (!this.isSolvable()) {
-      // 如果不可解，交换任意两个非空方块
+      // 如果不可解，交換任意兩個非空方塊
       this.makeGameSolvable();
     }
   }
@@ -71,34 +71,34 @@ class PuzzleGame {
     const { row, col } = this.emptyPos;
     const adjacent = [];
     
-    // 上方方块
+    // 上方方塊
     if (row > 0) adjacent.push({ row: row - 1, col });
-    // 下方方块
+    // 下方方塊
     if (row < this.size - 1) adjacent.push({ row: row + 1, col });
-    // 左侧方块
+    // 左側方塊
     if (col > 0) adjacent.push({ row, col: col - 1 });
-    // 右侧方块
+    // 右側方塊
     if (col < this.size - 1) adjacent.push({ row, col: col + 1 });
     
     return adjacent;
   }
   
   swapBlocks(row, col) {
-    // 交换指定位置的方块与空白方块
+    // 交換指定位置的方塊與空白方塊
     const temp = this.board[row][col];
     this.board[row][col] = 0;
     this.board[this.emptyPos.row][this.emptyPos.col] = temp;
     
-    // 更新空白方块位置
+    // 更新空白方塊位置
     this.emptyPos = { row, col };
   }
   
   isSolvable() {
-    // 检查当前游戏板是否可解
-    // 对于N×N的游戏板，当N为奇数时，逆序数必须为偶数才可解
-    // 当N为偶数时，逆序数+空白方块所在行数（从底部数）的奇偶性必须与初始状态相同才可解
+    // 檢查當前遊戲板是否可解
+    // 對於N×N的遊戲板，當N為奇數時，逆序數必須為偶數才可解
+    // 當N為偶數時，逆序數+空白方塊所在行數（從底部數）的奇偶性必須與初始狀態相同才可解
     
-    // 将二维数组转为一维数组，忽略空白方块
+    // 將二維數組轉為一維數組，忽略空白方塊
     const flatBoard = [];
     for (let row = 0; row < this.size; row++) {
       for (let col = 0; col < this.size; col++) {
@@ -108,7 +108,7 @@ class PuzzleGame {
       }
     }
     
-    // 计算逆序数
+    // 計算逆序數
     let inversions = 0;
     for (let i = 0; i < flatBoard.length; i++) {
       for (let j = i + 1; j < flatBoard.length; j++) {
@@ -118,26 +118,26 @@ class PuzzleGame {
       }
     }
     
-    // 根据游戏板尺寸判断是否可解
+    // 根據遊戲板尺寸判斷是否可解
     if (this.size % 2 === 1) {
-      // 奇数尺寸：逆序数必须为偶数
+      // 奇數尺寸：逆序數必須為偶數
       return inversions % 2 === 0;
     } else {
-      // 偶数尺寸：逆序数+空白方块所在行数（从底部数）的奇偶性必须为偶数
+      // 偶數尺寸：逆序數+空白方塊所在行數（從底部數）的奇偶性必須為偶數
       const emptyRowFromBottom = this.size - this.emptyPos.row;
       return (inversions + emptyRowFromBottom) % 2 === 0;
     }
   }
   
   makeGameSolvable() {
-    // 如果游戏不可解，交换任意两个非空方块使其可解
+    // 如果遊戲不可解，交換任意兩個非空方塊使其可解
     if (this.board[0][0] !== 0 && this.board[0][1] !== 0) {
-      // 交换左上角的两个方块
+      // 交換左上角的兩個方塊
       const temp = this.board[0][0];
       this.board[0][0] = this.board[0][1];
       this.board[0][1] = temp;
     } else {
-      // 如果左上角有空方块，交换右下角的两个方块
+      // 如果左上角有空方塊，交換右下角的兩個方塊
       const row = this.size - 1;
       const col = this.size - 2;
       if (this.board[row][col] !== 0 && this.board[row][col-1] !== 0) {
@@ -149,10 +149,10 @@ class PuzzleGame {
   }
   
   isAdjacent(row, col) {
-    // 检查指定位置的方块是否与空白方块相邻
+    // 檢查指定位置的方塊是否與空白方塊相鄰
     const { row: emptyRow, col: emptyCol } = this.emptyPos;
     
-    // 水平或垂直相邻
+    // 水平或垂直相鄰
     return (
       (Math.abs(row - emptyRow) === 1 && col === emptyCol) ||
       (Math.abs(col - emptyCol) === 1 && row === emptyRow)
@@ -161,10 +161,10 @@ class PuzzleGame {
   
   moveBlock(row, col) {
     if (this.isAdjacent(row, col)) {
-      // 交换方块
+      // 交換方塊
       this.swapBlocks(row, col);
       
-      // 增加移动次数
+      // 增加移動次數
       this.moves++;
       document.getElementById('moves').textContent = this.moves;
       
@@ -174,18 +174,18 @@ class PuzzleGame {
   }
   
   checkWin() {
-    // 检查游戏是否完成
+    // 檢查遊戲是否完成
     let value = 1;
     
     for (let row = 0; row < this.size; row++) {
       for (let col = 0; col < this.size; col++) {
-        // 最后一个位置应该是空白方块
+        // 最後一個位置應該是空白方塊
         if (row === this.size - 1 && col === this.size - 1) {
           if (this.board[row][col] !== 0) {
             return false;
           }
         } else {
-          // 其他位置应该是按顺序排列的数字
+          // 其他位置應該是按順序排列的數字
           if (this.board[row][col] !== value++) {
             return false;
           }
@@ -219,35 +219,35 @@ class PuzzleGame {
   }
   
   resetGame() {
-    // 停止当前计时器
+    // 停止當前計時器
     this.stopTimer();
     
-    // 重新初始化游戏
+    // 重新初始化遊戲
     this.initializeGame();
     
-    // 重新开始计时
+    // 重新開始計時
     this.startTimer();
   }
   
   saveHighScore() {
-    // 获取当前游戏模式和尺寸的键
+    // 獲取當前遊戲模式和尺寸的鍵
     const key = `${this.mode}-${this.size}`;
     
-    // 获取当前时间和移动次数
+    // 獲取當前時間和移動次數
     const currentTime = this.timerElement.textContent;
     const currentMoves = this.moves;
     
-    // 从本地存储中获取现有的高分记录
+    // 從本地存儲中獲取現有的高分記錄
     const highScores = JSON.parse(localStorage.getItem('puzzleHighScores') || '{}');
     
-    // 如果没有该模式和尺寸的记录，或者当前成绩更好，则更新记录
+    // 如果沒有該模式和尺寸的記錄，或者當前成績更好，則更新記錄
     if (!highScores[key] || this.isNewHighScore(highScores[key], currentTime, currentMoves)) {
       highScores[key] = {
         time: currentTime,
         moves: currentMoves
       };
       
-      // 保存到本地存储
+      // 保存到本地存儲
       localStorage.setItem('puzzleHighScores', JSON.stringify(highScores));
       
       return true;
@@ -257,7 +257,7 @@ class PuzzleGame {
   }
   
   isNewHighScore(existingScore, currentTime, currentMoves) {
-    // 解析时间字符串为秒数
+    // 解析時間字符串為秒數
     const parseTimeToSeconds = (timeStr) => {
       const [minutes, seconds] = timeStr.split(':').map(Number);
       return minutes * 60 + seconds;
@@ -266,7 +266,7 @@ class PuzzleGame {
     const existingTimeSeconds = parseTimeToSeconds(existingScore.time);
     const currentTimeSeconds = parseTimeToSeconds(currentTime);
     
-    // 首先比较时间，如果时间相同则比较移动次数
+    // 首先比較時間，如果時間相同則比較移動次數
     if (currentTimeSeconds < existingTimeSeconds) {
       return true;
     } else if (currentTimeSeconds === existingTimeSeconds && currentMoves < existingScore.moves) {
@@ -277,38 +277,38 @@ class PuzzleGame {
   }
   
   getHint() {
-    // 使用广度优先搜索找到最短路径到目标状态
-    // 由于完整的解决方案可能需要大量计算，这里只提供下一步的提示
+    // 使用廣度優先搜索找到最短路徑到目標狀態
+    // 由於完整的解決方案可能需要大量計算，這裡只提供下一步的提示
     
-    // 检查是否已经完成
+    // 檢查是否已經完成
     if (this.checkWin()) {
-      return null; // 已经完成，不需要提示
+      return null; // 已經完成，不需要提示
     }
     
-    // 获取当前可移动的方块
+    // 獲取當前可移動的方塊
     const adjacentBlocks = this.getAdjacentBlocks();
     
-    // 评估每个可能的移动
+    // 評估每個可能的移動
     let bestMove = null;
     let bestScore = -Infinity;
     
     for (const move of adjacentBlocks) {
-      // 临时移动方块
+      // 臨時移動方塊
       const { row, col } = move;
       const originalBoard = JSON.parse(JSON.stringify(this.board));
       const originalEmptyPos = {...this.emptyPos};
       
-      // 执行移动
+      // 執行移動
       this.swapBlocks(row, col);
       
-      // 计算移动后的得分（曼哈顿距离）
+      // 計算移動後的得分（曼哈頓距離）
       const score = this.evaluatePosition();
       
-      // 恢复原始状态
+      // 恢復原始狀態
       this.board = originalBoard;
       this.emptyPos = originalEmptyPos;
       
-      // 更新最佳移动
+      // 更新最佳移動
       if (score > bestScore) {
         bestScore = score;
         bestMove = move;
@@ -319,20 +319,20 @@ class PuzzleGame {
   }
   
   evaluatePosition() {
-    // 使用曼哈顿距离评估当前位置
-    // 曼哈顿距离越小，表示越接近目标状态
+    // 使用曼哈頓距離評估當前位置
+    // 曼哈頓距離越小，表示越接近目標狀態
     let score = 0;
     
     for (let row = 0; row < this.size; row++) {
       for (let col = 0; col < this.size; col++) {
         const value = this.board[row][col];
         if (value !== 0) {
-          // 计算当前位置与目标位置的曼哈顿距离
+          // 計算當前位置與目標位置的曼哈頓距離
           const targetRow = Math.floor((value - 1) / this.size);
           const targetCol = (value - 1) % this.size;
           const distance = Math.abs(row - targetRow) + Math.abs(col - targetCol);
           
-          // 距离越小，得分越高
+          // 距離越小，得分越高
           score -= distance;
         }
       }

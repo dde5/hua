@@ -1,28 +1,28 @@
-// UI交互逻辑
+// UI互動邏輯
 document.addEventListener('DOMContentLoaded', () => {
-  // 游戏设置变量
+  // 遊戲設置變數
   let selectedMode = null;
   let selectedSize = null;
   let selectedImage = null;
   let gameInstance = null;
   
-  // 预设图片
+  // 預設圖片
   const presetImages = [
-    { name: '米老鼠', src: 'images/mickey.jpg' },
+    { name: '米奇老鼠', src: 'images/mickey.jpg' },
     { name: '唐老鴨', src: 'images/donald.jpg' },
     { name: '小熊維尼', src: 'images/pooh.jpg' },
-    { name: '愛紗', src: 'images/elsa.jpg' },
-    { name: '辛巴', src: 'images/simba.jpg' }
+    { name: '冰雪奇緣艾莎', src: 'images/elsa.jpg' },
+    { name: '獅子王辛巴', src: 'images/simba.jpg' }
   ];
   
-  // 处理后的预设图片
+  // 處理後的預設圖片
   let processedPresetImages = [];
   
-  // 初始化图片选择区域
+  // 初始化圖片選擇區域
   async function initImageSelection() {
     const imageOptions = document.querySelector('.image-options');
     
-    // 预处理所有预设图片
+    // 預處理所有預設圖片
     processedPresetImages = await preprocessPresetImages(presetImages);
     
     processedPresetImages.forEach(image => {
@@ -39,7 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
   
-  // 初始化模式选择
+  // 初始化模式選擇
   function initModeSelection() {
     document.getElementById('number-mode').addEventListener('click', () => {
       selectedMode = 'number';
@@ -54,14 +54,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
   
-  // 高亮选中的按钮
+  // 高亮選中的按鈕
   function highlightSelectedButton(id) {
     const buttons = document.querySelectorAll('.mode-options button, .size-options button');
     buttons.forEach(button => button.classList.remove('selected'));
     document.getElementById(id).classList.add('selected');
   }
   
-  // 初始化尺寸选择
+  // 初始化尺寸選擇
   function initSizeSelection() {
     const sizeButtons = document.querySelectorAll('.size-options button');
     sizeButtons.forEach(button => {
@@ -71,19 +71,19 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
     
-    // 自定义尺寸
+    // 自定義尺寸
     document.getElementById('custom-size-input').addEventListener('change', (e) => {
       const value = parseInt(e.target.value);
       if (value >= 3 && value <= 10) {
         selectedSize = value;
       } else {
-        alert('請輸入3~10中間數字');
+        alert('請輸入3到10之間的數字');
         e.target.value = 4;
       }
     });
   }
   
-  // 初始化开始游戏按钮
+  // 初始化開始遊戲按鈕
   function initStartGameButton() {
     document.getElementById('start-game').addEventListener('click', () => {
       if (!selectedMode) {
@@ -113,21 +113,21 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
   
-  // 开始游戏
+  // 開始遊戲
   async function startGame(imageSource) {
     document.getElementById('game-setup').classList.add('hidden');
     document.getElementById('game-board').classList.remove('hidden');
     
-    // 确保图片已经过预处理
+    // 確保圖片已經過預處理
     try {
-      // 如果是自定义上传的图片，它已经在上传时预处理过了
-      // 如果是预设图片，确保使用处理后的版本
+      // 如果是自定義上傳的圖片，它已經在上傳時預處理過了
+      // 如果是預設圖片，確保使用處理後的版本
       if (selectedMode === 'image' && imageSource) {
-        // 查找是否是预设图片中的一个
+        // 查找是否是預設圖片中的一個
         const isPreset = presetImages.some(img => img.src === imageSource);
         
         if (isPreset) {
-          // 找到对应的处理后的图片
+          // 找到對應的處理後的圖片
           const processedImage = processedPresetImages.find(img => {
             const originalSrc = presetImages.find(original => original.name === img.name)?.src;
             return originalSrc === imageSource;
@@ -136,7 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
           if (processedImage) {
             imageSource = processedImage.src;
           } else {
-            // 如果找不到处理后的图片，重新处理一次
+            // 如果找不到處理後的圖片，重新處理一次
             imageSource = await preprocessImage(imageSource, selectedSize);
           }
         }
@@ -146,7 +146,7 @@ document.addEventListener('DOMContentLoaded', () => {
       renderGameBoard();
       gameInstance.startTimer();
       
-      // 加载最高分
+      // 載入最高分
       loadHighScores();
     } catch (error) {
       console.error('遊戲初始化失敗:', error);
@@ -156,7 +156,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
   
-  // 渲染游戏板
+  // 渲染遊戲板
   function renderGameBoard() {
     const puzzleContainer = document.querySelector('.puzzle-container');
     puzzleContainer.innerHTML = '';
@@ -174,23 +174,23 @@ document.addEventListener('DOMContentLoaded', () => {
           block.textContent = value;
         } else {
           block.classList.add('image-block');
-          // 设置背景图片位置 - 将整张图片切割成小块
-          // 计算这个值对应的原始位置
+          // 設置背景圖片位置 - 將整張圖片切割成小塊
+          // 計算這個值對應的原始位置
           const originalCol = (value - 1) % selectedSize;
           const originalRow = Math.floor((value - 1) / selectedSize);
           
-          // 计算精确的背景位置
-          // 使用更精确的计算方法，确保每个方块显示的是图片的正确部分，没有重叠
-          // 每个方块应该显示图片的 1/size 部分
+          // 計算精確的背景位置
+          // 使用更精確的計算方法，確保每個方塊顯示的是圖片的正確部分，沒有重疊
+          // 每個方塊應該顯示圖片的 1/size 部分
           
-          // 使用clip方法解决图片重叠问题
-          // 每个方块只显示图片的一个特定部分
+          // 使用clip方法解決圖片重疊問題
+          // 每個方塊只顯示圖片的一個特定部分
           
-          // 创建一个包含图片的容器
+          // 創建一個包含圖片的容器
           block.style.position = 'relative';
           block.style.overflow = 'hidden';
           
-          // 创建一个内部容器来放置完整图片
+          // 創建一個內部容器來放置完整圖片
           const imgContainer = document.createElement('div');
           imgContainer.style.position = 'absolute';
           imgContainer.style.width = `${selectedSize * 100}%`;
@@ -199,18 +199,18 @@ document.addEventListener('DOMContentLoaded', () => {
           imgContainer.style.backgroundSize = 'cover';
           imgContainer.style.backgroundRepeat = 'no-repeat';
           
-          // 计算偏移量，使图片的正确部分显示在方块中
+          // 計算偏移量，使圖片的正確部分顯示在方塊中
           const offsetX = -originalCol * 100;
           const offsetY = -originalRow * 100;
           
-          // 设置偏移量，将图片的正确部分定位到方块中
+          // 設置偏移量，將圖片的正確部分定位到方塊中
           imgContainer.style.left = `${offsetX}%`;
           imgContainer.style.top = `${offsetY}%`;
           
-          // 添加图片容器到方块中
+          // 添加圖片容器到方塊中
           block.appendChild(imgContainer);
           
-          // 添加边框以便于区分各个方块
+          // 添加邊框以便於區分各個方塊
           block.style.boxSizing = 'border-box';
           block.style.border = '1px solid rgba(255,255,255,0.2)';
           block.style.backgroundRepeat = 'no-repeat'; // 确保背景不重复
@@ -233,13 +233,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
   
-  // 更新游戏统计
+  // 更新遊戲統計
   function updateGameStats() {
     document.getElementById('moves').textContent = gameInstance.moves;
-    // 时间更新由计时器处理
+    // 時間更新由計時器處理
   }
   
-  // 游戏完成
+  // 遊戲完成
   function gameComplete() {
     gameInstance.stopTimer();
     
@@ -252,7 +252,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 保存高分
     gameInstance.saveHighScore();
     
-    // 初始化完成界面按钮
+    // 初始化完成界面按鈕
     document.getElementById('play-again').addEventListener('click', () => {
       document.getElementById('game-complete').classList.add('hidden');
       startGame(gameInstance.imageSource);
@@ -265,7 +265,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
   
-  // 重置游戏设置
+  // 重置遊戲設置
   function resetGameSettings() {
     selectedMode = null;
     selectedSize = null;
@@ -274,14 +274,14 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('image-selection').classList.add('hidden');
   }
   
-  // 加载最高分
+  // 載入最高分
   function loadHighScores() {
     const highScoresList = document.getElementById('high-scores-list');
     highScoresList.innerHTML = '';
     
     const scores = JSON.parse(localStorage.getItem('puzzleHighScores') || '{}');
     const key = `${selectedMode}-${selectedSize}`;
-    const modeScores = scores[key] || { time: '無紀錄', moves: '無紀錄' };
+    const modeScores = scores[key] || { time: '無記錄', moves: '無記錄' };
     
     const timeScore = document.createElement('div');
     timeScore.innerHTML = `<strong>最短時間:</strong> ${modeScores.time}`;
@@ -293,7 +293,7 @@ document.addEventListener('DOMContentLoaded', () => {
     highScoresList.appendChild(movesScore);
   }
   
-  // 初始化游戏控制按钮
+  // 初始化遊戲控制按鈕
   function initGameControls() {
     document.getElementById('reset-game').addEventListener('click', () => {
       gameInstance.resetGame();
@@ -307,7 +307,7 @@ document.addEventListener('DOMContentLoaded', () => {
       resetGameSettings();
     });
     
-    // 添加提示按钮功能
+    // 添加提示按鈕功能
     document.getElementById('hint-button').addEventListener('click', () => {
       const hintMove = gameInstance.getHint();
       if (hintMove) {
@@ -317,21 +317,21 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
   
-  // 高亮提示的方块
+  // 高亮提示的方塊
   function highlightHintBlock(row, col) {
     // 移除之前的提示高亮
     document.querySelectorAll('.puzzle-block').forEach(block => {
       block.classList.remove('hint');
     });
     
-    // 计算方块索引
+    // 計算方塊索引
     const index = row * selectedSize + col;
     const blocks = document.querySelectorAll('.puzzle-block');
     
     if (blocks[index]) {
       blocks[index].classList.add('hint');
       
-      // 3秒后移除高亮
+      // 3秒後移除高亮
       setTimeout(() => {
         blocks[index].classList.remove('hint');
       }, 3000);
@@ -354,7 +354,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // 显示预览
             const preview = document.createElement('img');
             preview.src = selectedImage;
-            preview.alt = '自定義圖片';
+            preview.alt = '自定义图片';
             preview.classList.add('selected');
             
             const imageOptions = document.querySelector('.image-options');
@@ -369,8 +369,8 @@ document.addEventListener('DOMContentLoaded', () => {
             preview.classList.add('custom-preview');
             imageOptions.appendChild(preview);
           } catch (error) {
-            console.error('處理圖片失敗:', error);
-            alert('處理圖片失敗，請嘗試其他圖片');
+            console.error('处理图片失败:', error);
+            alert('图片处理失败，请尝试其他图片');
           }
         };
         reader.readAsDataURL(e.target.files[0]);
@@ -378,7 +378,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
   
-  // 初始化所有UI组件
+  // 初始化所有UI組件
   function initUI() {
     initModeSelection();
     initImageSelection();
@@ -387,12 +387,13 @@ document.addEventListener('DOMContentLoaded', () => {
     initGameControls();
     initCustomImageUpload();
     
-    // 添加CSS类
+    // 添加CSS類
     document.querySelectorAll('.mode-options button, .size-options button').forEach(button => {
       button.classList.add('option-button');
     });
   }
   
-  // 启动UI初始化
+  // 啟動UI初始化
   initUI();
-});
+
+}); // Close DOMContentLoaded event listener
