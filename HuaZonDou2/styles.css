@@ -70,7 +70,7 @@ button.selected {
   max-width: 600px;
 }
 
-.mode-options, .size-options, .image-options {
+.mode-options, .size-options, .image-options, .color-options {
   display: flex;
   gap: 15px;
   margin: 0 auto 20px;
@@ -92,6 +92,27 @@ button.selected {
 
 .image-options img.selected {
   border-color: #3498db;
+}
+
+.color-options button {
+  min-width: 100px;
+}
+
+#color-default {
+  background-color: #555;
+  background-image: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.1) 10px, rgba(255, 255, 255, 0.2) 10px, rgba(255, 255, 255, 0.2) 20px);
+}
+
+#color-blue {
+  background-color: #3498db;
+}
+
+#color-red {
+  background-color: #e74c3c;
+}
+
+#color-orange {
+  background-color: #f39c12;
 }
 
 .custom-size {
@@ -173,7 +194,33 @@ button.selected {
   box-sizing: border-box;
 }
 
-.puzzle-block.empty::before {
+/* 預設暗灰條紋樣式 */
+.puzzle-block.empty.color-default::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border: 1px solid rgba(52, 52, 52, 0.8);
+  pointer-events: none;
+  z-index: 1;
+  box-shadow: inset 0 0 15px rgba(52, 52, 52, 0.8);
+  animation: glow-border-default 1.5s infinite alternate;
+  background-image: repeating-linear-gradient(45deg, rgba(52, 52, 52, 0.1), rgba(52, 52, 52, 0.1) 10px, rgba(52, 52, 52, 0.2) 10px, rgba(52, 52, 52, 0.2) 20px);
+}
+
+@keyframes glow-border-default {
+  from {
+    box-shadow: inset 0 0 10px rgba(52, 52, 52, 0.6);
+  }
+  to {
+    box-shadow: inset 0 0 20px rgba(52, 52, 52, 0.9);
+  }
+}
+
+/* 淡藍色樣式 */
+.puzzle-block.empty.color-blue::before {
   content: '';
   position: absolute;
   top: 0;
@@ -184,15 +231,63 @@ button.selected {
   pointer-events: none;
   z-index: 1;
   box-shadow: inset 0 0 15px rgba(52, 152, 219, 0.8);
-  animation: glow-border 1.5s infinite alternate;
+  animation: glow-border-blue 1.5s infinite alternate;
 }
 
-@keyframes glow-border {
+@keyframes glow-border-blue {
   from {
     box-shadow: inset 0 0 10px rgba(52, 152, 219, 0.6);
   }
   to {
     box-shadow: inset 0 0 20px rgba(52, 152, 219, 0.9);
+  }
+}
+
+/* 淡紅色樣式 */
+.puzzle-block.empty.color-red::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border: 1px solid rgba(231, 76, 60, 0.8);
+  pointer-events: none;
+  z-index: 1;
+  box-shadow: inset 0 0 15px rgba(231, 76, 60, 0.8);
+  animation: glow-border-red 1.5s infinite alternate;
+}
+
+@keyframes glow-border-red {
+  from {
+    box-shadow: inset 0 0 10px rgba(231, 76, 60, 0.6);
+  }
+  to {
+    box-shadow: inset 0 0 20px rgba(231, 76, 60, 0.9);
+  }
+}
+
+/* 淡橘色樣式 */
+.puzzle-block.empty.color-orange::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border: 1px solid rgba(243, 156, 18, 0.8);
+  pointer-events: none;
+  z-index: 1;
+  box-shadow: inset 0 0 15px rgba(243, 156, 18, 0.8);
+  animation: glow-border-orange 1.5s infinite alternate;
+}
+
+@keyframes glow-border-orange {
+  from {
+    box-shadow: inset 0 0 10px rgba(243, 156, 18, 0.6);
+  }
+  to {
+    box-shadow: inset 0 0 20px rgba(243, 156, 18, 0.9);
   }
 }
 

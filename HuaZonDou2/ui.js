@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let selectedMode = null;
   let selectedSize = null;
   let selectedImage = null;
+  let selectedColor = 'default'; // 預設為暗灰條紋
   let gameInstance = null;
   
   // 預設圖片
@@ -170,6 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const value = gameInstance.board[row][col];
         if (value === 0) {
           block.classList.add('empty');
+          block.classList.add(`color-${selectedColor}`);
         } else if (selectedMode === 'number') {
           block.textContent = value;
         } else {
@@ -376,17 +378,33 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
   
+  // 初始化顏色選擇
+  function initColorSelection() {
+    const colorButtons = document.querySelectorAll('.color-options button');
+    colorButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        selectedColor = button.dataset.color;
+        document.querySelectorAll('.color-options button').forEach(btn => btn.classList.remove('selected'));
+        button.classList.add('selected');
+      });
+    });
+    
+    // 預設選中第一個顏色選項（暗灰條紋）
+    document.getElementById('color-default').classList.add('selected');
+  }
+  
   // 初始化所有UI組件
   function initUI() {
     initModeSelection();
     initImageSelection();
     initSizeSelection();
+    initColorSelection();
     initStartGameButton();
     initGameControls();
     initCustomImageUpload();
     
     // 添加CSS類
-    document.querySelectorAll('.mode-options button, .size-options button').forEach(button => {
+    document.querySelectorAll('.mode-options button, .size-options button, .color-options button').forEach(button => {
       button.classList.add('option-button');
     });
   }
