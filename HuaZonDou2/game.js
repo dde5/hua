@@ -18,6 +18,9 @@ class PuzzleGame {
     this.board = [];
     let value = 1;
     
+    // 重置空白方块位置到右下角
+    this.emptyPos = { row: this.size - 1, col: this.size - 1 };
+    
     for (let row = 0; row < this.size; row++) {
       const rowArray = [];
       for (let col = 0; col < this.size; col++) {
