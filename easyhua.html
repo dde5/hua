@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>華容道</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+    <style>
+        body {
+            font-family: 'Press Start 2P', monospace;
+            background-color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 90%;
+            width: 450px;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        #game-board {
+            display: grid;
+            grid-template-columns: repeat(4, 50px);
+            grid-template-rows: repeat(5, 50px);
+            gap: 8px;
+            margin-bottom: 20px;
+            margin: 0 auto 20px auto;
+            width: fit-content;
+        }
+
+        .tile {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1rem;
+            cursor: pointer;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            user-select: none;
+            background-color: #e0e0e0;
+            transition: background-color 0.2s;
+            width: 50px;
+            height: 50px;
+        }
+
+        .tile:hover {
+            background-color: #d0d0d0;
+        }
+
+        .empty {
+            background-color: #fff;
+            border: 2px dashed #ccc;
+        }
+
+        #controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        #mode-select {
+            margin-bottom: 10px;
+            padding: 8px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            font-size: 0.8rem;
+        }
+
+        #button-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .game-button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 8px;
+            background-color: #4CAF50;
+            color: white;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .game-button:hover {
+                background-color: #367c39;
+        }
+
+        .game-button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        #message-box {
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+            min-height: 20px;
+        }
+
+        #timer {
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+
+        #move-count {
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+
+        #score-list {
+            list-style-type: none;
+            padding: 0;
+            margin-top: 10px;
+            font-size: 0.8rem;
+            max-height: 150px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 10px;
+            background-color: #f9f9f9;
+        }
+
+        #score-list li {
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        #score-list li:last-child {
+            border-bottom: none;
+        }
+
+        @media (max-width: 640px) {
+            .container {
+                padding: 15px;
+            }
+            #game-board {
+                grid-template-columns: repeat(4, 40px);
+                grid-template-rows: repeat(5, 40px);
+                gap: 6px;
+            }
+            .tile {
+                font-size: 0.7rem;
+                width: 40px;
+                height: 40px;
+            }
+             .game-button {
+                font-size: 0.7rem;
+                padding: 8px 12px;
+            }
+            h1{
+                font-size: 1.2rem;
+            }
+            #message-box, #timer, #move-count{
+                font-size: 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+    <div class="container bg-white rounded-lg shadow-md p-4">
+        <h1 class="text-2xl font-semibold mb-4">華容道</h1>
+        <div id="game-board" class="grid grid-cols-4 gap-2"></div>
+        <div id="controls" class="flex flex-col items-center">
+            <select id="mode-select" class="mb-2 text-sm">
+                <option value="number">數字模式</option>
+                <option value="size">大小模式</option>
+            </select>
+            <div id="button-container" class="flex gap-2 mb-2">
+                <button id="reset-button" class="game-button">重置遊戲</button>
+                <button id="start-timer" class="game-button">開始計時</button>
+                <button id="stop-timer" class="game-button">停止計時</button>
+            </div>
+            <div id="timer" class="mb-2 text-sm">時間：00:00</div>
+            <div id="move-count" class="mb-2 text-sm">移動次數：0</div>
+            <div id="message-box" class="mb-2 text-sm min-h-[20px]"></div>
+            <div id="score-section">
+                <h2 class="text-lg font-semibold mb-2">最速排行榜</h2>
+                <ul id="score-list"></ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const gameBoard = document.getElementById('game-board');
+        const modeSelect = document.getElementById('mode-select');
+        const resetButton = document.getElementById('reset-button');
+        const startTimerButton = document.getElementById('start-timer');
+        const stopTimerButton = document.getElementById('stop-timer');
+        const messageBox = document.getElementById('message-box');
+        const timerDisplay = document.getElementById('timer');
+        const moveCountDisplay = document.getElementById('move-count');
+        const scoreList = document.getElementById('score-list');
+        const scoreSection = document.getElementById('score-section'); // Ensure the score section is in the HTML
+
+        let boardSize = 4; // 初始為 4x4
+        let board = [];
+        let mode = 'number';
+        let emptyRow, emptyCol;
+        let timerInterval;
+        let seconds = 0;
+        let moves = 0;
+        let isTimerRunning = false;
+        let gameStarted = false; // 標記遊戲是否開始
+        let scores = []; // 用於存儲分數
+        const scoreKey = "huaRongDaoScores"; // localStorage key
+        let previousBoardState = null; // 保存上一步的盤面狀態
+
+        // 初始化遊戲
+        function initializeGame() {
+            boardSize = 4; // 確保初始化時設定為 4x4
+            board = [];
+            moves = 0;
+            seconds = 0;
+            isTimerRunning = false;
+            clearInterval(timerInterval);
+            timerDisplay.textContent = '時間：00:00';
+            moveCountDisplay.textContent = '移動次數：0';
+            messageBox.textContent = '';
+            gameStarted = false; // 重置遊戲開始標記
+            startTimerButton.disabled = false; // 啟用開始計時按鈕
+            stopTimerButton.disabled = true;  // 停用停止計時按鈕
+            previousBoardState = null;
+            if (modeSelect.value === "size") {
+                boardSize = 5;
+            }
+            createBoard();
+            renderBoard();
+            loadScores(); // Load scores on game initialization
+        }
+
+        // 創建遊戲盤面
+        function createBoard() {
+            board = [];
+            const totalTiles = boardSize * boardSize;
+            if (mode === 'number') {
+                for (let i = 1; i < totalTiles; i++) {
+                    board.push(i);
+                }
+                board.push(0); // 0 表示空格
+            } else { // size mode
+                const tileValues = ['大', '中', '小', '更小', '小小'];
+                if(boardSize === 5){
+                    for (let i = 0; i < tileValues.length; i++) {
+                        for(let j = 0; j < 4; j++){ // 每種大小四個
+                            board.push(tileValues[i]);
+                        }
+                    }
+                    board.push(0);
+                }
+                else if (boardSize === 6){
+                    const tileValues6 = ['最大', '大', '中', '小', '更小', '小小'];
+                    for (let i = 0; i < tileValues6.length; i++) {
+                        for(let j = 0; j < 6; j++){
+                            board.push(tileValues6[i]);
+                        }
+                    }
+                    board.push(0);
+                }
+                else if (boardSize === 8){
+                    const tileValues8 = ['最大', '較大', '大', '中', '小', '較小', '更小', '小小'];
+                     for (let i = 0; i < tileValues8.length; i++) {
+                        for(let j = 0; j < 8; j++){
+                            board.push(tileValues8[i]);
+                        }
+                    }
+                    board.push(0);
+                }
+            }
+
+            shuffleBoard();
+            // 找到空格的位置
+            for (let i = 0; i < totalTiles; i++) {
+                if (board[i] === 0) {
+                    emptyRow = Math.floor(i / boardSize);
+                    emptyCol = i % boardSize;
+                    break;
+                }
+            }
+        }
+
+        // 洗亂盤面
+        function shuffleBoard() {
+            for (let i = board.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [board[i], board[j]] = [board[j], board[i]];
+            }
+            // 確保盤面可解
+            while (!isBoardSolvable()) {
+                shuffleBoard();
+            }
+        }
+
+        // 判斷盤面是否有解 (使用反序數)
+        function isBoardSolvable() {
+            let inversions = 0;
+            const flattenedBoard = [...board]; // Create a copy to avoid modifying the original
+            const emptyIndex = flattenedBoard.indexOf(0);
+            flattenedBoard.splice(emptyIndex, 1); // Remove the empty tile for inversion count
+
+            for (let i = 0; i < flattenedBoard.length; i++) {
+                for (let j = i + 1; j < flattenedBoard.length; j++) {
+                    if (flattenedBoard[i] > flattenedBoard[j]) {
+                        inversions++;
+                    }
+                }
+            }
+
+            if (boardSize % 2 === 0) { // 如果是偶數邊長
+                const emptyRowFromBottom = boardSize - Math.floor(emptyIndex / boardSize);
+                return (inversions + emptyRowFromBottom) % 2 === 0;
+            } else { // 如果是奇數邊長
+                return inversions % 2 === 0;
+            }
+        }
+
+        // 渲染遊戲盤面
+        function renderBoard() {
+            gameBoard.innerHTML = ''; // 清空棋盤
+            const totalTiles = boardSize * boardSize;
+            gameBoard.style.gridTemplateColumns = `repeat(${boardSize}, 50px)`; // 設定 grid
+             gameBoard.style.gridTemplateRows = `repeat(${boardSize}, 50px)`;
+
+            for (let i = 0; i < totalTiles; i++) {
+                const tileValue = board[i];
+                const tile = document.createElement('div');
+                tile.classList.add('tile');
+                if (tileValue === 0) {
+                    tile.classList.add('empty');
+                    tile.textContent = '';
+                } else {
+                    tile.textContent = tileValue;
+                    tile.addEventListener('click', () => handleTileClick(i));
+                }
+                gameBoard.appendChild(tile);
+            }
+        }
+
+        // 處理方塊點擊事件
+        function handleTileClick(index) {
+            if(!gameStarted) {
+                messageBox.textContent = "請先點擊開始計時";
+                return;
+            }
+            const clickedRow = Math.floor(index / boardSize);
+            const clickedCol = index % boardSize;
+
+            if (isAdjacent(clickedRow, clickedCol, emptyRow, emptyCol)) {
+                // 保存上一步的盤面狀態
+                previousBoardState = [...board];
+                swapTiles(clickedRow, clickedCol, emptyRow, emptyCol);
+                renderBoard();
+                moves++;
+                moveCountDisplay.textContent = `移動次數：${moves}`;
+                emptyRow = clickedRow;
+                emptyCol = clickedCol;
+                if (isGameOver()) {
+                    handleGameOver();
+                }
+            }
+        }
+
+        // 判斷兩個方塊是否相鄰
+        function isAdjacent(row1, col1, row2, col2) {
+            return (Math.abs(row1 - row2) === 1 && col1 === col2) ||
+                   (row1 === row2 && Math.abs(col1 - col2) === 1);
+        }
+
+        // 交換兩個方塊
+        function swapTiles(row1, col1, row2, col2) {
+            const index1 = row1 * boardSize + col1;
+            const index2 = row2 * boardSize + col2;
+            [board[index1], board[index2]] = [board[index2], board[index1]];
+        }
+
+        // 判斷遊戲是否結束
+        function isGameOver() {
+            if (mode === 'number') {
+                for (let i = 0; i < board.length - 1; i++) {
+                    if (board[i] !== i + 1) {
+                        return false;
+                    }
+                }
+                return true;
+            } else { // size mode
+                const targetBoard = [];
+                if(boardSize === 5){
+                     const tileValues = ['大', '中', '小', '更小', '小小'];
+                    for (let i = 0; i < tileValues.length; i++) {
+                        for(let j = 0; j < 4; j++){
+                            targetBoard.push(tileValues[i]);
+                        }
+                    }
+                    targetBoard.push(0);
+                }
+                else if (boardSize === 6){
+                    const tileValues6 = ['最大', '大', '中', '小', '更小', '小小'];
+                    for (let i = 0; i < tileValues6.length; i++) {
+                        for(let j = 0; j < 6; j++){
+                            targetBoard.push(tileValues6[i]);
+                        }
+                    }
+                    targetBoard.push(0);
+                }
+                else if (boardSize === 8){
+                    const tileValues8 = ['最大', '較大', '大', '中', '小', '較小', '更小', '小小'];
+                     for (let i = 0; i < tileValues8.length; i++) {
+                        for(let j = 0; j < 8; j++){
+                            targetBoard.push(tileValues8[i]);
+                        }
+                    }
+                    targetBoard.push(0);
+                }
+                for(let i = 0; i < board.length; i++){
+                    if(board[i] !== targetBoard[i]){
+                        return false;
+                    }
+                }
+                return true;
+            }
+        }
+
+        // 遊戲結束處理
+        function handleGameOver() {
+            clearInterval(timerInterval);
+            isTimerRunning = false;
+            gameStarted = false;
+            let message = `恭喜你完成遊戲！ 共花了 ${formatTime(seconds)}，移動 ${moves} 次。`;
+             messageBox.textContent = message;
+            saveScore(moves, seconds);
+            loadScores();
+            startTimerButton.disabled = false;
+            stopTimerButton.disabled = true;
+        }
+
+        // 格式化時間
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            return `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
+        }
+
+        // 計時器函數
+        function startTimer() {
+            if (!isTimerRunning) {
+                isTimerRunning = true;
+                gameStarted = true; // 設置遊戲開始標記
+                startTimerButton.disabled = true; // 禁用開始按鈕
+                stopTimerButton.disabled = false; // 啟用停止按鈕
+                timerInterval = setInterval(() => {
+                    seconds++;
+                    timerDisplay.textContent = `時間：${formatTime(seconds)}`;
+                }, 1000);
+            }
+        }
+
+        // 停止計時器
+        function stopTimer() {
+            if (isTimerRunning) {
+                isTimerRunning = false;
+                clearInterval(timerInterval);
+                startTimerButton.disabled = false; // 啟用開始按鈕
+                stopTimerButton.disabled = true; // 禁用停止按鈕
+            }
+        }
+
+        // 重置遊戲
+        function resetGame() {
+            initializeGame();
+        }
+
+        // 儲存分數
+        function saveScore(moves, time) {
+            const newScore = { moves, time };
+            scores.push(newScore);
+            scores.sort((a, b) => a.time - b.time); // Sort by time
+            if (scores.length > 10) { // Keep top 10 scores
+                scores = scores.slice(0, 10);
+            }
+            localStorage.setItem(scoreKey, JSON.stringify(scores));
+        }
+
+        // 載入分數
+        function loadScores() {
+            const savedScores = localStorage.getItem(scoreKey);
+            if (savedScores) {
+                scores = JSON.parse(savedScores);
+                displayScores();
+            }
+        }
+
+        // 顯示分數
+        function displayScores() {
+            scoreList.innerHTML = '';
+            scores.forEach((score, index) => {
+                const li = document.createElement('li');
+                li.textContent = `#${index + 1} - 移動：${score.moves}，時間：${formatTime(score.time)}`;
+                scoreList.appendChild(li);
+            });
+        }
+
+        // 事件監聽器
+        modeSelect.addEventListener('change', initializeGame);
+        resetButton.addEventListener('click', resetGame);
+        startTimerButton.addEventListener('click', startTimer);
+        stopTimerButton.addEventListener('click', stopTimer);
+
+        // 初始化
+        initializeGame();
+    </script>
+</body>
+</html>
