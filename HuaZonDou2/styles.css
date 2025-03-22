@@ -160,19 +160,39 @@ button.selected {
   aspect-ratio: 1/1;
 }
 
-/* 只在Safari瀏覽器中應用兼容性修復 */
-@supports (-webkit-touch-callout: none) and (not (aspect-ratio: 1/1)) {
+/* Safari瀏覽器兼容性修復 */
+@supports (-webkit-touch-callout: none) {
   .puzzle-container {
     position: relative;
     width: 100%;
     height: 0;
     padding-bottom: 100%; /* 創建1:1的寬高比 */
+    display: grid;
+    grid-template-rows: repeat(var(--grid-size, 4), 1fr);
+    grid-template-columns: repeat(var(--grid-size, 4), 1fr);
   }
   
   .puzzle-container::after {
     content: '';
     display: block;
     padding-bottom: 100%;
+  }
+  
+  .puzzle-block {
+    position: relative;
+    width: 100%;
+    height: 0;
+    padding-bottom: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .puzzle-block.image-block {
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    -webkit-perspective: 1000;
   }
 }
 
@@ -186,6 +206,19 @@ button.selected {
   font-weight: bold;
   cursor: pointer;
   transition: transform 0.2s;
+  /* 添加3D效果，提升數字模式的視覺體驗 */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* Safari特定的數字方塊樣式 */
+@supports (-webkit-touch-callout: none) {
+  .puzzle-block:not(.image-block):not(.empty) {
+    background-image: linear-gradient(to bottom, #3498db, #2980b9);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+  }
 }
 
 .puzzle-block:hover {
@@ -462,6 +495,17 @@ button.selected {
   0% { box-shadow: 0 0 15px #e74c3c; }
   50% { box-shadow: 0 0 25px #e74c3c; }
   100% { box-shadow: 0 0 15px #e74c3c; }
+}
+
+/* 作弊模式信息樣式 */
+.cheat-used {
+  color: #ff5252;
+  font-weight: bold;
+}
+
+.cheat-not-used {
+  color: #4caf50;
+  font-weight: bold;
 }
 
 /* 響應式設計 */

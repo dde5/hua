@@ -162,6 +162,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const puzzleContainer = document.querySelector('.puzzle-container');
     puzzleContainer.innerHTML = '';
     puzzleContainer.style.gridTemplateColumns = `repeat(${selectedSize}, 1fr)`;
+    puzzleContainer.style.gridTemplateRows = `repeat(${selectedSize}, 1fr)`;
+    
+    // 設置CSS變量，用於Safari兼容性
+    puzzleContainer.style.setProperty('--grid-size', selectedSize);
     
     for (let row = 0; row < selectedSize; row++) {
       for (let col = 0; col < selectedSize; col++) {
@@ -196,6 +200,12 @@ document.addEventListener('DOMContentLoaded', () => {
           imgContainer.style.backgroundImage = `url(${gameInstance.imageSource})`;
           imgContainer.style.backgroundSize = 'cover';
           imgContainer.style.backgroundRepeat = 'no-repeat';
+          
+          // 添加Safari特定的樣式
+          imgContainer.style.transform = 'translateZ(0)';
+          imgContainer.style.webkitTransform = 'translateZ(0)';
+          imgContainer.style.webkitBackfaceVisibility = 'hidden';
+          imgContainer.style.webkitPerspective = '1000';
           
           // 計算偏移量，使圖片的正確部分顯示在方塊中
           // 這裡使用方塊的值來確定應該顯示的圖片部分
@@ -252,6 +262,29 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('completion-time').textContent = document.getElementById('time').textContent;
     document.getElementById('completion-moves').textContent = gameInstance.moves;
     
+    // 顯示作弊模式使用信息
+    const completionStats = document.querySelector('.completion-stats');
+    
+    // 移除之前可能存在的作弊信息
+    const existingCheatInfo = document.getElementById('completion-cheat-info');
+    if (existingCheatInfo) {
+      completionStats.removeChild(existingCheatInfo);
+    }
+    
+    // 添加作弊模式使用信息
+    const cheatInfo = document.createElement('p');
+    cheatInfo.id = 'completion-cheat-info';
+    
+    if (gameInstance.cheatCount > 0) {
+      cheatInfo.innerHTML = `<strong>作弊模式:</strong> 使用了 ${gameInstance.cheatCount} 次`;
+      cheatInfo.classList.add('cheat-used');
+    } else {
+      cheatInfo.innerHTML = `<strong>作弊模式:</strong> 未使用`;
+      cheatInfo.classList.add('cheat-not-used');
+    }
+    
+    completionStats.appendChild(cheatInfo);
+    
     // 保存高分
     gameInstance.saveHighScore();
     
@@ -284,7 +317,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const scores = JSON.parse(localStorage.getItem('puzzleHighScores') || '{}');
     const key = `${selectedMode}-${selectedSize}`;
-    const modeScores = scores[key] || { time: '無記錄', moves: '無記錄' };
+    const modeScores = scores[key] || { time: '無記錄', moves: '無記錄', cheatUsed: false, cheatCount: 0 };
     
     const timeScore = document.createElement('div');
     timeScore.innerHTML = `<strong>最短時間:</strong> ${modeScores.time}`;
@@ -292,8 +325,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const movesScore = document.createElement('div');
     movesScore.innerHTML = `<strong>最少步數:</strong> ${modeScores.moves}`;
     
+    // 添加作弊模式使用信息
+    const cheatInfo = document.createElement('div');
+    if (modeScores.cheatUsed) {
+      cheatInfo.innerHTML = `<strong>作弊模式:</strong> 使用了 ${modeScores.cheatCount} 次`;
+      cheatInfo.classList.add('cheat-used');
+    } else {
+      cheatInfo.innerHTML = `<strong>作弊模式:</strong> 未使用`;
+      cheatInfo.classList.add('cheat-not-used');
+    }
+    
     highScoresList.appendChild(timeScore);
     highScoresList.appendChild(movesScore);
+    highScoresList.appendChild(cheatInfo);
   }
   
   // 初始化遊戲控制按鈕
@@ -332,8 +376,23 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 作弊按鈕點擊事件
     cheatButton.addEventListener('click', () => {
+      // 檢查是否已經過了5分鐘的時間限制
+      const currentTime = new Date();
+      const elapsedTimeInSeconds = Math.floor((currentTime - gameInstance.startTime) / 1000);
+      const timeLimit = 5 * 60; // 5分鐘，單位為秒
+      
+      if (elapsedTimeInSeconds < timeLimit) {
+        const remainingMinutes = Math.floor((timeLimit - elapsedTimeInSeconds) / 60);
+        const remainingSeconds = (timeLimit - elapsedTimeInSeconds) % 60;
+        alert(`作弊模式將在 ${remainingMinutes}分${remainingSeconds}秒 後可用`);
+        return;
+      }
+      
       cheatMode = !cheatMode;
       cheatButton.classList.toggle('active', cheatMode);
+      
+      // 更新遊戲實例的作弊模式狀態
+      gameInstance.cheatEnabled = cheatMode;
       
       // 重置選中狀態
       firstSelectedBlock = null;
@@ -350,6 +409,18 @@ document.addEventListener('DOMContentLoaded', () => {
     // 修改方塊點擊事件處理，支持作弊模式
     document.querySelector('.puzzle-container').addEventListener('click', (e) => {
       if (!cheatMode) return; // 非作弊模式不處理
+      
+      // 檢查是否已經過了5分鐘的時間限制
+      const currentTime = new Date();
+      const elapsedTimeInSeconds = Math.floor((currentTime - gameInstance.startTime) / 1000);
+      const timeLimit = 5 * 60; // 5分鐘，單位為秒
+      
+      if (elapsedTimeInSeconds < timeLimit) {
+        const remainingMinutes = Math.floor((timeLimit - elapsedTimeInSeconds) / 60);
+        const remainingSeconds = (timeLimit - elapsedTimeInSeconds) % 60;
+        alert(`作弊模式將在 ${remainingMinutes}分${remainingSeconds}秒 後可用`);
+        return;
+      }
       
       const block = e.target.closest('.puzzle-block');
       if (!block) return;

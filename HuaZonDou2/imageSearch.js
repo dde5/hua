@@ -9,8 +9,13 @@
  */
 async function searchImages(query, page = 1, perPage = 10) {
   try {
-    // 使用Unsplash API
-    const accessKey = 'YOUR_UNSPLASH_ACCESS_KEY'; // 注意：實際使用時需要替換為真實的API密鑰
+    // 由於API密鑰問題，直接使用模擬數據
+    console.log('使用模擬數據進行搜索:', query);
+    return useMockData(query);
+    
+    // 以下代碼在有有效API密鑰時可以啟用
+    /*
+    const accessKey = 'YOUR_UNSPLASH_ACCESS_KEY'; // 需要替換為真實的API密鑰
     const url = `https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&page=${page}&per_page=${perPage}`;
     
     const response = await fetch(url, {
@@ -25,6 +30,7 @@ async function searchImages(query, page = 1, perPage = 10) {
     
     const data = await response.json();
     return data.results;
+    */
   } catch (error) {
     console.error('圖片搜索錯誤:', error);
     // 如果API調用失敗，使用模擬數據
@@ -41,7 +47,13 @@ async function searchImages(query, page = 1, perPage = 10) {
  */
 async function searchPixabayImages(query, page = 1, perPage = 10) {
   try {
-    const apiKey = 'YOUR_PIXABAY_API_KEY'; // 注意：實際使用時需要替換為真實的API密鑰
+    // 由於API密鑰問題，直接使用模擬數據
+    console.log('使用模擬數據進行搜索 (Pixabay):', query);
+    return useMockData(query);
+    
+    // 以下代碼在有有效API密鑰時可以啟用
+    // /* API KEY 不能用時刪掉前面//
+    const apiKey = '49472016-4b5a8b33b9749687471ba622f'; // 需要替換為真實的API密鑰
     const url = `https://pixabay.com/api/?key=${apiKey}&q=${encodeURIComponent(query)}&page=${page}&per_page=${perPage}`;
     
     const response = await fetch(url);
@@ -59,6 +71,7 @@ async function searchPixabayImages(query, page = 1, perPage = 10) {
       },
       alt_description: hit.tags
     }));
+    // */ API KEY 不能用時刪掉前面//
   } catch (error) {
     console.error('Pixabay圖片搜索錯誤:', error);
     return useMockData(query);

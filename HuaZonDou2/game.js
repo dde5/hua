@@ -10,6 +10,11 @@ class PuzzleGame {
     this.board = [];
     this.emptyPos = { row: size - 1, col: size - 1 };
     
+    // 作弊模式相關屬性
+    this.cheatCount = 0; // 作弊次數
+    this.cheatTimes = []; // 記錄每次作弊的時間
+    this.cheatEnabled = false; // 作弊模式是否啟用
+    
     this.initializeGame();
   }
   
@@ -225,6 +230,11 @@ class PuzzleGame {
     // 重新初始化遊戲
     this.initializeGame();
     
+    // 重置作弊模式相關屬性
+    this.cheatCount = 0;
+    this.cheatTimes = [];
+    this.cheatEnabled = false;
+    
     // 重新開始計時
     this.startTimer();
   }
@@ -242,9 +252,13 @@ class PuzzleGame {
     
     // 如果沒有該模式和尺寸的記錄，或者當前成績更好，則更新記錄
     if (!highScores[key] || this.isNewHighScore(highScores[key], currentTime, currentMoves)) {
+      // 如果使用了作弊模式，則在記錄中標記
       highScores[key] = {
         time: currentTime,
-        moves: currentMoves
+        moves: currentMoves,
+        cheatUsed: this.cheatCount > 0,
+        cheatCount: this.cheatCount,
+        cheatTimes: this.cheatTimes.map(time => time.toISOString())
       };
       
       // 保存到本地存儲
@@ -266,11 +280,23 @@ class PuzzleGame {
     const existingTimeSeconds = parseTimeToSeconds(existingScore.time);
     const currentTimeSeconds = parseTimeToSeconds(currentTime);
     
-    // 首先比較時間，如果時間相同則比較移動次數
-    if (currentTimeSeconds < existingTimeSeconds) {
+    // 檢查作弊模式使用情況
+    const existingCheatUsed = existingScore.cheatUsed || false;
+    const currentCheatUsed = this.cheatCount > 0;
+    
+    // 無作弊的記錄優先於有作弊的記錄
+    if (!currentCheatUsed && existingCheatUsed) {
       return true;
-    } else if (currentTimeSeconds === existingTimeSeconds && currentMoves < existingScore.moves) {
-      return true;
+    }
+    
+    // 如果兩者作弊狀態相同，則比較時間和移動次數
+    if (currentCheatUsed === existingCheatUsed) {
+      // 首先比較時間，如果時間相同則比較移動次數
+      if (currentTimeSeconds < existingTimeSeconds) {
+        return true;
+      } else if (currentTimeSeconds === existingTimeSeconds && currentMoves < existingScore.moves) {
+        return true;
+      }
     }
     
     return false;
@@ -286,6 +312,18 @@ class PuzzleGame {
     
     // 檢查是否選擇了相同的方塊
     if (row1 === row2 && col1 === col2) {
+      return false;
+    }
+    
+    // 檢查是否已經過了5分鐘的時間限制
+    const currentTime = new Date();
+    const elapsedTimeInSeconds = Math.floor((currentTime - this.startTime) / 1000);
+    const timeLimit = 5 * 60; // 5分鐘，單位為秒
+    
+    if (elapsedTimeInSeconds < timeLimit) {
+      const remainingMinutes = Math.floor((timeLimit - elapsedTimeInSeconds) / 60);
+      const remainingSeconds = (timeLimit - elapsedTimeInSeconds) % 60;
+      alert(`作弊模式將在 ${remainingMinutes}分${remainingSeconds}秒 後可用`);
       return false;
     }
     
@@ -307,6 +345,10 @@ class PuzzleGame {
     // 增加移動次數
     this.moves++;
     document.getElementById('moves').textContent = this.moves;
+    
+    // 記錄作弊使用信息
+    this.cheatCount++;
+    this.cheatTimes.push(new Date());
     
     return true;
   }
