@@ -182,7 +182,7 @@ button.selected {
   font-size: 1.5em;
   font-weight: bold;
   cursor: pointer;
-  transition: transform 0.2s;
+  /* 移除transition屬性，提高Safari中的交換速度 */
   /* 添加3D效果，提升數字模式的視覺體驗 */
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   border-radius: 4px;
@@ -196,6 +196,10 @@ button.selected {
   padding: 0;
   margin: 0;
   overflow: hidden;
+  /* 添加硬件加速相關屬性 */
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  will-change: transform;
 }
 
 /* Safari特定的數字方塊樣式 - 簡化版 */
@@ -349,7 +353,7 @@ button.selected {
   backface-visibility: hidden; /* 防止3D變換時的閃爍 */
 }
 
-/* 專門針對Safari的圖片模式樣式 - 修復版 */
+/* 專門針對Safari的圖片模式樣式 - 優化版 */
 @supports (-webkit-touch-callout: none) {
   .puzzle-block.image-block {
     position: relative;
@@ -357,6 +361,12 @@ button.selected {
     height: 100%;
     overflow: hidden;
     cursor: pointer;
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    -webkit-perspective: 1000;
+    will-change: transform;
+    transition: none; /* 移除過渡效果，提高交換速度 */
   }
   
   .puzzle-block.image-block > div {
@@ -364,6 +374,12 @@ button.selected {
     /* 移除強制覆蓋的樣式，讓ui.js中的設置生效 */
     background-size: cover !important;
     background-repeat: no-repeat !important;
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    -webkit-perspective: 1000;
+    will-change: transform;
+    transition: none; /* 移除過渡效果，提高交換速度 */
   }
 }
 }

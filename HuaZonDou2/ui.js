@@ -213,11 +213,13 @@ document.addEventListener('DOMContentLoaded', () => {
           imgContainer.style.backgroundSize = 'cover';
           imgContainer.style.backgroundRepeat = 'no-repeat';
           
-          // 添加Safari特定的樣式
+          // 添加Safari特定的樣式 - 優化版
           imgContainer.style.transform = 'translateZ(0)';
           imgContainer.style.webkitTransform = 'translateZ(0)';
           imgContainer.style.webkitBackfaceVisibility = 'hidden';
           imgContainer.style.webkitPerspective = '1000';
+          imgContainer.style.willChange = 'transform';
+          imgContainer.style.transition = 'none'; // 移除可能的過渡效果，提高交換速度
           
           // 計算偏移量，使圖片的正確部分顯示在方塊中
           // 這裡使用方塊的值來確定應該顯示的圖片部分
@@ -252,14 +254,21 @@ document.addEventListener('DOMContentLoaded', () => {
         block.addEventListener('click', () => {
           if (gameInstance.isAdjacent(row, col)) {
             // 使用requestAnimationFrame優化渲染性能
+            // 在Safari中，使用多層requestAnimationFrame來確保更平滑的動畫
             requestAnimationFrame(() => {
+              // 先執行邏輯操作
               gameInstance.moveBlock(row, col);
               updateGameStats();
-              renderGameBoard();
               
-              if (gameInstance.checkWin()) {
-                gameComplete();
-              }
+              // 使用第二個requestAnimationFrame來確保視覺更新在下一幀進行
+              // 這有助於減少Safari中的渲染延遲
+              requestAnimationFrame(() => {
+                renderGameBoard();
+                
+                if (gameInstance.checkWin()) {
+                  gameComplete();
+                }
+              });
             });
           }
         });
