@@ -217,9 +217,11 @@ document.addEventListener('DOMContentLoaded', () => {
           
           // 確保在Safari中正確顯示
           if (/^((?!chrome|android).)*safari/i.test(navigator.userAgent)) {
+            // 恢復之前能正常顯示的設置
             imgContainer.style.width = '100%';
             imgContainer.style.height = '100%';
             imgContainer.style.backgroundSize = `${selectedSize * 100}% ${selectedSize * 100}%`;
+            imgContainer.style.backgroundPosition = `${offsetX}% ${offsetY}%`;
           }
           
           // 計算偏移量，使圖片的正確部分顯示在方塊中

@@ -349,7 +349,7 @@ button.selected {
   backface-visibility: hidden; /* 防止3D變換時的閃爍 */
 }
 
-/* 專門針對Safari的圖片模式樣式 - 簡化版 */
+/* 專門針對Safari的圖片模式樣式 - 修復版 */
 @supports (-webkit-touch-callout: none) {
   .puzzle-block.image-block {
     position: relative;
@@ -368,6 +368,7 @@ button.selected {
     background-size: cover;
     background-position: center;
   }
+}
 }
 
 .game-controls {
