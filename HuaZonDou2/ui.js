@@ -13,7 +13,11 @@ document.addEventListener('DOMContentLoaded', () => {
     { name: '唐老鴨', src: 'images/donald.jpg' },
     { name: '小熊維尼', src: 'images/pooh.jpg' },
     { name: '冰雪奇緣艾莎', src: 'images/elsa.jpg' },
-    { name: '獅子王辛巴', src: 'images/simba.jpg' }
+    { name: '獅子王辛巴', src: 'images/simba.jpg' },
+    { name: '惡魔', src: 'images/devil.jpg' },
+    { name: '醫生', src: 'images/doctor.jpg' },
+    { name: '莎莉', src: 'images/sally.jpg' },
+    { name: '瑞吉娜', src: 'images/regina.jpg' }
   ];
   
   // 處理後的預設圖片
@@ -215,6 +219,12 @@ document.addEventListener('DOMContentLoaded', () => {
           imgContainer.style.webkitBackfaceVisibility = 'hidden';
           imgContainer.style.webkitPerspective = '1000';
           
+          // 計算偏移量，使圖片的正確部分顯示在方塊中
+          // 這裡使用方塊的值來確定應該顯示的圖片部分
+          // 這確保了無論方塊移動到哪個位置，它顯示的圖片部分都是固定的
+          const offsetX = -originalCol * 100;
+          const offsetY = -originalRow * 100;
+          
           // 確保在Safari中正確顯示
           if (/^((?!chrome|android).)*safari/i.test(navigator.userAgent)) {
             // 恢復之前能正常顯示的設置
@@ -223,12 +233,6 @@ document.addEventListener('DOMContentLoaded', () => {
             imgContainer.style.backgroundSize = `${selectedSize * 100}% ${selectedSize * 100}%`;
             imgContainer.style.backgroundPosition = `${offsetX}% ${offsetY}%`;
           }
-          
-          // 計算偏移量，使圖片的正確部分顯示在方塊中
-          // 這裡使用方塊的值來確定應該顯示的圖片部分
-          // 這確保了無論方塊移動到哪個位置，它顯示的圖片部分都是固定的
-          const offsetX = -originalCol * 100;
-          const offsetY = -originalRow * 100;
           
           // 設置偏移量，將圖片的正確部分定位到方塊中
           imgContainer.style.left = `${offsetX}%`;
