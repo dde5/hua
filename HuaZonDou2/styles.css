@@ -361,15 +361,11 @@ button.selected {
   
   .puzzle-block.image-block > div {
     position: absolute;
-    top: 0 !important;
-    left: 0 !important;
-    width: 100% !important;
-    height: 100% !important;
-    background-size: contain !important;
+    /* 移除強制覆蓋的樣式，讓ui.js中的設置生效 */
+    background-size: cover !important;
     background-repeat: no-repeat !important;
-    transform: none !important;
-    -webkit-transform: none !important;
   }
+}
 }
 
 .game-controls {
