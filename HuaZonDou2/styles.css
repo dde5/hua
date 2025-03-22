@@ -370,6 +370,100 @@ button.selected {
   gap: 15px;
 }
 
+/* 網路圖片搜索樣式 */
+.image-search-form {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+  justify-content: center;
+}
+
+.image-search-input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #bdc3c7;
+  border-radius: 4px;
+  font-size: 1em;
+  max-width: 300px;
+}
+
+.image-search-button {
+  padding: 8px 15px;
+  background-color: #3498db;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.image-search-button:hover {
+  background-color: #2980b9;
+}
+
+.image-search-button:disabled {
+  background-color: #95a5a6;
+  cursor: not-allowed;
+}
+
+.image-search-results {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 15px;
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 10px;
+  background-color: #f5f5f5;
+  border-radius: 5px;
+}
+
+.image-search-results img {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border: 2px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.image-search-results img:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.image-search-results img.selected {
+  border-color: #3498db;
+  box-shadow: 0 0 10px rgba(52, 152, 219, 0.5);
+}
+
+/* 作弊按鈕樣式 */
+#cheat-button {
+  background-color: #e74c3c;
+}
+
+#cheat-button:hover {
+  background-color: #c0392b;
+}
+
+#cheat-button.active {
+  background-color: #c0392b;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.3);
+}
+
+.puzzle-block.cheat-selected {
+  box-shadow: 0 0 15px #e74c3c;
+  animation: cheat-pulse 1.5s infinite;
+}
+
+@keyframes cheat-pulse {
+  0% { box-shadow: 0 0 15px #e74c3c; }
+  50% { box-shadow: 0 0 25px #e74c3c; }
+  100% { box-shadow: 0 0 15px #e74c3c; }
+}
+
 /* 響應式設計 */
 @media (max-width: 600px) {
   .game-stats {
@@ -386,5 +480,13 @@ button.selected {
   
   .puzzle-block {
     font-size: 1em;
+  }
+  
+  .image-search-form {
+    flex-direction: column;
+  }
+  
+  .image-search-input {
+    max-width: 100%;
   }
 }

@@ -276,6 +276,41 @@ class PuzzleGame {
     return false;
   }
   
+  // 作弊模式 - 交換任意兩個方塊
+  cheatSwap(row1, col1, row2, col2) {
+    // 檢查位置是否有效
+    if (row1 < 0 || row1 >= this.size || col1 < 0 || col1 >= this.size ||
+        row2 < 0 || row2 >= this.size || col2 < 0 || col2 >= this.size) {
+      return false;
+    }
+    
+    // 檢查是否選擇了相同的方塊
+    if (row1 === row2 && col1 === col2) {
+      return false;
+    }
+    
+    // 獲取方塊值
+    const value1 = this.board[row1][col1];
+    const value2 = this.board[row2][col2];
+    
+    // 交換方塊
+    this.board[row1][col1] = value2;
+    this.board[row2][col2] = value1;
+    
+    // 如果其中一個是空白方塊，更新空白方塊位置
+    if (value1 === 0) {
+      this.emptyPos = { row: row2, col: col2 };
+    } else if (value2 === 0) {
+      this.emptyPos = { row: row1, col: col1 };
+    }
+    
+    // 增加移動次數
+    this.moves++;
+    document.getElementById('moves').textContent = this.moves;
+    
+    return true;
+  }
+  
   getHint() {
     // 使用廣度優先搜索找到最短路徑到目標狀態
     // 由於完整的解決方案可能需要大量計算，這裡只提供下一步的提示

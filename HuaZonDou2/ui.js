@@ -318,6 +318,75 @@ document.addEventListener('DOMContentLoaded', () => {
         highlightHintBlock(hintMove.row, hintMove.col);
       }
     });
+    
+    // 添加作弊按鈕
+    const gameControls = document.querySelector('.game-controls');
+    const cheatButton = document.createElement('button');
+    cheatButton.id = 'cheat-button';
+    cheatButton.textContent = '作弊模式';
+    gameControls.appendChild(cheatButton);
+    
+    // 作弊模式變數
+    let cheatMode = false;
+    let firstSelectedBlock = null;
+    
+    // 作弊按鈕點擊事件
+    cheatButton.addEventListener('click', () => {
+      cheatMode = !cheatMode;
+      cheatButton.classList.toggle('active', cheatMode);
+      
+      // 重置選中狀態
+      firstSelectedBlock = null;
+      document.querySelectorAll('.puzzle-block').forEach(block => {
+        block.classList.remove('cheat-selected');
+      });
+      
+      // 更新提示文字
+      if (cheatMode) {
+        alert('作弊模式已啟用！點擊任意兩個方塊進行交換。');
+      }
+    });
+    
+    // 修改方塊點擊事件處理，支持作弊模式
+    document.querySelector('.puzzle-container').addEventListener('click', (e) => {
+      if (!cheatMode) return; // 非作弊模式不處理
+      
+      const block = e.target.closest('.puzzle-block');
+      if (!block) return;
+      
+      // 獲取方塊位置
+      const blocks = Array.from(document.querySelectorAll('.puzzle-container .puzzle-block'));
+      const index = blocks.indexOf(block);
+      const row = Math.floor(index / selectedSize);
+      const col = index % selectedSize;
+      
+      // 空白方塊不能被選中
+      if (block.classList.contains('empty')) return;
+      
+      if (!firstSelectedBlock) {
+        // 選中第一個方塊
+        firstSelectedBlock = { row, col, element: block };
+        block.classList.add('cheat-selected');
+      } else {
+        // 選中第二個方塊，執行交換
+        const { row: row1, col: col1 } = firstSelectedBlock;
+        
+        // 執行交換
+        gameInstance.cheatSwap(row1, col1, row, col);
+        
+        // 重置選中狀態
+        firstSelectedBlock.element.classList.remove('cheat-selected');
+        firstSelectedBlock = null;
+        
+        // 更新遊戲板
+        renderGameBoard();
+        
+        // 檢查是否完成
+        if (gameInstance.checkWin()) {
+          gameComplete();
+        }
+      }
+    }, true); // 使用捕獲階段以確保事件處理
   }
   
   // 高亮提示的方塊
@@ -396,6 +465,17 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('color-default').classList.add('selected');
   }
   
+  // 初始化網路圖片搜索
+  function initNetworkImageSearch() {
+    const searchContainer = document.getElementById('image-search-container');
+    
+    // 使用imageSearch.js中的函數初始化搜索界面
+    initImageSearch(searchContainer, (imageUrl) => {
+      // 當用戶選擇了一張網路圖片時
+      selectedImage = imageUrl;
+    });
+  }
+  
   // 初始化所有UI組件
   function initUI() {
     initModeSelection();
@@ -405,6 +485,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initStartGameButton();
     initGameControls();
     initCustomImageUpload();
+    initNetworkImageSearch();
     
     // 添加CSS類
     document.querySelectorAll('.mode-options button, .size-options button, .color-options button').forEach(button => {
