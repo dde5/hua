@@ -160,41 +160,16 @@ button.selected {
   aspect-ratio: 1/1;
 }
 
-/* Safari瀏覽器兼容性修復 */
+/* Safari瀏覽器兼容性修復 - 簡化版 */
 @supports (-webkit-touch-callout: none) {
   .puzzle-container {
-    position: relative;
-    width: 100%;
-    height: 0;
-    padding-bottom: 100%; /* 創建1:1的寬高比 */
     display: grid;
+    gap: 2px;
+    margin: 0 auto 20px;
+    max-width: 100%;
+    aspect-ratio: 1/1;
     grid-template-rows: repeat(var(--grid-size, 4), 1fr);
     grid-template-columns: repeat(var(--grid-size, 4), 1fr);
-  }
-  
-  .puzzle-container::after {
-    content: '';
-    display: block;
-    padding-bottom: 100%;
-  }
-  
-  .puzzle-block {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-  }
-  
-  .puzzle-block.image-block {
-    transform: translateZ(0);
-    -webkit-transform: translateZ(0);
-    -webkit-backface-visibility: hidden;
-    -webkit-perspective: 1000;
-    background-size: cover;
-    background-position: center;
   }
 }
 
@@ -223,12 +198,23 @@ button.selected {
   overflow: hidden;
 }
 
-/* Safari特定的數字方塊樣式 */
+/* Safari特定的數字方塊樣式 - 簡化版 */
 @supports (-webkit-touch-callout: none) {
   .puzzle-block:not(.image-block):not(.empty) {
     background-image: linear-gradient(to bottom, #3498db, #2980b9);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
     border: 1px solid rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .puzzle-block:not(.image-block):not(.empty) span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
   }
 }
 
@@ -363,26 +349,24 @@ button.selected {
   backface-visibility: hidden; /* 防止3D變換時的閃爍 */
 }
 
-/* 專門針對Safari的圖片模式樣式 */
+/* 專門針對Safari的圖片模式樣式 - 簡化版 */
 @supports (-webkit-touch-callout: none) {
   .puzzle-block.image-block {
-    display: block;
     position: relative;
     width: 100%;
     height: 100%;
     overflow: hidden;
+    cursor: pointer;
   }
   
   .puzzle-block.image-block > div {
     position: absolute;
     top: 0;
     left: 0;
-    width: 100% !important;
-    height: 100% !important;
-    background-size: cover !important;
-    background-position: center !important;
-    transform: none !important;
-    -webkit-transform: none !important;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
   }
 }
 
