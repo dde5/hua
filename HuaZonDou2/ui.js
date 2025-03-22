@@ -177,7 +177,15 @@ document.addEventListener('DOMContentLoaded', () => {
           block.classList.add('empty');
           block.classList.add(`color-${selectedColor}`);
         } else if (selectedMode === 'number') {
-          block.textContent = value;
+          // 創建一個span元素來包裝數字，以便更精確控制其位置
+          const numberSpan = document.createElement('span');
+          numberSpan.textContent = value;
+          numberSpan.style.display = 'flex';
+          numberSpan.style.alignItems = 'center';
+          numberSpan.style.justifyContent = 'center';
+          numberSpan.style.width = '100%';
+          numberSpan.style.height = '100%';
+          block.appendChild(numberSpan);
         } else {
           block.classList.add('image-block');
           // 設置背景圖片位置 - 將整張圖片切割成小塊
