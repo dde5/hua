@@ -227,11 +227,14 @@ document.addEventListener('DOMContentLoaded', () => {
           
           // 確保在Safari中正確顯示
           if (/^((?!chrome|android).)*safari/i.test(navigator.userAgent)) {
-            // 恢復之前能正常顯示的設置
+            // 修復Safari中的圖片顯示問題
             imgContainer.style.width = '100%';
             imgContainer.style.height = '100%';
-            imgContainer.style.backgroundSize = `${selectedSize * 100}% ${selectedSize * 100}%`;
+            imgContainer.style.backgroundSize = `${selectedSize * 100}%`;
             imgContainer.style.backgroundPosition = `${offsetX}% ${offsetY}%`;
+            // 確保圖片正確定位
+            imgContainer.style.left = '0';
+            imgContainer.style.top = '0';
           }
           
           // 設置偏移量，將圖片的正確部分定位到方塊中
