@@ -379,7 +379,10 @@ button.selected {
     left: 0;
     width: 100% !important;
     height: 100% !important;
-    background-position: inherit;
+    background-size: cover !important;
+    background-position: center !important;
+    transform: none !important;
+    -webkit-transform: none !important;
   }
 }
 
