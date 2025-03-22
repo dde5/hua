@@ -218,13 +218,16 @@ document.addEventListener('DOMContentLoaded', () => {
         
         block.addEventListener('click', () => {
           if (gameInstance.isAdjacent(row, col)) {
-            gameInstance.moveBlock(row, col);
-            updateGameStats();
-            renderGameBoard();
-            
-            if (gameInstance.checkWin()) {
-              gameComplete();
-            }
+            // 使用requestAnimationFrame優化渲染性能
+            requestAnimationFrame(() => {
+              gameInstance.moveBlock(row, col);
+              updateGameStats();
+              renderGameBoard();
+              
+              if (gameInstance.checkWin()) {
+                gameComplete();
+              }
+            });
           }
         });
         
