@@ -215,6 +215,13 @@ document.addEventListener('DOMContentLoaded', () => {
           imgContainer.style.webkitBackfaceVisibility = 'hidden';
           imgContainer.style.webkitPerspective = '1000';
           
+          // 確保在Safari中正確顯示
+          if (/^((?!chrome|android).)*safari/i.test(navigator.userAgent)) {
+            imgContainer.style.width = '100%';
+            imgContainer.style.height = '100%';
+            imgContainer.style.backgroundSize = `${selectedSize * 100}% ${selectedSize * 100}%`;
+          }
+          
           // 計算偏移量，使圖片的正確部分顯示在方塊中
           // 這裡使用方塊的值來確定應該顯示的圖片部分
           // 這確保了無論方塊移動到哪個位置，它顯示的圖片部分都是固定的
