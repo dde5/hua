@@ -422,6 +422,65 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
     
+    // 添加換色按鈕功能
+    const changeColorButton = document.getElementById('change-color-button');
+    // 設置初始按鈕顏色
+    updateChangeColorButtonStyle(selectedColor);
+    
+    // 換色按鈕點擊事件
+    changeColorButton.addEventListener('click', () => {
+      // 顏色選項
+      const colors = ['default', 'blue', 'red', 'orange'];
+      // 獲取當前顏色的索引
+      const currentIndex = colors.indexOf(selectedColor);
+      // 計算下一個顏色的索引（循環）
+      const nextIndex = (currentIndex + 1) % colors.length;
+      // 設置新的顏色
+      selectedColor = colors[nextIndex];
+      
+      // 更新按鈕樣式
+      updateChangeColorButtonStyle(selectedColor);
+      
+      // 更新所有空白方塊的顏色
+      document.querySelectorAll('.puzzle-block.empty').forEach(block => {
+        // 移除所有顏色類
+        block.classList.remove('color-default', 'color-blue', 'color-red', 'color-orange');
+        // 添加新的顏色類
+        block.classList.add(`color-${selectedColor}`);
+      });
+    });
+    
+    // 更新換色按鈕樣式的函數
+    function updateChangeColorButtonStyle(color) {
+      const button = document.getElementById('change-color-button');
+      
+      // 移除所有可能的顏色類
+      button.classList.remove('color-default-btn', 'color-blue-btn', 'color-red-btn', 'color-orange-btn');
+      
+      // 添加對應的顏色類
+      button.classList.add(`color-${color}-btn`);
+      
+      // 根據顏色設置按鈕的背景樣式
+      switch(color) {
+        case 'default':
+          button.style.backgroundColor = '#555';
+          button.style.backgroundImage = 'repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.1) 10px, rgba(255, 255, 255, 0.2) 10px, rgba(255, 255, 255, 0.2) 20px)';
+          break;
+        case 'blue':
+          button.style.backgroundColor = '#3498db';
+          button.style.backgroundImage = 'none';
+          break;
+        case 'red':
+          button.style.backgroundColor = '#e74c3c';
+          button.style.backgroundImage = 'none';
+          break;
+        case 'orange':
+          button.style.backgroundColor = '#f39c12';
+          button.style.backgroundImage = 'none';
+          break;
+      }
+    }
+    
     // 添加作弊按鈕
     const gameControls = document.querySelector('.game-controls');
     const cheatButton = document.createElement('button');

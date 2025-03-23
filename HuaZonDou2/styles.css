@@ -382,13 +382,35 @@ button.selected {
     transition: none; /* 移除過渡效果，提高交換速度 */
   }
 }
-
+}
 
 .game-controls {
   display: flex;
   justify-content: center;
   gap: 20px;
   margin-bottom: 30px;
+}
+
+/* 換色按鈕樣式 */
+#change-color-button {
+  transition: all 0.3s ease;
+}
+
+#change-color-button.color-default-btn {
+  background-color: #555;
+  background-image: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.1) 10px, rgba(255, 255, 255, 0.2) 10px, rgba(255, 255, 255, 0.2) 20px);
+}
+
+#change-color-button.color-blue-btn {
+  background-color: #3498db;
+}
+
+#change-color-button.color-red-btn {
+  background-color: #e74c3c;
+}
+
+#change-color-button.color-orange-btn {
+  background-color: #f39c12;
 }
 
 /* 高分榜樣式 */
