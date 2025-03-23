@@ -1,45 +1,126 @@
 // 網路圖片搜索工具
 
+// 存儲API設定
+let apiSettings = {
+  enabled: false,
+  apiKey: '',
+  verified: false
+};
+
 /**
- * 使用Unsplash API搜索圖片
+ * 驗證Pixabay API序號
+ * @param {string} apiKey - API序號
+ * @returns {Promise<boolean>} - 驗證結果
+ */
+async function verifyPixabayApiKey(apiKey) {
+  try {
+    // 檢查API序號是否為空
+    if (!apiKey || apiKey.trim() === '') {
+      throw new Error('API序號不能為空');
+    }
+    
+    // 使用一個簡單的查詢來測試API序號是否有效
+    const testQuery = 'test';
+    // 添加image_type參數以符合API要求
+    const url = `https://pixabay.com/api/?key=${apiKey}&q=${encodeURIComponent(testQuery)}&per_page=1&image_type=photo`;
+    
+    console.log('驗證API URL:', url);
+    
+    // 添加超時設置
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10秒超時
+    
+    try {
+      const response = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        throw new Error(`驗證失敗: HTTP狀態碼 ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('API驗證響應:', data);
+      
+      // 檢查返回的數據是否包含預期的字段
+      if (data && typeof data.totalHits !== 'undefined') {
+        // 更新API設定
+        apiSettings.enabled = true;
+        apiSettings.apiKey = apiKey;
+        apiSettings.verified = true;
+        
+        // 保存API設定到localStorage
+        saveApiSettings();
+        
+        // 更新UI狀態
+        const apiStatus = document.getElementById('api-status');
+        if (apiStatus) {
+          apiStatus.textContent = '✓ API驗證成功';
+          apiStatus.className = 'api-status success';
+          
+          // 顯示搜索選項
+          const searchOption = document.getElementById('search-option-container');
+          if (searchOption) {
+            searchOption.classList.remove('hidden');
+          }
+        }
+        
+        return true;
+      } else {
+        throw new Error('API返回的數據格式不正確');
+      }
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      throw fetchError;
+    }
+  } catch (error) {
+    console.error('API驗證錯誤:', error);
+    
+    // 更新UI顯示錯誤信息
+    const apiStatus = document.getElementById('api-status');
+    if (apiStatus) {
+      apiStatus.textContent = `✗ 驗證失敗: ${error.message}`;
+      apiStatus.className = 'api-status error';
+    }
+    
+    return false;
+  }
+}
+
+/**
+ * 保存API設定到localStorage
+ */
+function saveApiSettings() {
+  localStorage.setItem('pixabayApiSettings', JSON.stringify(apiSettings));
+}
+
+/**
+ * 從localStorage載入API設定
+ */
+function loadApiSettings() {
+  const savedSettings = localStorage.getItem('pixabayApiSettings');
+  if (savedSettings) {
+    try {
+      apiSettings = JSON.parse(savedSettings);
+    } catch (error) {
+      console.error('載入API設定失敗:', error);
+    }
+  }
+}
+
+/**
+ * 使用Unsplash API搜索圖片 (已棄用)
  * @param {string} query - 搜索關鍵詞
  * @param {number} page - 頁碼
  * @param {number} perPage - 每頁顯示數量
  * @returns {Promise<Array>} - 搜索結果
  */
 async function searchImages(query, page = 1, perPage = 10) {
-  try {
-    // 由於API密鑰問題，直接使用模擬數據
-    console.log('使用模擬數據進行搜索:', query);
-    return useMockData(query);
-    
-    // 以下代碼在有有效API密鑰時可以啟用
-    /*
-    const accessKey = 'YOUR_UNSPLASH_ACCESS_KEY'; // 需要替換為真實的API密鑰
-    const url = `https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&page=${page}&per_page=${perPage}`;
-    
-    const response = await fetch(url, {
-      headers: {
-        'Authorization': `Client-ID ${accessKey}`
-      }
-    });
-    
-    if (!response.ok) {
-      throw new Error(`搜索失敗: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    return data.results;
-    */
-  } catch (error) {
-    console.error('圖片搜索錯誤:', error);
-    // 如果API調用失敗，使用模擬數據
-    return useMockData(query);
-  }
+  // 直接使用Pixabay API
+  return searchPixabayImages(query, page, perPage);
 }
 
 /**
- * 使用Pixabay API搜索圖片（備用方案）
+ * 使用Pixabay API搜索圖片
  * @param {string} query - 搜索關鍵詞
  * @param {number} page - 頁碼
  * @param {number} perPage - 每頁顯示數量
@@ -47,14 +128,14 @@ async function searchImages(query, page = 1, perPage = 10) {
  */
 async function searchPixabayImages(query, page = 1, perPage = 10) {
   try {
-    // 由於API密鑰問題，直接使用模擬數據
-    console.log('使用模擬數據進行搜索 (Pixabay):', query);
-    return useMockData(query);
+    // 檢查API是否已啟用和驗證
+    if (!apiSettings.enabled || !apiSettings.verified) {
+      console.log('API未啟用或未驗證，使用模擬數據');
+      return useMockData(query);
+    }
     
-    // 以下代碼在有有效API密鑰時可以啟用
-    // /* API KEY 不能用時刪掉前面//
-    const apiKey = '49472016-4b5a8b33b9749687471ba622f'; // 需要替換為真實的API密鑰
-    const url = `https://pixabay.com/api/?key=${apiKey}&q=${encodeURIComponent(query)}&page=${page}&per_page=${perPage}`;
+    console.log('使用Pixabay API進行搜索:', query);
+    const url = `https://pixabay.com/api/?key=${apiSettings.apiKey}&q=${encodeURIComponent(query)}&page=${page}&per_page=${perPage}`;
     
     const response = await fetch(url);
     
@@ -71,7 +152,6 @@ async function searchPixabayImages(query, page = 1, perPage = 10) {
       },
       alt_description: hit.tags
     }));
-    // */ API KEY 不能用時刪掉前面//
   } catch (error) {
     console.error('Pixabay圖片搜索錯誤:', error);
     return useMockData(query);

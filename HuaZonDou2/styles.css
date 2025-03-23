@@ -435,6 +435,102 @@ button.selected {
   gap: 15px;
 }
 
+/* API設定樣式 */
+.api-settings {
+  margin: 15px 0;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 5px;
+  border: 1px solid #e9ecef;
+}
+
+.api-settings h3 {
+  margin-bottom: 10px;
+  color: #3498db;
+  text-align: center;
+}
+
+.api-settings-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.api-checkbox-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 5px;
+}
+
+.api-checkbox-container input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.api-input-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.api-input-container label {
+  font-weight: bold;
+  min-width: 70px;
+}
+
+.api-input-container input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #bdc3c7;
+  border-radius: 4px;
+  font-size: 1em;
+  min-width: 200px;
+}
+
+.api-input-container button {
+  padding: 8px 15px;
+  background-color: #3498db;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.api-input-container button:hover {
+  background-color: #2980b9;
+}
+
+.api-status {
+  margin-top: 8px;
+  padding: 8px;
+  border-radius: 4px;
+  font-weight: bold;
+  text-align: center;
+  min-height: 20px;
+}
+
+.api-status.success {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.api-status.error {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.api-status.loading {
+  background-color: #e9ecef;
+  color: #495057;
+  border: 1px solid #ced4da;
+}
+
 /* 網路圖片搜索樣式 */
 .image-search-form {
   display: flex;
@@ -506,7 +602,9 @@ button.selected {
 
 /* 作弊按鈕樣式 */
 #cheat-button {
-  background-color: #e74c3c;
+  background-color: #e74c3c; /* 預設紅色表示未啟用 */
+  position: relative;
+  padding-left: 30px; /* 為指示燈留出空間 */
 }
 
 #cheat-button:hover {
@@ -514,8 +612,26 @@ button.selected {
 }
 
 #cheat-button.active {
-  background-color: #c0392b;
+  background-color: #2ecc71; /* 綠色表示啟用 */
   box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.3);
+}
+
+#cheat-button::before {
+  content: '';
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: #e74c3c; /* 預設紅色 */
+  transition: background-color 0.3s ease;
+}
+
+#cheat-button.active::before {
+  background-color: #2ecc71; /* 啟用時為綠色 */
+  box-shadow: 0 0 5px #2ecc71;
 }
 
 .puzzle-block.cheat-selected {

@@ -331,16 +331,15 @@ class PuzzleGame {
     const value1 = this.board[row1][col1];
     const value2 = this.board[row2][col2];
     
+    // 檢查是否有空白方塊，如果有，則不進行交換
+    if (value1 === 0 || value2 === 0) {
+      alert('作弊模式不能交換空白方塊，請選擇其他方塊');
+      return false;
+    }
+    
     // 交換方塊
     this.board[row1][col1] = value2;
     this.board[row2][col2] = value1;
-    
-    // 如果其中一個是空白方塊，更新空白方塊位置
-    if (value1 === 0) {
-      this.emptyPos = { row: row2, col: col2 };
-    } else if (value2 === 0) {
-      this.emptyPos = { row: row1, col: col1 };
-    }
     
     // 增加移動次數
     this.moves++;

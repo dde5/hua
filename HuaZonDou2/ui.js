@@ -251,27 +251,7 @@ document.addEventListener('DOMContentLoaded', () => {
           block.style.backgroundRepeat = 'no-repeat'; // 确保背景不重复
         }
         
-        block.addEventListener('click', () => {
-          if (gameInstance.isAdjacent(row, col)) {
-            // 使用requestAnimationFrame優化渲染性能
-            // 在Safari中，使用多層requestAnimationFrame來確保更平滑的動畫
-            requestAnimationFrame(() => {
-              // 先執行邏輯操作
-              gameInstance.moveBlock(row, col);
-              updateGameStats();
-              
-              // 使用第二個requestAnimationFrame來確保視覺更新在下一幀進行
-              // 這有助於減少Safari中的渲染延遲
-              requestAnimationFrame(() => {
-                renderGameBoard();
-                
-                if (gameInstance.checkWin()) {
-                  gameComplete();
-                }
-              });
-            });
-          }
-        });
+        // 移除方塊點擊事件處理程序，因為我們已經在作弊模式的點擊事件處理程序中處理了所有的邏輯
         
         puzzleContainer.appendChild(block);
       }
@@ -440,20 +420,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 修改方塊點擊事件處理，支持作弊模式
     document.querySelector('.puzzle-container').addEventListener('click', (e) => {
-      if (!cheatMode) return; // 非作弊模式不處理
-      
-      // 檢查是否已經過了5分鐘的時間限制
-      const currentTime = new Date();
-      const elapsedTimeInSeconds = Math.floor((currentTime - gameInstance.startTime) / 1000);
-      const timeLimit = 5 * 60; // 5分鐘，單位為秒
-      
-      if (elapsedTimeInSeconds < timeLimit) {
-        const remainingMinutes = Math.floor((timeLimit - elapsedTimeInSeconds) / 60);
-        const remainingSeconds = (timeLimit - elapsedTimeInSeconds) % 60;
-        alert(`作弊模式將在 ${remainingMinutes}分${remainingSeconds}秒 後可用`);
-        return;
-      }
-      
+      // 獲取點擊的方塊
       const block = e.target.closest('.puzzle-block');
       if (!block) return;
       
@@ -463,8 +430,22 @@ document.addEventListener('DOMContentLoaded', () => {
       const row = Math.floor(index / selectedSize);
       const col = index % selectedSize;
       
-      // 空白方塊不能被選中
-      if (block.classList.contains('empty')) return;
+      // 作弊模式處理邏輯
+      if (cheatMode) {
+        // 檢查是否已經過了5分鐘的時間限制
+        const currentTime = new Date();
+        const elapsedTimeInSeconds = Math.floor((currentTime - gameInstance.startTime) / 1000);
+        const timeLimit = 5 * 60; // 5分鐘，單位為秒
+        
+        if (elapsedTimeInSeconds < timeLimit) {
+          const remainingMinutes = Math.floor((timeLimit - elapsedTimeInSeconds) / 60);
+          const remainingSeconds = (timeLimit - elapsedTimeInSeconds) % 60;
+          alert(`作弊模式將在 ${remainingMinutes}分${remainingSeconds}秒 後可用`);
+          return;
+        }
+        
+        // 空白方塊不能被選中
+        if (block.classList.contains('empty')) return;
       
       if (!firstSelectedBlock) {
         // 選中第一個方塊
@@ -487,6 +468,28 @@ document.addEventListener('DOMContentLoaded', () => {
         // 檢查是否完成
         if (gameInstance.checkWin()) {
           gameComplete();
+        }
+      }
+      } else {
+        // 非作弊模式下，處理正常的方塊移動
+        if (gameInstance.isAdjacent(row, col)) {
+          // 使用requestAnimationFrame優化渲染性能
+          // 在Safari中，使用多層requestAnimationFrame來確保更平滑的動畫
+          requestAnimationFrame(() => {
+            // 先執行邏輯操作
+            gameInstance.moveBlock(row, col);
+            updateGameStats();
+            
+            // 使用第二個requestAnimationFrame來確保視覺更新在下一幀進行
+            // 這有助於減少Safari中的渲染延遲
+            requestAnimationFrame(() => {
+              renderGameBoard();
+              
+              if (gameInstance.checkWin()) {
+                gameComplete();
+              }
+            });
+          });
         }
       }
     }, true); // 使用捕獲階段以確保事件處理
@@ -568,6 +571,75 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('color-default').classList.add('selected');
   }
   
+  // 初始化API設定界面
+  function initApiSettings() {
+    // 獲取DOM元素
+    const enableApiCheckbox = document.getElementById('enable-api');
+    const apiKeyInput = document.getElementById('api-key');
+    const verifyApiButton = document.getElementById('verify-api');
+    const apiStatusDiv = document.getElementById('api-status');
+    const searchOptionContainer = document.getElementById('search-option-container');
+    
+    // 從localStorage載入API設定
+    loadApiSettings();
+    
+    // 根據載入的設定更新界面
+    enableApiCheckbox.checked = apiSettings.enabled;
+    apiKeyInput.value = apiSettings.apiKey;
+    
+    // 如果API已驗證，顯示搜索界面
+    if (apiSettings.enabled && apiSettings.verified) {
+      searchOptionContainer.classList.remove('hidden');
+      apiStatusDiv.textContent = '已驗證';
+      apiStatusDiv.className = 'api-status success';
+    }
+    
+    // 核取方塊狀態變化事件
+    enableApiCheckbox.addEventListener('change', () => {
+      apiSettings.enabled = enableApiCheckbox.checked;
+      saveApiSettings();
+      
+      // 更新搜索界面顯示狀態
+      if (apiSettings.enabled && apiSettings.verified) {
+        searchOptionContainer.classList.remove('hidden');
+      } else {
+        searchOptionContainer.classList.add('hidden');
+      }
+    });
+    
+    // 驗證按鈕點擊事件
+    verifyApiButton.addEventListener('click', async () => {
+      const apiKey = apiKeyInput.value.trim();
+      
+      if (!apiKey) {
+        apiStatusDiv.textContent = '請輸入API序號';
+        apiStatusDiv.className = 'api-status error';
+        return;
+      }
+      
+      // 顯示驗證中狀態
+      apiStatusDiv.textContent = '驗證中...';
+      apiStatusDiv.className = 'api-status loading';
+      verifyApiButton.disabled = true;
+      
+      // 驗證API序號
+      const isValid = await verifyPixabayApiKey(apiKey);
+      
+      // 更新界面
+      if (isValid) {
+        apiStatusDiv.textContent = '驗證成功';
+        apiStatusDiv.className = 'api-status success';
+        searchOptionContainer.classList.remove('hidden');
+      } else {
+        apiStatusDiv.textContent = '驗證失敗，請檢查API序號';
+        apiStatusDiv.className = 'api-status error';
+        searchOptionContainer.classList.add('hidden');
+      }
+      
+      verifyApiButton.disabled = false;
+    });
+  }
+  
   // 初始化網路圖片搜索
   function initNetworkImageSearch() {
     const searchContainer = document.getElementById('image-search-container');
@@ -588,6 +660,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initStartGameButton();
     initGameControls();
     initCustomImageUpload();
+    initApiSettings(); // 初始化API設定界面
     initNetworkImageSearch();
     
     // 添加CSS類
