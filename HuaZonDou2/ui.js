@@ -9,16 +9,33 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // 預設圖片
   const presetImages = [
-    { name: '米奇老鼠', src: 'images/mickey.jpg' },
-    { name: '唐老鴨', src: 'images/donald.jpg' },
-    { name: '小熊維尼', src: 'images/pooh.jpg' },
-    { name: '冰雪奇緣艾莎', src: 'images/elsa.jpg' },
-    { name: '獅子王辛巴', src: 'images/simba.jpg' },
-    { name: '惡魔', src: 'images/devil.jpg' },
-    { name: '醫生', src: 'images/doctor.jpg' },
-    { name: '莎莉', src: 'images/sally.jpg' },
-    { name: '瑞吉娜', src: 'images/regina.jpg' }
+    { name: 'C1', src: 'images/C1.jpg' },
+    { name: 'C2', src: 'images/C2.jpg' },
+    { name: 'C3', src: 'images/C3.jpg' },
+    { name: 'C4', src: 'images/C4.jpg' },
+    { name: 'C5', src: 'images/C5.jpg' },
+    { name: 'C6', src: 'images/C6.jpg' },
+    { name: 'C7', src: 'images/C7.jpg' },
+    { name: 'C8', src: 'images/C8.jpg' },
+    { name: 'E1', src: 'images/E1.jpg' },
+    { name: 'E2', src: 'images/E2.jpg' },
+    { name: 'E3', src: 'images/E3.jpg' },
+    { name: 'E4', src: 'images/E4.jpg' },
+    { name: 'E5', src: 'images/E5.jpg' },
+    { name: 'E6', src: 'images/E6.jpg' },
+    { name: 'M1', src: 'images/M1.jpg' },
+    { name: 'M2', src: 'images/M2.jpg' },
+    { name: 'M3', src: 'images/M3.jpg' },
+    { name: 'M4', src: 'images/M4.jpg' },
+    { name: 'M5', src: 'images/M5.jpg' },
+    { name: 'H1', src: 'images/H1.jpg' },
+    { name: 'H2', src: 'images/H2.jpg' },
+    { name: 'H3', src: 'images/H3.jpg' },
+    { name: 'H4', src: 'images/H4.jpg' },
+    { name: 'H5', src: 'images/H5.jpg' },
+    { name: 'H6', src: 'images/H6.jpg' }
   ];
+
   
   // 處理後的預設圖片
   let processedPresetImages = [];
@@ -677,72 +694,40 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('color-default').classList.add('selected');
   }
   
-  // 初始化API設定界面
+  // 初始化API設定
   function initApiSettings() {
-    // 獲取DOM元素
-    const enableApiCheckbox = document.getElementById('enable-api');
-    const apiKeyInput = document.getElementById('api-key');
-    const verifyApiButton = document.getElementById('verify-api');
-    const apiStatusDiv = document.getElementById('api-status');
+    const apiCheckbox = document.getElementById('enable-api');
     const searchOptionContainer = document.getElementById('search-option-container');
     
-    // 從localStorage載入API設定
-    loadApiSettings();
+    // 檢查是否有保存的API設定
+    const apiEnabled = localStorage.getItem('api_enabled') === 'true';
     
-    // 根據載入的設定更新界面
-    enableApiCheckbox.checked = apiSettings.enabled;
-    apiKeyInput.value = apiSettings.apiKey;
-    
-    // 如果API已驗證，顯示搜索界面
-    if (apiSettings.enabled && apiSettings.verified) {
+    if (apiEnabled) {
+      apiCheckbox.checked = true;
       searchOptionContainer.classList.remove('hidden');
-      apiStatusDiv.textContent = '已驗證';
-      apiStatusDiv.className = 'api-status success';
+      
+      // 初始化圖片搜索界面 - 使用Google搜圖
+      const searchContainer = document.getElementById('image-search-container');
+      initImageSearch(searchContainer, (imageUrl) => {
+        selectedImage = imageUrl;
+      });
     }
     
-    // 核取方塊狀態變化事件
-    enableApiCheckbox.addEventListener('change', () => {
-      apiSettings.enabled = enableApiCheckbox.checked;
-      saveApiSettings();
-      
-      // 更新搜索界面顯示狀態
-      if (apiSettings.enabled && apiSettings.verified) {
+    // 啟用/禁用Google搜圖功能
+    apiCheckbox.addEventListener('change', () => {
+      if (apiCheckbox.checked) {
         searchOptionContainer.classList.remove('hidden');
+        localStorage.setItem('api_enabled', 'true');
+        
+        // 初始化圖片搜索界面 - 使用Google搜圖
+        const searchContainer = document.getElementById('image-search-container');
+        initImageSearch(searchContainer, (imageUrl) => {
+          selectedImage = imageUrl;
+        });
       } else {
         searchOptionContainer.classList.add('hidden');
+        localStorage.setItem('api_enabled', 'false');
       }
-    });
-    
-    // 驗證按鈕點擊事件
-    verifyApiButton.addEventListener('click', async () => {
-      const apiKey = apiKeyInput.value.trim();
-      
-      if (!apiKey) {
-        apiStatusDiv.textContent = '請輸入API序號';
-        apiStatusDiv.className = 'api-status error';
-        return;
-      }
-      
-      // 顯示驗證中狀態
-      apiStatusDiv.textContent = '驗證中...';
-      apiStatusDiv.className = 'api-status loading';
-      verifyApiButton.disabled = true;
-      
-      // 驗證API序號
-      const isValid = await verifyPixabayApiKey(apiKey);
-      
-      // 更新界面
-      if (isValid) {
-        apiStatusDiv.textContent = '驗證成功';
-        apiStatusDiv.className = 'api-status success';
-        searchOptionContainer.classList.remove('hidden');
-      } else {
-        apiStatusDiv.textContent = '驗證失敗，請檢查API序號';
-        apiStatusDiv.className = 'api-status error';
-        searchOptionContainer.classList.add('hidden');
-      }
-      
-      verifyApiButton.disabled = false;
     });
   }
   
@@ -766,8 +751,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initStartGameButton();
     initGameControls();
     initCustomImageUpload();
-    initApiSettings(); // 初始化API設定界面
-    initNetworkImageSearch();
+    initApiSettings(); // 初始化Google搜圖功能
     
     // 添加CSS類
     document.querySelectorAll('.mode-options button, .size-options button, .color-options button').forEach(button => {
