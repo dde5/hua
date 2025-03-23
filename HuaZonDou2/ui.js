@@ -375,6 +375,53 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
     
+    // 添加顯示原圖按鈕功能
+    let showingOriginal = false;
+    const showOriginalButton = document.getElementById('show-original-button');
+    showOriginalButton.addEventListener('click', () => {
+      showingOriginal = !showingOriginal;
+      
+      // 切換按鈕樣式
+      showOriginalButton.classList.toggle('active', showingOriginal);
+      
+      // 獲取所有拼圖方塊
+      const puzzleBlocks = document.querySelectorAll('.puzzle-block');
+      
+      if (showingOriginal) {
+        // 顯示原圖 - 創建一個覆蓋層
+        const overlay = document.createElement('div');
+        overlay.id = 'original-image-overlay';
+        overlay.style.position = 'absolute';
+        overlay.style.top = '0';
+        overlay.style.left = '0';
+        overlay.style.width = '100%';
+        overlay.style.height = '100%';
+        overlay.style.backgroundImage = `url(${gameInstance.imageSource})`;
+        overlay.style.backgroundSize = 'cover';
+        overlay.style.backgroundPosition = 'center';
+        overlay.style.zIndex = '10';
+        overlay.style.opacity = '0.9';
+        overlay.style.transition = 'opacity 0.3s ease';
+        
+        // 添加到拼圖容器
+        const puzzleContainer = document.querySelector('.puzzle-container');
+        puzzleContainer.style.position = 'relative';
+        puzzleContainer.appendChild(overlay);
+        
+        // 更新按鈕文字
+        showOriginalButton.textContent = '隱藏原圖';
+      } else {
+        // 隱藏原圖 - 移除覆蓋層
+        const overlay = document.getElementById('original-image-overlay');
+        if (overlay) {
+          overlay.parentNode.removeChild(overlay);
+        }
+        
+        // 恢復按鈕文字
+        showOriginalButton.textContent = '顯示原圖';
+      }
+    });
+    
     // 添加作弊按鈕
     const gameControls = document.querySelector('.game-controls');
     const cheatButton = document.createElement('button');

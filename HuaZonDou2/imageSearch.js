@@ -20,9 +20,9 @@ async function verifyPixabayApiKey(apiKey) {
     }
     
     // 使用一個簡單的查詢來測試API序號是否有效
-    const testQuery = 'test';
+    const testQuery = 'yellow+flowers';
     // 添加image_type參數以符合API要求
-    const url = `https://pixabay.com/api/?key=${apiKey}&q=${encodeURIComponent(testQuery)}&per_page=1&image_type=photo`;
+    const url = `https://pixabay.com/api/?key=${apiKey}&q=${encodeURIComponent(testQuery)}&image_type=photo&per_page=1`;
     
     console.log('驗證API URL:', url);
     

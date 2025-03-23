@@ -382,7 +382,7 @@ button.selected {
     transition: none; /* 移除過渡效果，提高交換速度 */
   }
 }
-}
+
 
 .game-controls {
   display: flex;
