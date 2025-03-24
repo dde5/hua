@@ -163,7 +163,7 @@ button.selected {
   aspect-ratio: 1/1;
 }
 
-/* Safari瀏覽器兼容性修復 - 簡化版 */
+/* Safari瀏覽器兼容性優化 */
 @supports (-webkit-touch-callout: none) {
   .puzzle-container {
     display: grid;
@@ -173,6 +173,23 @@ button.selected {
     aspect-ratio: 1/1;
     grid-template-rows: repeat(var(--grid-size, 4), 1fr);
     grid-template-columns: repeat(var(--grid-size, 4), 1fr);
+    /* 啟用硬件加速 */
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    -webkit-perspective: 1000;
+    /* 減少重排和重繪 */
+    will-change: transform;
+  }
+  
+  /* Safari特定的方塊優化 */
+  .puzzle-block {
+    /* 使用transform代替傳統定位 */
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    /* 減少重排和重繪 */
+    will-change: transform;
   }
 }
 

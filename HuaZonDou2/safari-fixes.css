@@ -1,0 +1,33 @@
+/* Safari特定修復樣式 */
+
+/* 檢測Safari瀏覽器 */
+@supports (-webkit-touch-callout: none) {
+  /* 修復文件輸入框在Safari中的問題 */
+  input[type="file"] {
+    /* 確保文件輸入框可以被點擊 */
+    pointer-events: auto !important;
+    /* 確保文件輸入框不會被其他元素覆蓋 */
+    position: relative !important;
+    z-index: 1 !important;
+  }
+  
+  /* 修復文件輸入框標籤在Safari中的問題 */
+  label[for="custom-image"] {
+    /* 確保標籤可以被點擊 */
+    pointer-events: auto !important;
+    /* 確保標籤不會被其他元素覆蓋 */
+    position: relative !important;
+    z-index: 2 !important;
+    /* 添加視覺反饋 */
+    cursor: pointer !important;
+  }
+  
+  /* 修復上傳選項容器在Safari中的問題 */
+  .upload-option {
+    /* 確保容器可以被點擊 */
+    pointer-events: auto !important;
+    /* 確保容器不會被其他元素覆蓋 */
+    position: relative !important;
+    z-index: 1 !important;
+  }
+}

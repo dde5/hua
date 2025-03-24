@@ -98,8 +98,10 @@ class SafariOptimizer {
     
     // 優化點擊事件，減少延遲
     document.addEventListener('touchend', (e) => {
-      // 防止Safari中的300ms點擊延遲
-      if (e.target.tagName === 'BUTTON' || e.target.tagName === 'A' || e.target.tagName === 'IMG') {
+      // 防止Safari中的300ms點擊延遲，但不阻止文件選擇元素
+      if ((e.target.tagName === 'BUTTON' || e.target.tagName === 'A' || e.target.tagName === 'IMG') && 
+          !e.target.closest('input[type="file"]') && 
+          e.target.tagName !== 'LABEL') {
         e.preventDefault();
       }
     }, false);

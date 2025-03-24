@@ -40,25 +40,126 @@ document.addEventListener('DOMContentLoaded', () => {
   // 處理後的預設圖片
   let processedPresetImages = [];
   
+  // 創建載入指示器元素
+  function createLoadingIndicator() {
+    const loadingContainer = document.createElement('div');
+    loadingContainer.className = 'loading-container';
+    
+    const loadingIndicator = document.createElement('div');
+    loadingIndicator.className = 'loading-indicator';
+    
+    const loadingText = document.createElement('div');
+    loadingText.className = 'loading-text';
+    loadingText.textContent = '載入圖片中...';
+    
+    const progressBar = document.createElement('div');
+    progressBar.className = 'progress-bar';
+    
+    const progressFill = document.createElement('div');
+    progressFill.className = 'progress-fill';
+    progressBar.appendChild(progressFill);
+    
+    loadingContainer.appendChild(loadingIndicator);
+    loadingContainer.appendChild(loadingText);
+    loadingContainer.appendChild(progressBar);
+    
+    return {
+      container: loadingContainer,
+      text: loadingText,
+      progressFill: progressFill,
+      show: () => loadingContainer.classList.add('visible'),
+      hide: () => loadingContainer.classList.remove('visible'),
+      updateProgress: (loaded, total, message = null) => {
+        const percent = Math.round((loaded / total) * 100);
+        progressFill.style.width = `${percent}%`;
+        if (message) {
+          loadingText.textContent = message;
+        } else {
+          loadingText.textContent = `載入圖片中... ${loaded}/${total} (${percent}%)`;
+        }
+      }
+    };
+  }
+  
   // 初始化圖片選擇區域
   async function initImageSelection() {
     const imageOptions = document.querySelector('.image-options');
     
-    // 預處理所有預設圖片
-    processedPresetImages = await preprocessPresetImages(presetImages);
+    // 創建並添加載入指示器
+    const loadingIndicator = createLoadingIndicator();
+    document.getElementById('image-selection').appendChild(loadingIndicator.container);
+    loadingIndicator.show();
     
-    processedPresetImages.forEach(image => {
-      const img = document.createElement('img');
-      img.src = image.src;
-      img.alt = image.name;
-      img.title = image.name;
-      img.addEventListener('click', () => {
-        document.querySelectorAll('.image-options img').forEach(i => i.classList.remove('selected'));
-        img.classList.add('selected');
-        selectedImage = image.src;
-      });
-      imageOptions.appendChild(img);
-    });
+    // 使用DocumentFragment減少DOM操作
+    const fragment = document.createDocumentFragment();
+    
+    try {
+      // 預處理所有預設圖片，添加進度回調
+      const preloaderOptions = {
+        size: 4, // 預設使用4x4尺寸
+        quality: 0.9,
+        useOptimalFormat: true,
+        progressCallback: (loaded, total, src, error) => {
+          loadingIndicator.updateProgress(loaded, total);
+          if (error) {
+            console.warn(`載入圖片失敗: ${src}`, error);
+          }
+        }
+      };
+      
+      processedPresetImages = await preprocessPresetImages(presetImages, preloaderOptions);
+      
+      // 使用延遲載入技術，分批添加圖片
+      const batchSize = 5; // 每批添加的圖片數量
+      const totalBatches = Math.ceil(processedPresetImages.length / batchSize);
+      
+      // 檢測是否為Safari瀏覽器
+      const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+      const safariOptimizations = isSafari && window.imagePreloader ? 
+        window.imagePreloader.getSafariOptimizations() : {};
+      
+      // 根據是否為Safari調整批次大小和延遲
+      const actualBatchSize = safariOptimizations.batchSize || batchSize;
+      const batchDelay = safariOptimizations.delayBetweenBatches || 0;
+      
+      for (let i = 0; i < totalBatches; i++) {
+        const start = i * actualBatchSize;
+        const end = Math.min(start + actualBatchSize, processedPresetImages.length);
+        const batch = processedPresetImages.slice(start, end);
+        
+        await new Promise(resolve => {
+          setTimeout(() => {
+            batch.forEach(image => {
+              const img = document.createElement('img');
+              img.src = image.src;
+              img.alt = image.name;
+              img.title = image.name;
+              img.loading = 'lazy'; // 使用原生延遲載入
+              img.addEventListener('click', () => {
+                document.querySelectorAll('.image-options img').forEach(i => i.classList.remove('selected'));
+                img.classList.add('selected');
+                selectedImage = image.src;
+              });
+              fragment.appendChild(img);
+            });
+            resolve();
+          }, i > 0 ? batchDelay : 0); // 第一批立即顯示，後續批次添加延遲
+        });
+        
+        // 更新載入進度
+        loadingIndicator.updateProgress(Math.min(end, processedPresetImages.length), processedPresetImages.length);
+      }
+      
+      // 一次性將所有圖片添加到DOM
+      imageOptions.appendChild(fragment);
+      
+    } catch (error) {
+      console.error('載入圖片失敗:', error);
+      loadingIndicator.updateProgress(1, 1, '載入圖片失敗，請重試');
+    } finally {
+      // 隱藏載入指示器
+      setTimeout(() => loadingIndicator.hide(), 500);
+    }
   }
   
   // 初始化模式選擇
@@ -654,6 +755,21 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // 初始化自定义图片上传
   function initCustomImageUpload() {
+    // 檢測是否為Safari瀏覽器
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    
+    // 為Safari瀏覽器添加特殊處理
+    if (isSafari) {
+      // 為文件輸入框的標籤添加特殊的點擊處理
+      const fileLabel = document.querySelector('label[for="custom-image"]');
+      if (fileLabel) {
+        fileLabel.addEventListener('click', (e) => {
+          // 確保事件不被阻止
+          e.stopPropagation();
+        }, true);
+      }
+    }
+    
     document.getElementById('custom-image').addEventListener('change', (e) => {
       if (e.target.files && e.target.files[0]) {
         const reader = new FileReader();
@@ -690,6 +806,15 @@ document.addEventListener('DOMContentLoaded', () => {
         reader.readAsDataURL(e.target.files[0]);
       }
     });
+    
+    // 為Safari瀏覽器添加額外的點擊處理
+    if (isSafari) {
+      const fileInput = document.getElementById('custom-image');
+      // 確保文件輸入框可以被點擊
+      fileInput.style.opacity = '0.001'; // 幾乎不可見但仍可點擊
+      fileInput.style.position = 'absolute';
+      fileInput.style.pointerEvents = 'auto';
+    }
   }
   
   // 顏色選擇已從設置界面移除，預設使用暗灰條紋
