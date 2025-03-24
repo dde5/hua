@@ -161,6 +161,19 @@ document.addEventListener('DOMContentLoaded', () => {
             // 如果找不到處理後的圖片，重新處理一次
             imageSource = await preprocessImage(imageSource, selectedSize);
           }
+        } else if (imageSource.startsWith('http')) {
+          // 處理從Google搜圖獲取的網絡圖片
+          try {
+            // 預處理網絡圖片
+            imageSource = await preprocessImage(imageSource, selectedSize);
+          } catch (error) {
+            console.error('處理網絡圖片失敗:', error);
+            alert('無法載入網絡圖片，請嘗試其他圖片或使用預設圖片');
+            // 回到設置界面
+            document.getElementById('game-board').classList.add('hidden');
+            document.getElementById('game-setup').classList.remove('hidden');
+            return;
+          }
         }
       }
       

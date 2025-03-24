@@ -22,7 +22,13 @@ function openGoogleImageSearch(query) {
   
   // 打開新窗口進行Google圖片搜索
   const searchUrl = getGoogleImageSearchUrl(query);
-  window.open(searchUrl, '_blank');
+  const googleWindow = window.open(searchUrl, '_blank');
+  
+  // 提示用戶如何使用Google搜圖功能
+  alert('請在Google圖片中選擇您想要的圖片，然後右鍵選擇「複製圖片地址」，再回到遊戲點擊「使用Google圖片」按鈕');
+  
+  // 創建一個全局變量來存儲Google圖片URL
+  window.googleImageUrl = '';
 }
 
 /**
@@ -156,6 +162,24 @@ function initImageSearch(searchContainer, onImageSelect) {
   googleSearchButton.id = 'google-search-button';
   googleSearchButton.className = 'google-search-button';
   
+  // 創建使用Google圖片按鈕
+  const useGoogleImageButton = document.createElement('button');
+  useGoogleImageButton.textContent = '使用Google圖片';
+  useGoogleImageButton.id = 'use-google-image-button';
+  useGoogleImageButton.className = 'use-google-image-button';
+  useGoogleImageButton.style.display = 'block';
+  useGoogleImageButton.style.marginTop = '10px';
+  
+  // 創建Google圖片URL輸入框
+  const googleImageUrlInput = document.createElement('input');
+  googleImageUrlInput.type = 'text';
+  googleImageUrlInput.id = 'google-image-url-input';
+  googleImageUrlInput.placeholder = '粘貼Google圖片網址...';
+  googleImageUrlInput.className = 'google-image-url-input';
+  googleImageUrlInput.style.display = 'block';
+  googleImageUrlInput.style.marginTop = '10px';
+  googleImageUrlInput.style.width = '100%';
+  
   // 創建搜索結果容器
   const resultsContainer = document.createElement('div');
   resultsContainer.id = 'image-search-results';
@@ -166,16 +190,16 @@ function initImageSearch(searchContainer, onImageSelect) {
   searchForm.className = 'search-form';
   searchForm.appendChild(searchInput);
   
-  // 移除搜索按鈕，因為它沒有特別作用
-  
   // 添加Google搜圖按鈕到表單
   searchForm.appendChild(googleSearchButton);
+  
+  // 添加Google圖片URL輸入框和使用按鈕
+  searchForm.appendChild(googleImageUrlInput);
+  searchForm.appendChild(useGoogleImageButton);
   
   // 添加表單和結果容器到搜索容器
   searchContainer.appendChild(searchForm);
   searchContainer.appendChild(resultsContainer);
-  
-  // 移除搜索按鈕點擊事件，因為我們已經移除了搜索按鈕
   
   // 添加按Enter鍵觸發Google搜圖的功能
   searchInput.addEventListener('keypress', (e) => {
@@ -189,5 +213,23 @@ function initImageSearch(searchContainer, onImageSelect) {
   googleSearchButton.addEventListener('click', () => {
     const query = searchInput.value.trim();
     openGoogleImageSearch(query);
+  });
+  
+  // 添加使用Google圖片按鈕點擊事件
+  useGoogleImageButton.addEventListener('click', () => {
+    const imageUrl = googleImageUrlInput.value.trim();
+    if (!imageUrl) {
+      alert('請先粘貼Google圖片網址');
+      return;
+    }
+    
+    // 確認是否使用此圖片進入遊戲
+    if (confirm('確定要使用此圖片進入遊戲嗎？')) {
+      // 調用選擇回調，將圖片URL傳遞給遊戲
+      onImageSelect(imageUrl);
+      
+      // 自動點擊開始遊戲按鈕
+      document.getElementById('start-game').click();
+    }
   });
 }
