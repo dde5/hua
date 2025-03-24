@@ -294,8 +294,12 @@ class ImagePreloader {
       useTransform: true,
       avoidReflows: true,
       // Safari在處理大量圖片時的建議設置
-      batchSize: 4, // 每批處理的圖片數量
-      delayBetweenBatches: 50 // 批次間延遲（毫秒）
+      batchSize: 3, // 每批處理的圖片數量（減少以提高穩定性）
+      delayBetweenBatches: 80, // 批次間延遲（毫秒）（增加以確保完全載入）
+      // 圖片處理優化
+      preferredFormat: 'jpeg', // Safari對WebP支持較差
+      quality: 0.85, // 適當降低質量以提高性能
+      maxImageSize: 800 // 限制最大圖片尺寸以保持性能
     };
   }
 }

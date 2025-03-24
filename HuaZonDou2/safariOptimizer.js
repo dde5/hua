@@ -98,10 +98,16 @@ class SafariOptimizer {
     
     // 優化點擊事件，減少延遲
     document.addEventListener('touchend', (e) => {
-      // 防止Safari中的300ms點擊延遲，但不阻止文件選擇元素
-      if ((e.target.tagName === 'BUTTON' || e.target.tagName === 'A' || e.target.tagName === 'IMG') && 
-          !e.target.closest('input[type="file"]') && 
-          e.target.tagName !== 'LABEL') {
+      // 不再阻止按鈕的默認行為，以確保按鈕在Safari中可以正常工作
+      // 只為特定元素（非按鈕、非連結、非標籤、非輸入框）阻止默認行為
+      if (e.target.tagName !== 'BUTTON' && 
+          e.target.tagName !== 'A' && 
+          e.target.tagName !== 'LABEL' && 
+          e.target.tagName !== 'INPUT' && 
+          !e.target.closest('button') && 
+          !e.target.closest('a') && 
+          !e.target.closest('label') && 
+          !e.target.closest('input')) {
         e.preventDefault();
       }
     }, false);

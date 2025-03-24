@@ -30,4 +30,37 @@
     position: relative !important;
     z-index: 1 !important;
   }
+  
+  /* 修復按鈕在Safari中的問題 */
+  button {
+    /* 確保按鈕可以被點擊 */
+    pointer-events: auto !important;
+    /* 添加視覺反饋 */
+    cursor: pointer !important;
+    /* 確保按鈕不會被其他元素覆蓋 */
+    position: relative !important;
+    z-index: 2 !important;
+    /* 修復Safari中的點擊事件問題 */
+    -webkit-tap-highlight-color: rgba(0,0,0,0) !important;
+    -webkit-touch-callout: none !important;
+  }
+  
+  /* 修復圖片在Safari中的顯示問題 */
+  .puzzle-block .image-block {
+    /* 確保圖片容器正確顯示 */
+    overflow: hidden !important;
+    /* 使用硬件加速 */
+    transform: translateZ(0) !important;
+    -webkit-transform: translateZ(0) !important;
+    -webkit-backface-visibility: hidden !important;
+  }
+  
+  /* 修復遊戲板在Safari中的顯示問題 */
+  .puzzle-container {
+    /* 使用硬件加速 */
+    transform: translateZ(0) !important;
+    -webkit-transform: translateZ(0) !important;
+    /* 確保正確的網格顯示 */
+    display: grid !important;
+  }
 }
