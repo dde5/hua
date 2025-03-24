@@ -679,19 +679,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
   
-  // 初始化顏色選擇
+  // 顏色選擇已從設置界面移除，預設使用暗灰條紋
   function initColorSelection() {
-    const colorButtons = document.querySelectorAll('.color-options button');
-    colorButtons.forEach(button => {
-      button.addEventListener('click', () => {
-        selectedColor = button.dataset.color;
-        document.querySelectorAll('.color-options button').forEach(btn => btn.classList.remove('selected'));
-        button.classList.add('selected');
-      });
-    });
-    
-    // 預設選中第一個顏色選項（暗灰條紋）
-    document.getElementById('color-default').classList.add('selected');
+    // 設置預設顏色為暗灰條紋
+    selectedColor = 'default';
   }
   
   // 初始化API設定
@@ -720,7 +711,9 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('api_enabled', 'true');
         
         // 初始化圖片搜索界面 - 使用Google搜圖
+        // 先清空容器，避免重複添加搜索界面
         const searchContainer = document.getElementById('image-search-container');
+        searchContainer.innerHTML = '';
         initImageSearch(searchContainer, (imageUrl) => {
           selectedImage = imageUrl;
         });

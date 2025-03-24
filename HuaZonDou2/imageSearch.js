@@ -166,12 +166,7 @@ function initImageSearch(searchContainer, onImageSelect) {
   searchForm.className = 'search-form';
   searchForm.appendChild(searchInput);
   
-  // 創建搜索按鈕
-  const searchButton = document.createElement('button');
-  searchButton.textContent = '搜索';
-  searchButton.id = 'search-button';
-  searchButton.className = 'search-button';
-  searchForm.appendChild(searchButton);
+  // 移除搜索按鈕，因為它沒有特別作用
   
   // 添加Google搜圖按鈕到表單
   searchForm.appendChild(googleSearchButton);
@@ -180,36 +175,13 @@ function initImageSearch(searchContainer, onImageSelect) {
   searchContainer.appendChild(searchForm);
   searchContainer.appendChild(resultsContainer);
   
-  // 添加搜索按鈕點擊事件
-  searchButton.addEventListener('click', async () => {
-    const query = searchInput.value.trim();
-    if (!query) {
-      alert('請輸入搜索關鍵詞');
-      return;
-    }
-    
-    searchButton.disabled = true;
-    searchButton.textContent = '搜索中...';
-    
-    try {
-      // 使用模擬數據
-      const results = useMockData(query);
-      
-      // 顯示搜索結果
-      displaySearchResults(results, resultsContainer, onImageSelect);
-    } catch (error) {
-      console.error('搜索失敗:', error);
-      resultsContainer.innerHTML = '<p>搜索失敗，請稍後再試</p>';
-    } finally {
-      searchButton.disabled = false;
-      searchButton.textContent = '搜索';
-    }
-  });
+  // 移除搜索按鈕點擊事件，因為我們已經移除了搜索按鈕
   
-  // 添加按Enter鍵搜索的功能
+  // 添加按Enter鍵觸發Google搜圖的功能
   searchInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
-      searchButton.click();
+      const query = searchInput.value.trim();
+      openGoogleImageSearch(query);
     }
   });
   
