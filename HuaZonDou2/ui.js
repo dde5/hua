@@ -152,6 +152,13 @@ document.addEventListener('DOMContentLoaded', () => {
       gameInstance.cheatEnabled = false;
     }
     
+    // 確保作弊按鈕顯示為未啟用狀態（紅色）
+    const cheatButton = document.getElementById('cheat-button');
+    if (cheatButton) {
+      cheatButton.classList.remove('active');
+      cheatButton.style.backgroundColor = '#e74c3c';
+    }
+    
     // 確保圖片已經過預處理
     try {
       // 如果是自定義上傳的圖片，它已經在上傳時預處理過了
@@ -388,7 +395,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const cheatButton = document.getElementById('cheat-button');
     if (cheatButton) {
       cheatButton.classList.remove('active');
-      cheatButton.style.backgroundColor = '#3498db'; // 恢復原本的藍色
+      cheatButton.style.backgroundColor = '#e74c3c'; // 設置為紅色（未啟用狀態）
     }
   }
   
@@ -399,27 +406,86 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const scores = JSON.parse(localStorage.getItem('puzzleHighScores') || '{}');
     const key = `${selectedMode}-${selectedSize}`;
-    const modeScores = scores[key] || { time: '無記錄', moves: '無記錄', cheatUsed: false, cheatCount: 0 };
+    const modeScores = scores[key] || [];
     
-    const timeScore = document.createElement('div');
-    timeScore.innerHTML = `<strong>最短時間:</strong> ${modeScores.time}`;
+    // 創建標題
+    const title = document.createElement('h4');
+    title.textContent = '前三名記錄';
+    highScoresList.appendChild(title);
     
-    const movesScore = document.createElement('div');
-    movesScore.innerHTML = `<strong>最少步數:</strong> ${modeScores.moves}`;
-    
-    // 添加作弊模式使用信息
-    const cheatInfo = document.createElement('div');
-    if (modeScores.cheatUsed) {
-      cheatInfo.innerHTML = `<strong>作弊模式:</strong> 使用了 ${modeScores.cheatCount} 次`;
-      cheatInfo.classList.add('cheat-used');
+    if (modeScores.length === 0) {
+      // 如果沒有記錄
+      const noRecord = document.createElement('div');
+      noRecord.textContent = '暫無記錄';
+      noRecord.classList.add('no-record');
+      highScoresList.appendChild(noRecord);
     } else {
-      cheatInfo.innerHTML = `<strong>作弊模式:</strong> 未使用`;
-      cheatInfo.classList.add('cheat-not-used');
+      // 創建記錄表格
+      const table = document.createElement('table');
+      table.classList.add('high-scores-table');
+      
+      // 創建表頭
+      const thead = document.createElement('thead');
+      const headerRow = document.createElement('tr');
+      
+      const rankHeader = document.createElement('th');
+      rankHeader.textContent = '排名';
+      
+      const timeHeader = document.createElement('th');
+      timeHeader.textContent = '時間';
+      
+      const movesHeader = document.createElement('th');
+      movesHeader.textContent = '步數';
+      
+      const cheatHeader = document.createElement('th');
+      cheatHeader.textContent = '作弊';
+      
+      headerRow.appendChild(rankHeader);
+      headerRow.appendChild(timeHeader);
+      headerRow.appendChild(movesHeader);
+      headerRow.appendChild(cheatHeader);
+      thead.appendChild(headerRow);
+      table.appendChild(thead);
+      
+      // 創建表格內容
+      const tbody = document.createElement('tbody');
+      
+      modeScores.forEach((score, index) => {
+        const row = document.createElement('tr');
+        
+        // 排名
+        const rankCell = document.createElement('td');
+        rankCell.textContent = `#${index + 1}`;
+        
+        // 時間
+        const timeCell = document.createElement('td');
+        timeCell.textContent = score.time;
+        
+        // 步數
+        const movesCell = document.createElement('td');
+        movesCell.textContent = score.moves;
+        
+        // 作弊信息
+        const cheatCell = document.createElement('td');
+        if (score.cheatUsed) {
+          cheatCell.textContent = `${score.cheatCount}次`;
+          cheatCell.classList.add('cheat-used');
+        } else {
+          cheatCell.textContent = '無';
+          cheatCell.classList.add('cheat-not-used');
+        }
+        
+        row.appendChild(rankCell);
+        row.appendChild(timeCell);
+        row.appendChild(movesCell);
+        row.appendChild(cheatCell);
+        
+        tbody.appendChild(row);
+      });
+      
+      table.appendChild(tbody);
+      highScoresList.appendChild(table);
     }
-    
-    highScoresList.appendChild(timeScore);
-    highScoresList.appendChild(movesScore);
-    highScoresList.appendChild(cheatInfo);
   }
   
   // 初始化遊戲控制按鈕
@@ -429,6 +495,17 @@ document.addEventListener('DOMContentLoaded', () => {
       renderGameBoard();
       // 播放重置遊戲音效
       soundManager.playGameStartSound();
+      
+      // 重置作弊模式狀態和按鈕顏色
+      cheatMode = false;
+      if (gameInstance) {
+        gameInstance.cheatEnabled = false;
+      }
+      const cheatButton = document.getElementById('cheat-button');
+      if (cheatButton) {
+        cheatButton.classList.remove('active');
+        cheatButton.style.backgroundColor = '#e74c3c'; // 設置為紅色（未啟用狀態）
+      }
     });
     
     document.getElementById('new-game').addEventListener('click', () => {
