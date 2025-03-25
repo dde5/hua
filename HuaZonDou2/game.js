@@ -5,7 +5,7 @@ class PuzzleGame {
     this.mode = mode; // 'number' 或 'image'
     this.imageSource = imageSource;
     this.moves = 0;
-    this.startTime = null;
+    this.startTime = new Date(); // 確保每次創建新遊戲時都重置開始時間
     this.timer = null;
     this.board = [];
     this.emptyPos = { row: size - 1, col: size - 1 };
@@ -14,13 +14,6 @@ class PuzzleGame {
     this.cheatCount = 0; // 作弊次數
     this.cheatTimes = []; // 記錄每次作弊的時間
     this.cheatEnabled = false; // 作弊模式是否啟用
-    
-    // 音效相關
-    this.hittedSound = new Audio('sounds/hitted.mp3');
-    this.cheatingSound = new Audio('sounds/cheating.mp3');
-    this.donePerfectSound = new Audio('sounds/done-perfect.mp3');
-    this.colorChangeSound = new Audio('sounds/color-change.mp3'); // 新增換顏色音效
-    this.gameStartSound = new Audio('sounds/game-start.mp3');     // 新增遊戲開始音效
     
     this.initializeGame();
   }
@@ -51,9 +44,6 @@ class PuzzleGame {
     // 重置遊戲狀態
     this.moves = 0;
     document.getElementById('moves').textContent = '0';
-    
-    // 播放遊戲開始音效
-    this.playSound(this.gameStartSound); // 播放遊戲開始音效
   }
   
   shuffleBoard() {
@@ -106,9 +96,6 @@ class PuzzleGame {
     
     // 更新空白方塊位置
     this.emptyPos = { row, col };
-    
-    // 播放移動音效
-    this.playSound(this.hittedSound);
   }
   
   isSolvable() {
@@ -186,6 +173,9 @@ class PuzzleGame {
       this.moves++;
       document.getElementById('moves').textContent = this.moves;
       
+      // 播放移動音效
+      soundManager.playMoveSound();
+      
       return true;
     }
     return false;
@@ -210,14 +200,6 @@ class PuzzleGame {
         }
       }
     }
-    
-    // 播放過關音效
-    this.playSound(this.donePerfectSound);
-    
-    // 重置作弊模式相關屬性
-    this.cheatCount = 0;
-    this.cheatTimes = [];
-    this.cheatEnabled = false;
     
     return true;
   }
@@ -254,13 +236,13 @@ class PuzzleGame {
     // 重置作弊模式相關屬性
     this.cheatCount = 0;
     this.cheatTimes = [];
-    this.cheatEnabled = false;
+    this.cheatEnabled = false; // 確保作弊模式被禁用
+    
+    // 重新設置開始時間，確保作弊模式時間限制重置
+    this.startTime = new Date();
     
     // 重新開始計時
     this.startTimer();
-    
-    // 播放遊戲開始音效
-    this.playSound(this.gameStartSound); // 播放遊戲開始音效
   }
   
   saveHighScore() {
@@ -374,7 +356,8 @@ class PuzzleGame {
     this.cheatTimes.push(new Date());
     
     // 播放作弊音效
-    this.playSound(this.cheatingSound);
+    soundManager.playCheatSound();
+    
     return true;
   }
   
@@ -442,30 +425,4 @@ class PuzzleGame {
     
     return score;
   }
-  
-  // 播放音效
-  playSound(sound) {
-    if (sound) {
-      sound.currentTime = 0; // 確保每次播放都從頭開始
-      sound.play();
-    }
-  }
-  
-  // 換顏色功能 (假設你需要一個函數來觸發顏色變化)
-  changeBackgroundColor() {
-    // 播放換顏色音效
-    this.playSound(this.colorChangeSound);
-    
-    // 在這裡添加你的換顏色邏輯
-    // 例如，你可以使用 JavaScript 來改變頁面的背景顏色
-    document.body.style.backgroundColor = '#' + Math.floor(Math.random() * 16777215).toString(16);
-  }
 }
-
-// 假設你有一個按鈕點擊時觸發換顏色
-document.getElementById('change-color-button').addEventListener('click', () => {
-  gameInstance.changeBackgroundColor(); // 呼叫換顏色函數
-});
-
-// 在遊戲初始化時創建 PuzzleGame 的實例
-let gameInstance = new PuzzleGame(4, 'number', null); // 4x4, number mode, no image

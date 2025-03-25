@@ -223,13 +223,57 @@ function initImageSearch(searchContainer, onImageSelect) {
       return;
     }
     
+    // 還原Google圖片網址
+    const restoredUrl = 還原圖片網址(imageUrl);
+    
     // 確認是否使用此圖片進入遊戲
     if (confirm('確定要使用此圖片進入遊戲嗎？')) {
-      // 調用選擇回調，將圖片URL傳遞給遊戲
-      onImageSelect(imageUrl);
+      // 調用選擇回調，將還原後的圖片URL傳遞給遊戲
+      onImageSelect(restoredUrl);
       
       // 自動點擊開始遊戲按鈕
       document.getElementById('start-game').click();
     }
   });
+}
+
+/**
+ * 還原Google圖片網址，去除無效資訊
+ * @param {string} url - 原始URL
+ * @returns {string} - 還原後的URL
+ */
+function 還原圖片網址(url) {
+  try {
+    // 處理 Google Images 連結
+    if (url.startsWith("https://www.google.com/imgres")) {
+      const urlParams = new URLSearchParams(new URL(url).search);
+      const imgurl = urlParams.get('imgurl');
+      if (imgurl) {
+        return imgurl;
+      }
+    }
+    // 處理 Google 網址重定向
+    else if (url.startsWith("https://www.google.com/url?sa=i")) {
+      const urlParams = new URLSearchParams(new URL(url).search);
+      const targetUrl = urlParams.get('url');
+      if (targetUrl) {
+        return targetUrl;
+      }
+    }
+    // 處理 iStockphoto 連結
+    else if (url.startsWith("https://www.istockphoto.com")) {
+      const regex = /gm(\d+)-/;
+      const match = url.match(regex);
+      if (match && match[1]) {
+        return url;
+      }
+      return url;
+    }
+    // 如果都不是以上幾種，直接返回原始 URL (不做任何處理)
+    return url;
+  } catch (error) {
+    // 處理 URL 解析錯誤等情況
+    console.error("處理 URL 時發生錯誤:", error);
+    return url; // 返回原始URL，而不是錯誤訊息
+  }
 }

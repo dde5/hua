@@ -140,6 +140,18 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('game-setup').classList.add('hidden');
     document.getElementById('game-board').classList.remove('hidden');
     
+    // 播放遊戲開始音效
+    soundManager.playGameStartSound();
+    
+    // 重置作弊模式相關變數
+    cheatMode = false;
+    firstSelectedBlock = null;
+    
+    // 確保遊戲實例的作弊模式也被禁用
+    if (gameInstance) {
+      gameInstance.cheatEnabled = false;
+    }
+    
     // 確保圖片已經過預處理
     try {
       // 如果是自定義上傳的圖片，它已經在上傳時預處理過了
@@ -298,6 +310,17 @@ document.addEventListener('DOMContentLoaded', () => {
   function gameComplete() {
     gameInstance.stopTimer();
     
+    // 播放勝利音效
+    soundManager.playWinSound();
+    
+    // 關閉作弊模式
+    cheatMode = false;
+    gameInstance.cheatEnabled = false;
+    const cheatButton = document.getElementById('cheat-button');
+    if (cheatButton) {
+      cheatButton.classList.remove('active');
+    }
+    
     document.getElementById('game-board').classList.add('hidden');
     document.getElementById('game-complete').classList.remove('hidden');
     
@@ -327,12 +350,18 @@ document.addEventListener('DOMContentLoaded', () => {
     
     completionStats.appendChild(cheatInfo);
     
-    // 保存高分
+    // 保存高分，確保作弊次數被記錄
     gameInstance.saveHighScore();
     
     // 初始化完成界面按鈕
     document.getElementById('play-again').addEventListener('click', () => {
       document.getElementById('game-complete').classList.add('hidden');
+      // 不需要在這裡設置 startTime，讓 PuzzleGame 構造函數處理
+      // 重置作弊按鈕狀態
+      const cheatButton = document.getElementById('cheat-button');
+      if (cheatButton) {
+        cheatButton.classList.remove('active');
+      }
       startGame(gameInstance.imageSource);
     });
     
@@ -350,6 +379,17 @@ document.addEventListener('DOMContentLoaded', () => {
     selectedImage = null;
     document.querySelectorAll('.selected').forEach(el => el.classList.remove('selected'));
     document.getElementById('image-selection').classList.add('hidden');
+    
+    // 重置作弊模式狀態和按鈕顏色
+    cheatMode = false;
+    if (gameInstance) {
+      gameInstance.cheatEnabled = false;
+    }
+    const cheatButton = document.getElementById('cheat-button');
+    if (cheatButton) {
+      cheatButton.classList.remove('active');
+      cheatButton.style.backgroundColor = '#3498db'; // 恢復原本的藍色
+    }
   }
   
   // 載入最高分
@@ -387,6 +427,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('reset-game').addEventListener('click', () => {
       gameInstance.resetGame();
       renderGameBoard();
+      // 播放重置遊戲音效
+      soundManager.playGameStartSound();
     });
     
     document.getElementById('new-game').addEventListener('click', () => {
@@ -394,6 +436,27 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('game-setup').classList.remove('hidden');
       gameInstance.stopTimer();
       resetGameSettings();
+      // 播放遊戲開始音效
+    });
+    
+    // 添加靜音按鈕功能
+    const muteButton = document.getElementById('mute-button');
+    muteButton.addEventListener('click', () => {
+      const isMuted = soundManager.toggleMute();
+      
+      // 更新按鈕樣式
+      if (isMuted) {
+        muteButton.classList.add('active');
+        muteButton.style.backgroundColor = '#e74c3c'; // 紅色
+      } else {
+        muteButton.classList.remove('active');
+        muteButton.style.backgroundColor = '#3498db'; // 恢復原本的藍色
+      }
+      
+      // 播放音效測試（如果未靜音）
+      if (!isMuted) {
+        soundManager.playGameStartSound();
+      }
     });
     
     // 添加提示按鈕功能
@@ -402,6 +465,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (hintMove) {
         // 高亮提示的方块
         highlightHintBlock(hintMove.row, hintMove.col);
+        // 播放提示音效
+        soundManager.playMoveSound();
       }
     });
     
@@ -467,6 +532,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const nextIndex = (currentIndex + 1) % colors.length;
       // 設置新的顏色
       selectedColor = colors[nextIndex];
+      
+      // 播放換色音效
+      soundManager.playColorChangeSound();
       
       // 更新按鈕樣式
       updateChangeColorButtonStyle(selectedColor);
@@ -551,6 +619,8 @@ document.addEventListener('DOMContentLoaded', () => {
       // 更新提示文字
       if (cheatMode) {
         alert('作弊模式已啟用！點擊任意兩個方塊進行交換。');
+        // 播放作弊音效
+        soundManager.playCheatSound();
       }
     });
     
@@ -567,18 +637,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const col = index % selectedSize;
       
       // 作弊模式處理邏輯
-      if (cheatMode) {
-        // 檢查是否已經過了5分鐘的時間限制
-        const currentTime = new Date();
-        const elapsedTimeInSeconds = Math.floor((currentTime - gameInstance.startTime) / 1000);
-        const timeLimit = 5 * 60; // 5分鐘，單位為秒
-        
-        if (elapsedTimeInSeconds < timeLimit) {
-          const remainingMinutes = Math.floor((timeLimit - elapsedTimeInSeconds) / 60);
-          const remainingSeconds = (timeLimit - elapsedTimeInSeconds) % 60;
-          alert(`作弊模式將在 ${remainingMinutes}分${remainingSeconds}秒 後可用`);
-          return;
-        }
+      if (cheatMode && gameInstance.cheatEnabled) {
         
         // 空白方塊不能被選中
         if (block.classList.contains('empty')) return;
