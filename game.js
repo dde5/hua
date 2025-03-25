@@ -5,7 +5,7 @@ class PuzzleGame {
     this.mode = mode; // 'number' 或 'image'
     this.imageSource = imageSource;
     this.moves = 0;
-    this.startTime = null;
+    this.startTime = new Date(); // 確保每次創建新遊戲時都重置開始時間
     this.timer = null;
     this.board = [];
     this.emptyPos = { row: size - 1, col: size - 1 };
@@ -173,6 +173,9 @@ class PuzzleGame {
       this.moves++;
       document.getElementById('moves').textContent = this.moves;
       
+      // 播放移動音效
+      soundManager.playMoveSound();
+      
       return true;
     }
     return false;
@@ -233,7 +236,10 @@ class PuzzleGame {
     // 重置作弊模式相關屬性
     this.cheatCount = 0;
     this.cheatTimes = [];
-    this.cheatEnabled = false;
+    this.cheatEnabled = false; // 確保作弊模式被禁用
+    
+    // 重新設置開始時間，確保作弊模式時間限制重置
+    this.startTime = new Date();
     
     // 重新開始計時
     this.startTimer();
@@ -250,16 +256,69 @@ class PuzzleGame {
     // 從本地存儲中獲取現有的高分記錄
     const highScores = JSON.parse(localStorage.getItem('puzzleHighScores') || '{}');
     
-    // 如果沒有該模式和尺寸的記錄，或者當前成績更好，則更新記錄
-    if (!highScores[key] || this.isNewHighScore(highScores[key], currentTime, currentMoves)) {
-      // 如果使用了作弊模式，則在記錄中標記
-      highScores[key] = {
-        time: currentTime,
-        moves: currentMoves,
-        cheatUsed: this.cheatCount > 0,
-        cheatCount: this.cheatCount,
-        cheatTimes: this.cheatTimes.map(time => time.toISOString())
-      };
+    // 確保該關卡有記錄陣列
+    if (!highScores[key]) {
+      highScores[key] = [];
+    }
+    
+    // 創建當前成績記錄
+    const currentScore = {
+      time: currentTime,
+      moves: currentMoves,
+      cheatUsed: this.cheatCount > 0,
+      cheatCount: this.cheatCount,
+      cheatTimes: this.cheatTimes.map(time => time.toISOString())
+    };
+    
+    // 檢查是否應該將當前成績添加到記錄中
+    let shouldAdd = false;
+    
+    // 如果記錄少於3個，直接添加
+    if (highScores[key].length < 3) {
+      shouldAdd = true;
+    } else {
+      // 檢查當前成績是否比任何現有記錄更好
+      for (let i = 0; i < highScores[key].length; i++) {
+        if (this.isNewHighScore(highScores[key][i], currentTime, currentMoves)) {
+          shouldAdd = true;
+          break;
+        }
+      }
+    }
+    
+    if (shouldAdd) {
+      // 添加新記錄
+      highScores[key].push(currentScore);
+      
+      // 根據成績排序（無作弊優先，然後是時間，最後是移動次數）
+      highScores[key].sort((a, b) => {
+        // 無作弊記錄優先於有作弊記錄
+        if (a.cheatUsed !== b.cheatUsed) {
+          return a.cheatUsed ? 1 : -1;
+        }
+        
+        // 解析時間字符串為秒數
+        const parseTimeToSeconds = (timeStr) => {
+          const [minutes, seconds] = timeStr.split(':').map(Number);
+          return minutes * 60 + seconds;
+        };
+        
+        const aTimeSeconds = parseTimeToSeconds(a.time);
+        const bTimeSeconds = parseTimeToSeconds(b.time);
+        
+        // 時間相同則比較移動次數
+        if (aTimeSeconds === bTimeSeconds) {
+          return a.moves - b.moves;
+        }
+        
+        // 時間較短的排前面
+        return aTimeSeconds - bTimeSeconds;
+      });
+      
+      // 只保留前三名
+      if (highScores[key].length > 3) {
+        highScores[key] = highScores[key].slice(0, 3);
+      }
       
       // 保存到本地存儲
       localStorage.setItem('puzzleHighScores', JSON.stringify(highScores));
@@ -348,6 +407,9 @@ class PuzzleGame {
     // 記錄作弊使用信息
     this.cheatCount++;
     this.cheatTimes.push(new Date());
+    
+    // 播放作弊音效
+    soundManager.playCheatSound();
     
     return true;
   }
