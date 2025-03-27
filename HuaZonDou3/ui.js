@@ -189,8 +189,6 @@ document.addEventListener('DOMContentLoaded', () => {
           console.log('處理網絡圖片');
           // 處理從Google搜圖獲取的網絡圖片
           try {
-            // 清除可能存在的舊緩存，確保每次都獲取新圖片
-            clearImageCache(imageSource, selectedSize);
             // 預處理網絡圖片
             imageSource = await preprocessImage(imageSource, selectedSize);
           } catch (error) {
@@ -438,12 +436,11 @@ document.addEventListener('DOMContentLoaded', () => {
         // 嘗試從URL中提取文件名
         const urlParts = selectedImage.split('/');
         const fileName = urlParts[urlParts.length - 1].split('.')[0];
-        // 如果能提取到文件名，使用它，否則使用通用名稱
-        // 使用完整檔名作為識別符，確保不同URL的圖片有不同的識別符
-        imageName = fileName || 'custom';
+        // 使用URL的最后部分作為唯一識別符
+        imageName = 'net_' + (fileName || new Date().getTime());
       } else {
-        // 如果是自定義上傳圖片，使用通用名稱
-        imageName = 'custom';
+        // 如果是自定義上傳圖片，使用時間戳作為唯一識別符
+        imageName = 'custom_' + new Date().getTime();
       }
     }
     
@@ -532,20 +529,21 @@ document.addEventListener('DOMContentLoaded', () => {
           levelText = '數字模式';
         } else {
           // 從圖片路徑中提取圖片名稱
-          let displayImageName = 'custom';
+          let displayImageName = '自定義圖片';
           if (selectedImage) {
             const match = selectedImage.match(/images\/([^.]+)\./i);
             if (match && match[1]) {
-              // 取圖片檔名的前10個字母，如果不足10個則取全部
-              // 使用完整檔名作為顯示名稱，確保不同圖片有不同的顯示名稱
-          displayImageName = match[1];
+              // 使用完整檔名作為顯示名稱
+              displayImageName = match[1];
             } else if (selectedImage.startsWith('http')) {
               // 嘗試從URL中提取文件名
               const urlParts = selectedImage.split('/');
               const fileName = urlParts[urlParts.length - 1].split('.')[0];
-              // 如果能提取到文件名，使用它的前10個字母，否則使用通用名稱
-              // 使用完整檔名作為顯示名稱，確保不同URL的圖片有不同的顯示名稱
-              displayImageName = fileName || 'custom';
+              // 使用網絡圖片前綴和文件名
+              displayImageName = '網絡圖片-' + (fileName || '未命名');
+            } else {
+              // 自定義上傳圖片
+              displayImageName = '自定義圖片';
             }
           }
           levelText = `圖片-${displayImageName}`;

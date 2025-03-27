@@ -255,18 +255,17 @@ class PuzzleGame {
       // 從圖片路徑中提取圖片名稱
       const match = this.imageSource.match(/images\/([^.]+)\./i);
       if (match && match[1]) {
-        // 取圖片檔名的前10個字母，如果不足10個則取全部
-        imageName = match[1].substring(0, 10);
+        // 使用完整檔名作為識別符
+        imageName = match[1];
       } else if (this.imageSource.startsWith('http')) {
         // 嘗試從URL中提取文件名
         const urlParts = this.imageSource.split('/');
         const fileName = urlParts[urlParts.length - 1].split('.')[0];
-        // 如果能提取到文件名，使用它的前10個字母，否則使用通用名稱
-        // 使用完整檔名作為識別符，確保不同URL的圖片有不同的識別符
-        imageName = fileName || 'custom';
+        // 使用URL的最后部分作為唯一識別符
+        imageName = 'net_' + (fileName || new Date().getTime());
       } else {
-        // 如果是自定義上傳圖片，使用通用名稱
-        imageName = 'custom';
+        // 如果是自定義上傳圖片，使用時間戳作為唯一識別符
+        imageName = 'custom_' + new Date().getTime();
       }
     }
     
