@@ -255,7 +255,8 @@ class PuzzleGame {
       // 從圖片路徑中提取圖片名稱
       const match = this.imageSource.match(/images\/([^.]+)\./i);
       if (match && match[1]) {
-        imageName = match[1];
+        // 取圖片檔名的前10個字母，如果不足10個則取全部
+        imageName = match[1].substring(0, 10);
       } else {
         // 如果是自定義上傳或網絡圖片，使用通用名稱
         imageName = 'custom';

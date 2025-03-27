@@ -454,10 +454,11 @@ document.addEventListener('DOMContentLoaded', () => {
       if (selectedImage) {
         const match = selectedImage.match(/images\/([^.]+)\./i);
         if (match && match[1]) {
-          displayImageName = match[1];
+          // 取圖片檔名的前10個字母，如果不足10個則取全部
+          displayImageName = match[1].substring(0, 10);
         }
       }
-      titleText = `圖片 ${displayImageName} ${selectedSize}×${selectedSize} 前三名記錄`;
+      titleText = `圖片-${displayImageName} ${selectedSize}×${selectedSize} 前三名記錄`;
     }
     
     title.textContent = titleText;
@@ -525,10 +526,11 @@ document.addEventListener('DOMContentLoaded', () => {
           if (selectedImage) {
             const match = selectedImage.match(/images\/([^.]+)\./i);
             if (match && match[1]) {
-              displayImageName = match[1];
+              // 取圖片檔名的前10個字母，如果不足10個則取全部
+              displayImageName = match[1].substring(0, 10);
             }
           }
-          levelText = `圖片 ${displayImageName}`;
+          levelText = `圖片-${displayImageName}`;
         }
         levelCell.textContent = levelText;
         row.appendChild(levelCell);
