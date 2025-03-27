@@ -241,13 +241,36 @@ class PuzzleGame {
     // 重新設置開始時間，確保作弊模式時間限制重置
     this.startTime = new Date();
     
+    // 重置計時器顯示
+    document.getElementById('time').textContent = '00:00';
+    
     // 重新開始計時
     this.startTimer();
   }
   
   saveHighScore() {
-    // 獲取當前遊戲模式和尺寸的鍵
-    const key = `${this.mode}-${this.size}`;
+    // 獲取當前遊戲模式、圖片和尺寸的鍵
+    let imageName = '';
+    if (this.mode === 'image' && this.imageSource) {
+      // 從圖片路徑中提取圖片名稱
+      const match = this.imageSource.match(/images\/([^.]+)\./i);
+      if (match && match[1]) {
+        // 取圖片檔名的前10個字母，如果不足10個則取全部
+        imageName = match[1].substring(0, 10);
+      } else if (this.imageSource.startsWith('http')) {
+        // 嘗試從URL中提取文件名
+        const urlParts = this.imageSource.split('/');
+        const fileName = urlParts[urlParts.length - 1].split('.')[0];
+        // 如果能提取到文件名，使用它的前10個字母，否則使用通用名稱
+        // 使用完整檔名作為識別符，確保不同URL的圖片有不同的識別符
+        imageName = fileName || 'custom';
+      } else {
+        // 如果是自定義上傳圖片，使用通用名稱
+        imageName = 'custom';
+      }
+    }
+    
+    const key = `${this.mode}-${imageName}-${this.size}`;
     
     // 獲取當前時間和移動次數
     const currentTime = this.timerElement.textContent;
@@ -256,16 +279,74 @@ class PuzzleGame {
     // 從本地存儲中獲取現有的高分記錄
     const highScores = JSON.parse(localStorage.getItem('puzzleHighScores') || '{}');
     
-    // 如果沒有該模式和尺寸的記錄，或者當前成績更好，則更新記錄
-    if (!highScores[key] || this.isNewHighScore(highScores[key], currentTime, currentMoves)) {
-      // 如果使用了作弊模式，則在記錄中標記
-      highScores[key] = {
-        time: currentTime,
-        moves: currentMoves,
-        cheatUsed: this.cheatCount > 0,
-        cheatCount: this.cheatCount,
-        cheatTimes: this.cheatTimes.map(time => time.toISOString())
-      };
+    // 確保該關卡有記錄陣列
+    if (!highScores[key]) {
+      highScores[key] = [];
+    }
+    
+    // 確保記錄是陣列類型
+    if (!Array.isArray(highScores[key])) {
+      highScores[key] = [];
+    }
+    
+    // 創建當前成績記錄
+    const currentScore = {
+      time: currentTime,
+      moves: currentMoves,
+      cheatUsed: this.cheatCount > 0,
+      cheatCount: this.cheatCount,
+      cheatTimes: this.cheatTimes.map(time => time.toISOString())
+    };
+    
+    // 檢查是否應該將當前成績添加到記錄中
+    let shouldAdd = false;
+    
+    // 如果記錄少於3個，直接添加
+    if (highScores[key].length < 3) {
+      shouldAdd = true;
+    } else {
+      // 檢查當前成績是否比任何現有記錄更好
+      for (let i = 0; i < highScores[key].length; i++) {
+        if (this.isNewHighScore(highScores[key][i], currentTime, currentMoves)) {
+          shouldAdd = true;
+          break;
+        }
+      }
+    }
+    
+    if (shouldAdd) {
+      // 添加新記錄
+      highScores[key].push(currentScore);
+      
+      // 根據成績排序（無作弊優先，然後是時間，最後是移動次數）
+      highScores[key].sort((a, b) => {
+        // 無作弊記錄優先於有作弊記錄
+        if (a.cheatUsed !== b.cheatUsed) {
+          return a.cheatUsed ? 1 : -1;
+        }
+        
+        // 解析時間字符串為秒數
+        const parseTimeToSeconds = (timeStr) => {
+          const [minutes, seconds] = timeStr.split(':').map(Number);
+          return minutes * 60 + seconds;
+        };
+        
+        const aTimeSeconds = parseTimeToSeconds(a.time);
+        const bTimeSeconds = parseTimeToSeconds(b.time);
+        
+        // 時間相同則比較移動次數
+        if (aTimeSeconds === bTimeSeconds) {
+          return a.moves - b.moves;
+        }
+        
+        // 時間較短的排前面
+        return aTimeSeconds - bTimeSeconds;
+      });
+      
+      // 只保留前三名
+      if (highScores[key].length > 3) {
+        highScores[key] = highScores[key].slice(0, 3);
+      }
       
       // 保存到本地存儲
       localStorage.setItem('puzzleHighScores', JSON.stringify(highScores));

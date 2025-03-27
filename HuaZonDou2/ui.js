@@ -152,28 +152,41 @@ document.addEventListener('DOMContentLoaded', () => {
       gameInstance.cheatEnabled = false;
     }
     
+    // 確保作弊按鈕顯示為未啟用狀態（紅色）
+    const cheatButton = document.getElementById('cheat-button');
+    if (cheatButton) {
+      cheatButton.classList.remove('active');
+      cheatButton.style.backgroundColor = '#e74c3c';
+    }
+    
     // 確保圖片已經過預處理
     try {
       // 如果是自定義上傳的圖片，它已經在上傳時預處理過了
       // 如果是預設圖片，確保使用處理後的版本
       if (selectedMode === 'image' && imageSource) {
+        console.log('處理圖片模式，圖片來源:', imageSource.substring(0, 50) + '...');
+        
         // 查找是否是預設圖片中的一個
         const isPreset = presetImages.some(img => img.src === imageSource);
         
         if (isPreset) {
+          console.log('使用預設圖片');
           // 找到對應的處理後的圖片
           const processedImage = processedPresetImages.find(img => {
-            const originalSrc = presetImages.find(original => original.name === img.name)?.src;
-            return originalSrc === imageSource;
+            const originalImage = presetImages.find(original => original.name === img.name);
+            return originalImage && originalImage.src === imageSource;
           });
           
           if (processedImage) {
+            console.log('找到預處理過的圖片');
             imageSource = processedImage.src;
           } else {
+            console.log('未找到預處理過的圖片，重新處理');
             // 如果找不到處理後的圖片，重新處理一次
             imageSource = await preprocessImage(imageSource, selectedSize);
           }
         } else if (imageSource.startsWith('http')) {
+          console.log('處理網絡圖片');
           // 處理從Google搜圖獲取的網絡圖片
           try {
             // 預處理網絡圖片
@@ -186,9 +199,22 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('game-setup').classList.remove('hidden');
             return;
           }
+        } else {
+          console.log('處理自定義或其他類型圖片');
+          // 確保所有非預設、非網絡圖片都經過處理
+          try {
+            imageSource = await preprocessImage(imageSource, selectedSize);
+          } catch (error) {
+            console.error('處理圖片失敗:', error);
+            alert('圖片處理失敗，請嘗試其他圖片');
+            document.getElementById('game-board').classList.add('hidden');
+            document.getElementById('game-setup').classList.remove('hidden');
+            return;
+          }
         }
       }
       
+      console.log('創建遊戲實例，模式:', selectedMode, '尺寸:', selectedSize);
       gameInstance = new PuzzleGame(selectedSize, selectedMode, imageSource);
       renderGameBoard();
       gameInstance.startTimer();
@@ -388,7 +414,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const cheatButton = document.getElementById('cheat-button');
     if (cheatButton) {
       cheatButton.classList.remove('active');
-      cheatButton.style.backgroundColor = '#3498db'; // 恢復原本的藍色
+      cheatButton.style.backgroundColor = '#e74c3c'; // 設置為紅色（未啟用狀態）
     }
   }
   
@@ -398,28 +424,171 @@ document.addEventListener('DOMContentLoaded', () => {
     highScoresList.innerHTML = '';
     
     const scores = JSON.parse(localStorage.getItem('puzzleHighScores') || '{}');
-    const key = `${selectedMode}-${selectedSize}`;
-    const modeScores = scores[key] || { time: '無記錄', moves: '無記錄', cheatUsed: false, cheatCount: 0 };
     
-    const timeScore = document.createElement('div');
-    timeScore.innerHTML = `<strong>最短時間:</strong> ${modeScores.time}`;
-    
-    const movesScore = document.createElement('div');
-    movesScore.innerHTML = `<strong>最少步數:</strong> ${modeScores.moves}`;
-    
-    // 添加作弊模式使用信息
-    const cheatInfo = document.createElement('div');
-    if (modeScores.cheatUsed) {
-      cheatInfo.innerHTML = `<strong>作弊模式:</strong> 使用了 ${modeScores.cheatCount} 次`;
-      cheatInfo.classList.add('cheat-used');
-    } else {
-      cheatInfo.innerHTML = `<strong>作弊模式:</strong> 未使用`;
-      cheatInfo.classList.add('cheat-not-used');
+    // 獲取當前圖片名稱
+    let imageName = '';
+    if (selectedMode === 'image' && selectedImage) {
+      // 從圖片路徑中提取圖片名稱
+      const match = selectedImage.match(/images\/([^.]+)\./i);
+      if (match && match[1]) {
+        imageName = match[1];
+      } else if (selectedImage.startsWith('http')) {
+        // 嘗試從URL中提取文件名
+        const urlParts = selectedImage.split('/');
+        const fileName = urlParts[urlParts.length - 1].split('.')[0];
+        // 如果能提取到文件名，使用它，否則使用通用名稱
+        // 使用完整檔名作為識別符，確保不同URL的圖片有不同的識別符
+        imageName = fileName || 'custom';
+      } else {
+        // 如果是自定義上傳圖片，使用通用名稱
+        imageName = 'custom';
+      }
     }
     
-    highScoresList.appendChild(timeScore);
-    highScoresList.appendChild(movesScore);
-    highScoresList.appendChild(cheatInfo);
+    const key = `${selectedMode}-${imageName}-${selectedSize}`;
+    // 確保modeScores一定是陣列
+    const modeScores = Array.isArray(scores[key]) ? scores[key] : [];
+    
+    // 創建標題
+    const title = document.createElement('h4');
+    let titleText = '';
+    
+    if (selectedMode === 'number') {
+      titleText = `數字模式 ${selectedSize}×${selectedSize} 前三名記錄`;
+    } else {
+      // 從圖片路徑中提取圖片名稱
+      let displayImageName = 'custom';
+      if (selectedImage) {
+        const match = selectedImage.match(/images\/([^.]+)\./i);
+        if (match && match[1]) {
+          // 取圖片檔名的前10個字母，如果不足10個則取全部
+          // 使用完整檔名作為顯示名稱，確保不同圖片有不同的顯示名稱
+          displayImageName = match[1];
+        }
+      }
+      titleText = `圖片-${displayImageName} ${selectedSize}×${selectedSize} 前三名記錄`;
+    }
+    
+    title.textContent = titleText;
+    highScoresList.appendChild(title);
+    
+    if (modeScores.length === 0) {
+      // 如果沒有記錄
+      const noRecord = document.createElement('div');
+      noRecord.textContent = '暫無記錄';
+      noRecord.classList.add('no-record');
+      highScoresList.appendChild(noRecord);
+    } else {
+      // 創建記錄表格
+      const table = document.createElement('table');
+      table.classList.add('high-scores-table');
+      
+      // 創建表頭
+      const thead = document.createElement('thead');
+      const headerRow = document.createElement('tr');
+      
+      // 添加關卡列
+      const levelHeader = document.createElement('th');
+      levelHeader.textContent = '關卡';
+      headerRow.appendChild(levelHeader);
+      
+      // 添加難度列
+      const difficultyHeader = document.createElement('th');
+      difficultyHeader.textContent = '難度';
+      headerRow.appendChild(difficultyHeader);
+      
+      const rankHeader = document.createElement('th');
+      rankHeader.textContent = '排名';
+      
+      const timeHeader = document.createElement('th');
+      timeHeader.textContent = '時間';
+      
+      const movesHeader = document.createElement('th');
+      movesHeader.textContent = '步數';
+      
+      const cheatHeader = document.createElement('th');
+      cheatHeader.textContent = '作弊';
+      
+      headerRow.appendChild(rankHeader);
+      headerRow.appendChild(timeHeader);
+      headerRow.appendChild(movesHeader);
+      headerRow.appendChild(cheatHeader);
+      thead.appendChild(headerRow);
+      table.appendChild(thead);
+      
+      // 創建表格內容
+      const tbody = document.createElement('tbody');
+      
+      modeScores.forEach((score, index) => {
+        const row = document.createElement('tr');
+        
+        // 關卡信息
+        const levelCell = document.createElement('td');
+        let levelText = '';
+        
+        if (selectedMode === 'number') {
+          levelText = '數字模式';
+        } else {
+          // 從圖片路徑中提取圖片名稱
+          let displayImageName = 'custom';
+          if (selectedImage) {
+            const match = selectedImage.match(/images\/([^.]+)\./i);
+            if (match && match[1]) {
+              // 取圖片檔名的前10個字母，如果不足10個則取全部
+              // 使用完整檔名作為顯示名稱，確保不同圖片有不同的顯示名稱
+          displayImageName = match[1];
+            } else if (selectedImage.startsWith('http')) {
+              // 嘗試從URL中提取文件名
+              const urlParts = selectedImage.split('/');
+              const fileName = urlParts[urlParts.length - 1].split('.')[0];
+              // 如果能提取到文件名，使用它的前10個字母，否則使用通用名稱
+              // 使用完整檔名作為顯示名稱，確保不同URL的圖片有不同的顯示名稱
+              displayImageName = fileName || 'custom';
+            }
+          }
+          levelText = `圖片-${displayImageName}`;
+        }
+        levelCell.textContent = levelText;
+        row.appendChild(levelCell);
+        
+        // 難度信息
+        const difficultyCell = document.createElement('td');
+        difficultyCell.textContent = `${selectedSize}×${selectedSize}`;
+        row.appendChild(difficultyCell);
+        
+        // 排名
+        const rankCell = document.createElement('td');
+        rankCell.textContent = `#${index + 1}`;
+        
+        // 時間
+        const timeCell = document.createElement('td');
+        timeCell.textContent = score.time;
+        
+        // 步數
+        const movesCell = document.createElement('td');
+        movesCell.textContent = score.moves;
+        
+        // 作弊信息
+        const cheatCell = document.createElement('td');
+        if (score.cheatUsed) {
+          cheatCell.textContent = `${score.cheatCount}次`;
+          cheatCell.classList.add('cheat-used');
+        } else {
+          cheatCell.textContent = '無';
+          cheatCell.classList.add('cheat-not-used');
+        }
+        
+        row.appendChild(rankCell);
+        row.appendChild(timeCell);
+        row.appendChild(movesCell);
+        row.appendChild(cheatCell);
+        
+        tbody.appendChild(row);
+      });
+      
+      table.appendChild(tbody);
+      highScoresList.appendChild(table);
+    }
   }
   
   // 初始化遊戲控制按鈕
@@ -429,6 +598,17 @@ document.addEventListener('DOMContentLoaded', () => {
       renderGameBoard();
       // 播放重置遊戲音效
       soundManager.playGameStartSound();
+      
+      // 重置作弊模式狀態和按鈕顏色
+      cheatMode = false;
+      if (gameInstance) {
+        gameInstance.cheatEnabled = false;
+      }
+      const cheatButton = document.getElementById('cheat-button');
+      if (cheatButton) {
+        cheatButton.classList.remove('active');
+        cheatButton.style.backgroundColor = '#e74c3c'; // 設置為紅色（未啟用狀態）
+      }
     });
     
     document.getElementById('new-game').addEventListener('click', () => {

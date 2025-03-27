@@ -698,6 +698,41 @@ button.selected {
 
 .cheat-not-used {
   color: #4caf50;
+}
+
+/* 高分表格樣式 */
+.high-scores-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+  font-size: 0.9em;
+}
+
+.high-scores-table th,
+.high-scores-table td {
+  padding: 6px;
+  text-align: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.high-scores-table th {
+  background-color: rgba(0, 0, 0, 0.2);
+  font-weight: bold;
+}
+
+.high-scores-table tr:nth-child(even) {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.high-scores-table tr:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.no-record {
+  font-style: italic;
+  color: #95a5a6;
+  text-align: center;
+  margin-top: 10px;
   font-weight: bold;
 }
 
