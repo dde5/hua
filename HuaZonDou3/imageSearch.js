@@ -39,11 +39,52 @@ function openGoogleImageSearch(query) {
 function useMockData(query) {
   console.log('使用預設圖片');
   // 獲取當前頁面的基礎URL，確保圖片路徑是絕對路徑
-  const baseUrl = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
-  console.log('基礎URL:', baseUrl);
+  let baseUrl = '';
   
-  // 使用實際存在的預設圖片作為模擬數據，使用絕對路徑
-  return [
+  // 檢查是否為file://協議
+  if (window.location.protocol === 'file:') {
+    // 對於本地文件，直接使用相對路徑
+    baseUrl = '';
+    console.log('檢測到本地文件協議，使用相對路徑');
+  } else {
+    // 對於http/https協議，使用完整的基礎URL
+    baseUrl = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
+    console.log('基礎URL:', baseUrl);
+  }
+  
+  // 嘗試使用搜索關鍵詞獲取相關圖片
+  // 這裡可以添加實際的圖片搜索API調用，但由於限制，我們仍使用預設圖片
+  // 但根據關鍵詞選擇不同類別的圖片
+  
+  // 根據關鍵詞選擇不同類別的圖片
+  let selectedImages = [];
+  const query_lower = query.toLowerCase();
+  
+  if (query_lower.includes('風景') || query_lower.includes('自然') || query_lower.includes('landscape')) {
+    selectedImages = ['E1', 'E2', 'E3', 'E4', 'E5', 'E6'];
+  } else if (query_lower.includes('動物') || query_lower.includes('animal')) {
+    selectedImages = ['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8'];
+  } else if (query_lower.includes('人物') || query_lower.includes('人像') || query_lower.includes('portrait')) {
+    selectedImages = ['H1', 'H2', 'H3', 'H4', 'H5', 'H6'];
+  } else if (query_lower.includes('藝術') || query_lower.includes('art')) {
+    selectedImages = ['M1', 'M2', 'M3', 'M4', 'M5'];
+  } else {
+    // 如果沒有匹配的關鍵詞，隨機選擇8張圖片
+    const allImages = ['C1', 'C2', 'E1', 'E2', 'M1', 'M2', 'H1', 'H2'];
+    selectedImages = allImages;
+  }
+  
+  // 將選擇的圖片轉換為結果格式
+  const results = selectedImages.map(img => ({
+    id: img,
+    urls: {
+      regular: baseUrl + 'images/' + img + '.jpg',
+      small: baseUrl + 'images/' + img + '.jpg'
+    },
+    alt_description: `${query} 相關圖片 - ${img}`
+  }));
+  
+  return results.length > 0 ? results : [
     {
       id: 'C1',
       urls: {
@@ -155,7 +196,10 @@ function displaySearchResults(images, container, onSelect) {
 function checkImageLoadable(url) {
   return new Promise((resolve) => {
     const img = new Image();
-    img.crossOrigin = 'Anonymous';
+    // 只對網路圖片設置crossOrigin，避免本地圖片的SecurityError
+    if (url.startsWith('http')) {
+      img.crossOrigin = 'Anonymous';
+    }
     
     // 設置載入超時
     const timeoutId = setTimeout(() => {

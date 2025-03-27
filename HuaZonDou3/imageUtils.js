@@ -17,8 +17,11 @@ function preprocessImage(imageSource, size) {
     console.log('preprocessImage: 開始處理圖片，尺寸:', size);
     
     const img = new Image();
-    // 對所有圖片都設置crossOrigin，避免CORS問題
-    img.crossOrigin = 'Anonymous';
+    // 只對網路圖片設置crossOrigin，避免CORS問題
+    // 對於file://協議的圖片，不設置crossOrigin
+    if (imageSource.startsWith('http')) {
+      img.crossOrigin = 'Anonymous';
+    }
     
     // 設置載入超時
     const timeoutId = setTimeout(() => {
@@ -57,10 +60,20 @@ function preprocessImage(imageSource, size) {
         ctx.drawImage(img, offsetX, offsetY, img.width, img.height);
         
         // 返回處理後的圖片DataURL
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
-        console.log('preprocessImage: 圖片處理成功');
-        
-        resolve(dataUrl);
+        try {
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+          console.log('preprocessImage: 圖片處理成功');
+          resolve(dataUrl);
+        } catch (error) {
+          // 如果是SecurityError（通常是由於本地文件URL造成的），直接返回原始圖片
+          if (error.name === 'SecurityError') {
+            console.warn('preprocessImage: 無法處理本地圖片，直接使用原始圖片');
+            resolve(imageSource);
+          } else {
+            console.error('preprocessImage: toDataURL失敗', error);
+            reject(error);
+          }
+        }
       } catch (error) {
         console.error('preprocessImage: 處理圖片時發生錯誤', error);
         reject(error);

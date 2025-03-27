@@ -263,8 +263,11 @@ class PuzzleGame {
         const fileName = urlParts[urlParts.length - 1].split('.')[0];
         // 使用URL的最后部分作為唯一識別符
         imageName = 'net_' + (fileName || new Date().getTime());
+      } else if (this.imageSource.startsWith('data:')) {
+        // 如果是自定義上傳圖片（Data URL格式），使用固定前綴加時間戳
+        imageName = 'custom_' + new Date().getTime();
       } else {
-        // 如果是自定義上傳圖片，使用時間戳作為唯一識別符
+        // 其他情況，使用時間戳作為唯一識別符
         imageName = 'custom_' + new Date().getTime();
       }
     }
