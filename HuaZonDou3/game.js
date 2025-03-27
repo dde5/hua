@@ -257,8 +257,14 @@ class PuzzleGame {
       if (match && match[1]) {
         // 取圖片檔名的前10個字母，如果不足10個則取全部
         imageName = match[1].substring(0, 10);
+      } else if (this.imageSource.startsWith('http')) {
+        // 嘗試從URL中提取文件名
+        const urlParts = this.imageSource.split('/');
+        const fileName = urlParts[urlParts.length - 1].split('.')[0];
+        // 如果能提取到文件名，使用它的前10個字母，否則使用通用名稱
+        imageName = fileName ? fileName.substring(0, 10) : 'custom';
       } else {
-        // 如果是自定義上傳或網絡圖片，使用通用名稱
+        // 如果是自定義上傳圖片，使用通用名稱
         imageName = 'custom';
       }
     }

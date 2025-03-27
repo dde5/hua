@@ -432,8 +432,14 @@ document.addEventListener('DOMContentLoaded', () => {
       const match = selectedImage.match(/images\/([^.]+)\./i);
       if (match && match[1]) {
         imageName = match[1];
+      } else if (selectedImage.startsWith('http')) {
+        // 嘗試從URL中提取文件名
+        const urlParts = selectedImage.split('/');
+        const fileName = urlParts[urlParts.length - 1].split('.')[0];
+        // 如果能提取到文件名，使用它，否則使用通用名稱
+        imageName = fileName || 'custom';
       } else {
-        // 如果是自定義上傳或網絡圖片，使用通用名稱
+        // 如果是自定義上傳圖片，使用通用名稱
         imageName = 'custom';
       }
     }
@@ -528,6 +534,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (match && match[1]) {
               // 取圖片檔名的前10個字母，如果不足10個則取全部
               displayImageName = match[1].substring(0, 10);
+            } else if (selectedImage.startsWith('http')) {
+              // 嘗試從URL中提取文件名
+              const urlParts = selectedImage.split('/');
+              const fileName = urlParts[urlParts.length - 1].split('.')[0];
+              // 如果能提取到文件名，使用它的前10個字母，否則使用通用名稱
+              displayImageName = fileName ? fileName.substring(0, 10) : 'custom';
             }
           }
           levelText = `圖片-${displayImageName}`;
