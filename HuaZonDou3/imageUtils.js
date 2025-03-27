@@ -1,6 +1,64 @@
 // 圖片處理工具函數
 
 /**
+ * 從緩存中獲取處理過的圖片
+ * @param {string} imageSource - 圖片源（URL或DataURL）
+ * @param {number} size - 遊戲尺寸（幾乘幾的網格）
+ * @returns {string|null} - 緩存的圖片DataURL或null（如果沒有緩存）
+ */
+function getImageFromCache(imageSource, size) {
+  try {
+    // 創建一個唯一的緩存鍵，結合圖片源和尺寸
+    // 對於URL，我們使用URL本身作為鍵的一部分
+    // 對於DataURL，我們使用其哈希值（前50個字符）作為鍵的一部分
+    let cacheKey;
+    if (imageSource.startsWith('data:')) {
+      // 對於DataURL，使用前50個字符作為標識符
+      cacheKey = `img_cache_${imageSource.substring(0, 50)}_${size}`;
+    } else {
+      // 對於URL，使用完整URL
+      cacheKey = `img_cache_${imageSource}_${size}`;
+    }
+    
+    // 從localStorage獲取緩存的圖片
+    const cachedImage = localStorage.getItem(cacheKey);
+    if (cachedImage) {
+      console.log('從緩存中獲取圖片成功');
+      return cachedImage;
+    }
+    return null;
+  } catch (error) {
+    console.error('獲取圖片緩存失敗:', error);
+    return null;
+  }
+}
+
+/**
+ * 將處理過的圖片保存到緩存
+ * @param {string} imageSource - 圖片源（URL或DataURL）
+ * @param {number} size - 遊戲尺寸（幾乘幾的網格）
+ * @param {string} processedImage - 處理後的圖片DataURL
+ */
+function saveImageToCache(imageSource, size, processedImage) {
+  try {
+    // 創建與getImageFromCache相同的緩存鍵
+    let cacheKey;
+    if (imageSource.startsWith('data:')) {
+      cacheKey = `img_cache_${imageSource.substring(0, 50)}_${size}`;
+    } else {
+      cacheKey = `img_cache_${imageSource}_${size}`;
+    }
+    
+    // 保存到localStorage
+    localStorage.setItem(cacheKey, processedImage);
+    console.log('圖片已保存到緩存');
+  } catch (error) {
+    console.error('保存圖片到緩存失敗:', error);
+    // 緩存失敗不影響主要功能，只是記錄錯誤
+  }
+}
+
+/**
  * 預處理圖片，確保圖片是正方形且尺寸適合切割
  * @param {string} imageSource - 圖片源（URL或DataURL）
  * @param {number} size - 遊戲尺寸（幾乘幾的網格）
@@ -11,6 +69,14 @@ function preprocessImage(imageSource, size) {
     if (!imageSource) {
       console.error('preprocessImage: 圖片源為空');
       reject(new Error('圖片源為空'));
+      return;
+    }
+    
+    // 首先嘗試從緩存中獲取圖片
+    const cachedImage = getImageFromCache(imageSource, size);
+    if (cachedImage) {
+      console.log('preprocessImage: 使用緩存的圖片');
+      resolve(cachedImage);
       return;
     }
     
@@ -59,6 +125,10 @@ function preprocessImage(imageSource, size) {
         // 返回處理後的圖片DataURL
         const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
         console.log('preprocessImage: 圖片處理成功');
+        
+        // 將處理後的圖片保存到緩存
+        saveImageToCache(imageSource, size, dataUrl);
+        
         resolve(dataUrl);
       } catch (error) {
         console.error('preprocessImage: 處理圖片時發生錯誤', error);
