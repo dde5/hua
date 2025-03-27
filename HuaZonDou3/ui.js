@@ -189,6 +189,8 @@ document.addEventListener('DOMContentLoaded', () => {
           console.log('處理網絡圖片');
           // 處理從Google搜圖獲取的網絡圖片
           try {
+            // 清除可能存在的舊緩存，確保每次都獲取新圖片
+            clearImageCache(imageSource, selectedSize);
             // 預處理網絡圖片
             imageSource = await preprocessImage(imageSource, selectedSize);
           } catch (error) {

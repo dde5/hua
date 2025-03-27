@@ -9,15 +9,16 @@
 function getImageFromCache(imageSource, size) {
   try {
     // 創建一個唯一的緩存鍵，結合圖片源和尺寸
-    // 對於URL，我們使用URL本身作為鍵的一部分
+    // 對於URL，我們使用URL的哈希值作為鍵的一部分
     // 對於DataURL，我們使用其哈希值（前50個字符）作為鍵的一部分
     let cacheKey;
     if (imageSource.startsWith('data:')) {
       // 對於DataURL，使用前50個字符作為標識符
       cacheKey = `img_cache_${imageSource.substring(0, 50)}_${size}`;
     } else {
-      // 對於URL，使用完整URL
-      cacheKey = `img_cache_${imageSource}_${size}`;
+      // 對於URL，使用URL的哈希值（使用簡單的字符串哈希函數）
+      const urlHash = simpleHash(imageSource);
+      cacheKey = `img_cache_url_${urlHash}_${size}`;
     }
     
     // 從localStorage獲取緩存的圖片
@@ -39,6 +40,24 @@ function getImageFromCache(imageSource, size) {
  * @param {number} size - 遊戲尺寸（幾乘幾的網格）
  * @param {string} processedImage - 處理後的圖片DataURL
  */
+/**
+ * 簡單的字符串哈希函數，用於生成URL的唯一標識符
+ * @param {string} str - 要哈希的字符串
+ * @returns {string} - 哈希值
+ */
+function simpleHash(str) {
+  let hash = 0;
+  if (str.length === 0) return hash.toString();
+  
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // 轉換為32位整數
+  }
+  
+  return Math.abs(hash).toString();
+}
+
 function saveImageToCache(imageSource, size, processedImage) {
   try {
     // 創建與getImageFromCache相同的緩存鍵
@@ -46,7 +65,8 @@ function saveImageToCache(imageSource, size, processedImage) {
     if (imageSource.startsWith('data:')) {
       cacheKey = `img_cache_${imageSource.substring(0, 50)}_${size}`;
     } else {
-      cacheKey = `img_cache_${imageSource}_${size}`;
+      const urlHash = simpleHash(imageSource);
+      cacheKey = `img_cache_url_${urlHash}_${size}`;
     }
     
     // 保存到localStorage
@@ -176,4 +196,29 @@ async function preprocessPresetImages(presetImages) {
   }
   
   return processedImages;
+}
+
+/**
+ * 清除特定圖片的緩存
+ * @param {string} imageSource - 圖片源（URL或DataURL）
+ * @param {number} size - 遊戲尺寸（幾乘幾的網格）
+ */
+function clearImageCache(imageSource, size) {
+  try {
+    // 創建與getImageFromCache相同的緩存鍵
+    let cacheKey;
+    if (imageSource.startsWith('data:')) {
+      cacheKey = `img_cache_${imageSource.substring(0, 50)}_${size}`;
+    } else {
+      const urlHash = simpleHash(imageSource);
+      cacheKey = `img_cache_url_${urlHash}_${size}`;
+    }
+    
+    // 從localStorage中移除該緩存
+    localStorage.removeItem(cacheKey);
+    console.log('已清除圖片緩存:', cacheKey);
+  } catch (error) {
+    console.error('清除圖片緩存失敗:', error);
+    // 清除緩存失敗不影響主要功能，只是記錄錯誤
+  }
 }
