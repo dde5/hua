@@ -17,7 +17,10 @@ function preprocessImage(imageSource, size) {
     console.log('preprocessImage: 開始處理圖片，尺寸:', size);
     
     const img = new Image();
-    img.crossOrigin = 'Anonymous'; // 處理跨域問題
+    // 如果是本地文件，不設置crossOrigin，避免CORS問題
+    if (imageSource.startsWith('http')) {
+      img.crossOrigin = 'Anonymous'; // 只對網絡圖片設置跨域屬性
+    }
     
     // 設置載入超時
     const timeoutId = setTimeout(() => {

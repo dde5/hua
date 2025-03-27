@@ -241,6 +241,9 @@ class PuzzleGame {
     // 重新設置開始時間，確保作弊模式時間限制重置
     this.startTime = new Date();
     
+    // 重置計時器顯示
+    document.getElementById('time').textContent = '00:00';
+    
     // 重新開始計時
     this.startTimer();
   }
@@ -258,6 +261,11 @@ class PuzzleGame {
     
     // 確保該關卡有記錄陣列
     if (!highScores[key]) {
+      highScores[key] = [];
+    }
+    
+    // 確保記錄是陣列類型
+    if (!Array.isArray(highScores[key])) {
       highScores[key] = [];
     }
     

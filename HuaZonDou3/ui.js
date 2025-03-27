@@ -425,7 +425,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const scores = JSON.parse(localStorage.getItem('puzzleHighScores') || '{}');
     const key = `${selectedMode}-${selectedSize}`;
-    const modeScores = scores[key] || [];
+    // 確保modeScores一定是陣列
+    const modeScores = Array.isArray(scores[key]) ? scores[key] : [];
     
     // 創建標題
     const title = document.createElement('h4');
