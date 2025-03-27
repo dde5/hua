@@ -424,13 +424,43 @@ document.addEventListener('DOMContentLoaded', () => {
     highScoresList.innerHTML = '';
     
     const scores = JSON.parse(localStorage.getItem('puzzleHighScores') || '{}');
-    const key = `${selectedMode}-${selectedSize}`;
+    
+    // 獲取當前圖片名稱
+    let imageName = '';
+    if (selectedMode === 'image' && selectedImage) {
+      // 從圖片路徑中提取圖片名稱
+      const match = selectedImage.match(/images\/([^.]+)\./i);
+      if (match && match[1]) {
+        imageName = match[1];
+      } else {
+        // 如果是自定義上傳或網絡圖片，使用通用名稱
+        imageName = 'custom';
+      }
+    }
+    
+    const key = `${selectedMode}-${imageName}-${selectedSize}`;
     // 確保modeScores一定是陣列
     const modeScores = Array.isArray(scores[key]) ? scores[key] : [];
     
     // 創建標題
     const title = document.createElement('h4');
-    title.textContent = `${selectedMode === 'number' ? '數字' : '圖片'}模式 ${selectedSize}×${selectedSize} 前三名記錄`;
+    let titleText = '';
+    
+    if (selectedMode === 'number') {
+      titleText = `數字模式 ${selectedSize}×${selectedSize} 前三名記錄`;
+    } else {
+      // 從圖片路徑中提取圖片名稱
+      let displayImageName = 'custom';
+      if (selectedImage) {
+        const match = selectedImage.match(/images\/([^.]+)\./i);
+        if (match && match[1]) {
+          displayImageName = match[1];
+        }
+      }
+      titleText = `圖片 ${displayImageName} ${selectedSize}×${selectedSize} 前三名記錄`;
+    }
+    
+    title.textContent = titleText;
     highScoresList.appendChild(title);
     
     if (modeScores.length === 0) {
@@ -453,7 +483,11 @@ document.addEventListener('DOMContentLoaded', () => {
       levelHeader.textContent = '關卡';
       headerRow.appendChild(levelHeader);
       
-
+      // 添加難度列
+      const difficultyHeader = document.createElement('th');
+      difficultyHeader.textContent = '難度';
+      headerRow.appendChild(difficultyHeader);
+      
       const rankHeader = document.createElement('th');
       rankHeader.textContent = '排名';
       
@@ -481,8 +515,28 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // 關卡信息
         const levelCell = document.createElement('td');
-        levelCell.textContent = `${selectedMode === 'number' ? '數字' : '圖片'} ${selectedSize}×${selectedSize}`;
+        let levelText = '';
+        
+        if (selectedMode === 'number') {
+          levelText = '數字模式';
+        } else {
+          // 從圖片路徑中提取圖片名稱
+          let displayImageName = 'custom';
+          if (selectedImage) {
+            const match = selectedImage.match(/images\/([^.]+)\./i);
+            if (match && match[1]) {
+              displayImageName = match[1];
+            }
+          }
+          levelText = `圖片 ${displayImageName}`;
+        }
+        levelCell.textContent = levelText;
         row.appendChild(levelCell);
+        
+        // 難度信息
+        const difficultyCell = document.createElement('td');
+        difficultyCell.textContent = `${selectedSize}×${selectedSize}`;
+        row.appendChild(difficultyCell);
         
         // 排名
         const rankCell = document.createElement('td');

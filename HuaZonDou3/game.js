@@ -249,8 +249,20 @@ class PuzzleGame {
   }
   
   saveHighScore() {
-    // 獲取當前遊戲模式和尺寸的鍵
-    const key = `${this.mode}-${this.size}`;
+    // 獲取當前遊戲模式、圖片和尺寸的鍵
+    let imageName = '';
+    if (this.mode === 'image' && this.imageSource) {
+      // 從圖片路徑中提取圖片名稱
+      const match = this.imageSource.match(/images\/([^.]+)\./i);
+      if (match && match[1]) {
+        imageName = match[1];
+      } else {
+        // 如果是自定義上傳或網絡圖片，使用通用名稱
+        imageName = 'custom';
+      }
+    }
+    
+    const key = `${this.mode}-${imageName}-${this.size}`;
     
     // 獲取當前時間和移動次數
     const currentTime = this.timerElement.textContent;
