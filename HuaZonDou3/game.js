@@ -262,7 +262,8 @@ class PuzzleGame {
         const urlParts = this.imageSource.split('/');
         const fileName = urlParts[urlParts.length - 1].split('.')[0];
         // 如果能提取到文件名，使用它的前10個字母，否則使用通用名稱
-        imageName = fileName ? fileName.substring(0, 10) : 'custom';
+        // 使用完整檔名作為識別符，確保不同URL的圖片有不同的識別符
+        imageName = fileName || 'custom';
       } else {
         // 如果是自定義上傳圖片，使用通用名稱
         imageName = 'custom';
