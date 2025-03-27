@@ -38,71 +38,75 @@ function openGoogleImageSearch(query) {
  */
 function useMockData(query) {
   console.log('使用預設圖片');
-  // 使用預設圖片作為模擬數據
+  // 獲取當前頁面的基礎URL，確保圖片路徑是絕對路徑
+  const baseUrl = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
+  console.log('基礎URL:', baseUrl);
+  
+  // 使用實際存在的預設圖片作為模擬數據，使用絕對路徑
   return [
     {
-      id: 'mock1',
+      id: 'C1',
       urls: {
-        regular: 'images/mickey.jpg',
-        small: 'images/mickey.jpg'
+        regular: baseUrl + 'images/C1.jpg',
+        small: baseUrl + 'images/C1.jpg'
       },
-      alt_description: `${query} 相關圖片 1`
+      alt_description: `${query} 相關圖片 - C1`
     },
     {
-      id: 'mock2',
+      id: 'C2',
       urls: {
-        regular: 'images/donald.jpg',
-        small: 'images/donald.jpg'
+        regular: baseUrl + 'images/C2.jpg',
+        small: baseUrl + 'images/C2.jpg'
       },
-      alt_description: `${query} 相關圖片 2`
+      alt_description: `${query} 相關圖片 - C2`
     },
     {
-      id: 'mock3',
+      id: 'E1',
       urls: {
-        regular: 'images/pooh.jpg',
-        small: 'images/pooh.jpg'
+        regular: baseUrl + 'images/E1.jpg',
+        small: baseUrl + 'images/E1.jpg'
       },
-      alt_description: `${query} 相關圖片 3`
+      alt_description: `${query} 相關圖片 - E1`
     },
     {
-      id: 'mock4',
+      id: 'E2',
       urls: {
-        regular: 'images/elsa.jpg',
-        small: 'images/elsa.jpg'
+        regular: baseUrl + 'images/E2.jpg',
+        small: baseUrl + 'images/E2.jpg'
       },
-      alt_description: `${query} 相關圖片 4`
+      alt_description: `${query} 相關圖片 - E2`
     },
     {
-      id: 'mock5',
+      id: 'M1',
       urls: {
-        regular: 'images/donald.jpg',
-        small: 'images/donald.jpg'
+        regular: baseUrl + 'images/M1.jpg',
+        small: baseUrl + 'images/M1.jpg'
       },
-      alt_description: `${query} 相關圖片 2`
+      alt_description: `${query} 相關圖片 - M1`
     },
     {
-      id: 'mock3',
+      id: 'M2',
       urls: {
-        regular: 'images/pooh.jpg',
-        small: 'images/pooh.jpg'
+        regular: baseUrl + 'images/M2.jpg',
+        small: baseUrl + 'images/M2.jpg'
       },
-      alt_description: `${query} 相關圖片 3`
+      alt_description: `${query} 相關圖片 - M2`
     },
     {
-      id: 'mock4',
+      id: 'H1',
       urls: {
-        regular: 'images/elsa.jpg',
-        small: 'images/elsa.jpg'
+        regular: baseUrl + 'images/H1.jpg',
+        small: baseUrl + 'images/H1.jpg'
       },
-      alt_description: `${query} 相關圖片 4`
+      alt_description: `${query} 相關圖片 - H1`
     },
     {
-      id: 'mock5',
+      id: 'H2',
       urls: {
-        regular: 'images/simba.jpg',
-        small: 'images/simba.jpg'
+        regular: baseUrl + 'images/H2.jpg',
+        small: baseUrl + 'images/H2.jpg'
       },
-      alt_description: `${query} 相關圖片 5`
+      alt_description: `${query} 相關圖片 - H2`
     }
   ];
 }
@@ -144,6 +148,90 @@ function displaySearchResults(images, container, onSelect) {
 }
 
 /**
+ * 檢查圖片是否可以載入
+ * @param {string} url - 圖片URL
+ * @returns {Promise<boolean>} - 圖片是否可載入
+ */
+function checkImageLoadable(url) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'Anonymous';
+    
+    // 設置載入超時
+    const timeoutId = setTimeout(() => {
+      console.error('圖片載入超時:', url);
+      resolve(false);
+    }, 5000); // 5秒超時
+    
+    img.onload = function() {
+      clearTimeout(timeoutId);
+      console.log('圖片載入成功:', url);
+      resolve(true);
+    };
+    
+    img.onerror = function() {
+      clearTimeout(timeoutId);
+      console.error('圖片載入失敗:', url);
+      resolve(false);
+    };
+    
+    try {
+      img.src = url;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      console.error('設置圖片源時發生錯誤:', error);
+      resolve(false);
+    }
+  });
+}
+
+/**
+ * 搜索Google圖片並直接顯示結果
+ * @param {string} query - 搜索關鍵詞
+ * @param {HTMLElement} resultsContainer - 結果顯示容器
+ * @param {Function} onSelect - 選擇圖片時的回調函數
+ */
+async function searchGoogleImages(query, resultsContainer, onSelect) {
+  if (!query || query.trim() === '') {
+    alert('請輸入搜索關鍵詞');
+    return;
+  }
+  
+  // 顯示載入中提示
+  resultsContainer.innerHTML = '<p>正在搜索圖片，請稍候...</p>';
+  
+  try {
+    // 使用模擬數據作為搜索結果
+    const mockResults = useMockData(query);
+    
+    // 篩選出可載入的圖片
+    const loadableImages = [];
+    const loadingMessage = document.createElement('p');
+    loadingMessage.textContent = '正在檢查圖片可用性，請稍候...';
+    resultsContainer.innerHTML = '';
+    resultsContainer.appendChild(loadingMessage);
+    
+    // 檢查每張圖片是否可載入
+    for (const image of mockResults) {
+      const isLoadable = await checkImageLoadable(image.urls.regular);
+      if (isLoadable) {
+        loadableImages.push(image);
+      }
+    }
+    
+    // 顯示可載入的圖片
+    displaySearchResults(loadableImages, resultsContainer, onSelect);
+    
+    if (loadableImages.length === 0) {
+      resultsContainer.innerHTML = '<p>沒有找到可用的圖片，請嘗試其他關鍵詞</p>';
+    }
+  } catch (error) {
+    console.error('搜索圖片時發生錯誤:', error);
+    resultsContainer.innerHTML = '<p>搜索圖片時發生錯誤，請重試</p>';
+  }
+}
+
+/**
  * 初始化圖片搜索界面
  * @param {HTMLElement} searchContainer - 搜索容器
  * @param {Function} onImageSelect - 選擇圖片時的回調函數
@@ -156,29 +244,11 @@ function initImageSearch(searchContainer, onImageSelect) {
   searchInput.placeholder = '輸入關鍵詞搜索圖片...';
   searchInput.className = 'image-search-input';
   
-  // 創建Google搜圖按鈕
-  const googleSearchButton = document.createElement('button');
-  googleSearchButton.textContent = 'Google搜圖';
-  googleSearchButton.id = 'google-search-button';
-  googleSearchButton.className = 'google-search-button';
-  
-  // 創建使用Google圖片按鈕
-  const useGoogleImageButton = document.createElement('button');
-  useGoogleImageButton.textContent = '使用Google圖片';
-  useGoogleImageButton.id = 'use-google-image-button';
-  useGoogleImageButton.className = 'use-google-image-button';
-  useGoogleImageButton.style.display = 'block';
-  useGoogleImageButton.style.marginTop = '10px';
-  
-  // 創建Google圖片URL輸入框
-  const googleImageUrlInput = document.createElement('input');
-  googleImageUrlInput.type = 'text';
-  googleImageUrlInput.id = 'google-image-url-input';
-  googleImageUrlInput.placeholder = '粘貼Google圖片網址...';
-  googleImageUrlInput.className = 'google-image-url-input';
-  googleImageUrlInput.style.display = 'block';
-  googleImageUrlInput.style.marginTop = '10px';
-  googleImageUrlInput.style.width = '100%';
+  // 創建搜索按鈕
+  const searchButton = document.createElement('button');
+  searchButton.textContent = '搜索圖片';
+  searchButton.id = 'search-button';
+  searchButton.className = 'search-button';
   
   // 創建搜索結果容器
   const resultsContainer = document.createElement('div');
@@ -189,51 +259,42 @@ function initImageSearch(searchContainer, onImageSelect) {
   const searchForm = document.createElement('div');
   searchForm.className = 'search-form';
   searchForm.appendChild(searchInput);
-  
-  // 添加Google搜圖按鈕到表單
-  searchForm.appendChild(googleSearchButton);
-  
-  // 添加Google圖片URL輸入框和使用按鈕
-  searchForm.appendChild(googleImageUrlInput);
-  searchForm.appendChild(useGoogleImageButton);
+  searchForm.appendChild(searchButton);
   
   // 添加表單和結果容器到搜索容器
   searchContainer.appendChild(searchForm);
   searchContainer.appendChild(resultsContainer);
   
-  // 添加按Enter鍵觸發Google搜圖的功能
+  // 添加按Enter鍵觸發搜索的功能
   searchInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
       const query = searchInput.value.trim();
-      openGoogleImageSearch(query);
+      searchGoogleImages(query, resultsContainer, (imageUrl) => {
+        // 確認是否使用此圖片進入遊戲
+        if (confirm('確定要使用此圖片進入遊戲嗎？')) {
+          // 調用選擇回調，將圖片URL傳遞給遊戲
+          onImageSelect(imageUrl);
+          
+          // 自動點擊開始遊戲按鈕
+          document.getElementById('start-game').click();
+        }
+      });
     }
   });
   
-  // 添加Google搜圖按鈕點擊事件
-  googleSearchButton.addEventListener('click', () => {
+  // 添加搜索按鈕點擊事件
+  searchButton.addEventListener('click', () => {
     const query = searchInput.value.trim();
-    openGoogleImageSearch(query);
-  });
-  
-  // 添加使用Google圖片按鈕點擊事件
-  useGoogleImageButton.addEventListener('click', () => {
-    const imageUrl = googleImageUrlInput.value.trim();
-    if (!imageUrl) {
-      alert('請先粘貼Google圖片網址');
-      return;
-    }
-    
-    // 還原Google圖片網址
-    const restoredUrl = 還原圖片網址(imageUrl);
-    
-    // 確認是否使用此圖片進入遊戲
-    if (confirm('確定要使用此圖片進入遊戲嗎？')) {
-      // 調用選擇回調，將還原後的圖片URL傳遞給遊戲
-      onImageSelect(restoredUrl);
-      
-      // 自動點擊開始遊戲按鈕
-      document.getElementById('start-game').click();
-    }
+    searchGoogleImages(query, resultsContainer, (imageUrl) => {
+      // 確認是否使用此圖片進入遊戲
+      if (confirm('確定要使用此圖片進入遊戲嗎？')) {
+        // 調用選擇回調，將圖片URL傳遞給遊戲
+        onImageSelect(imageUrl);
+        
+        // 自動點擊開始遊戲按鈕
+        document.getElementById('start-game').click();
+      }
+    });
   });
 }
 
@@ -253,21 +314,24 @@ function 還原圖片網址(url) {
       }
     }
     // 處理 Google 網址重定向
-    else if (url.startsWith("https://www.google.com/url?sa=i")) {
+    else if (url.startsWith("https://www.google.com/url?sa=i") || url.includes("google.com/url")) {
       const urlParams = new URLSearchParams(new URL(url).search);
-      const targetUrl = urlParams.get('url');
+      const targetUrl = urlParams.get('url') || urlParams.get('q');
       if (targetUrl) {
         return targetUrl;
       }
     }
+    // 處理 Google 圖片搜索結果
+    else if (url.includes("googleusercontent.com")) {
+      return url; // 直接返回 Google 圖片 CDN 的 URL
+    }
     // 處理 iStockphoto 連結
     else if (url.startsWith("https://www.istockphoto.com")) {
-      const regex = /gm(\d+)-/;
-      const match = url.match(regex);
-      if (match && match[1]) {
-        return url;
-      }
-      return url;
+      return url; // 直接返回 iStockphoto URL
+    }
+    // 處理其他常見圖片網站
+    else if (url.includes(".jpg") || url.includes(".jpeg") || url.includes(".png") || url.includes(".gif") || url.includes(".webp")) {
+      return url; // 如果 URL 包含常見圖片擴展名，直接返回
     }
     // 如果都不是以上幾種，直接返回原始 URL (不做任何處理)
     return url;
