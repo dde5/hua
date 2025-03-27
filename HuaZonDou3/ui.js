@@ -430,7 +430,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 創建標題
     const title = document.createElement('h4');
-    title.textContent = '前三名記錄';
+    title.textContent = `${selectedMode === 'number' ? '數字' : '圖片'}模式 ${selectedSize}×${selectedSize} 前三名記錄`;
     highScoresList.appendChild(title);
     
     if (modeScores.length === 0) {
@@ -448,6 +448,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const thead = document.createElement('thead');
       const headerRow = document.createElement('tr');
       
+      // 添加關卡列
+      const levelHeader = document.createElement('th');
+      levelHeader.textContent = '關卡';
+      headerRow.appendChild(levelHeader);
+      
+
       const rankHeader = document.createElement('th');
       rankHeader.textContent = '排名';
       
@@ -472,6 +478,11 @@ document.addEventListener('DOMContentLoaded', () => {
       
       modeScores.forEach((score, index) => {
         const row = document.createElement('tr');
+        
+        // 關卡信息
+        const levelCell = document.createElement('td');
+        levelCell.textContent = `${selectedMode === 'number' ? '數字' : '圖片'} ${selectedSize}×${selectedSize}`;
+        row.appendChild(levelCell);
         
         // 排名
         const rankCell = document.createElement('td');
