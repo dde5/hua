@@ -58,6 +58,12 @@ function simpleHash(str) {
   return Math.abs(hash).toString();
 }
 
+/**
+ * 將處理過的圖片保存到緩存
+ * @param {string} imageSource - 圖片源（URL或DataURL）
+ * @param {number} size - 遊戲尺寸（幾乘幾的網格）
+ * @param {string} processedImage - 處理後的圖片DataURL
+ */
 function saveImageToCache(imageSource, size, processedImage) {
   try {
     // 創建與getImageFromCache相同的緩存鍵
@@ -69,9 +75,33 @@ function saveImageToCache(imageSource, size, processedImage) {
       cacheKey = `img_cache_url_${urlHash}_${size}`;
     }
     
-    // 保存到localStorage
-    localStorage.setItem(cacheKey, processedImage);
-    console.log('圖片已保存到緩存');
+    // 嘗試保存到localStorage
+    try {
+      localStorage.setItem(cacheKey, processedImage);
+      console.log('圖片已保存到緩存');
+      
+      // 更新緩存使用記錄
+      updateCacheUsageRecord(cacheKey);
+    } catch (storageError) {
+      // 檢查是否是配額超出錯誤
+      if (storageError.name === 'QuotaExceededError') {
+        console.warn('localStorage配額已滿，正在清理舊緩存...');
+        // 清理舊緩存並重試
+        if (clearOldestCache()) {
+          try {
+            localStorage.setItem(cacheKey, processedImage);
+            console.log('清理後成功保存圖片到緩存');
+            updateCacheUsageRecord(cacheKey);
+          } catch (retryError) {
+            console.error('即使清理後仍無法保存到緩存:', retryError);
+          }
+        } else {
+          console.error('無法清理緩存，無法保存新圖片');
+        }
+      } else {
+        throw storageError; // 重新拋出非配額錯誤
+      }
+    }
   } catch (error) {
     console.error('保存圖片到緩存失敗:', error);
     // 緩存失敗不影響主要功能，只是記錄錯誤
