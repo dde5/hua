@@ -1,119 +1,139 @@
 // 遊戲核心邏輯
 class PuzzleGame {
-  constructor(size, mode, imageSource) {
+  constructor(size, mode, imageSource, imageIdentifier) { // <-- 接收 imageIdentifier
+    if (!size || size < 3 || size > 10) {
+        console.error(`無效的遊戲尺寸: ${size}, 將使用預設值 4`);
+        size = 4;
+    }
     this.size = size;
     this.mode = mode; // 'number' 或 'image'
-    this.imageSource = imageSource;
+    // imageSource is expected to be null (number mode) or a preprocessed Data URL (image mode)
+    this.imageSource = (mode === 'image' && imageSource) ? imageSource : null;
+    this.imageIdentifier = imageIdentifier || ''; // <-- 存儲標識符 ('C1', 'custom', 'network', '')
+
     this.moves = 0;
-    this.startTime = new Date(); // 確保每次創建新遊戲時都重置開始時間
+    this.startTime = null; // Initialize as null, set in startTimer or resetGame
     this.timer = null;
+    this.timerElement = document.getElementById('time'); // Cache the element
+
     this.board = [];
-    this.emptyPos = { row: size - 1, col: size - 1 };
-    
+    this.emptyPos = { row: this.size - 1, col: this.size - 1 }; // Initial empty pos
+
     // 作弊模式相關屬性
-    this.cheatCount = 0; // 作弊次數
-    this.cheatTimes = []; // 記錄每次作弊的時間
-    this.cheatEnabled = false; // 作弊模式是否啟用
-    
-    this.initializeGame();
+    this.cheatCount = 0;
+    this.cheatTimes = [];
+    this.cheatEnabled = false; // 作弊模式初始為禁用
+
+    this.initializeGame(); // Create and shuffle the board
+    console.log(`遊戲實例已創建: ${this.size}x${this.size}, 模式: ${this.mode}, 標識符: '${this.imageIdentifier}'`);
   }
-  
+
   initializeGame() {
-    // 創建有序的遊戲板
+    // 創建有序的遊戲板 (1 to size*size - 1, 0 for empty)
     this.board = [];
     let value = 1;
-    
-    // 重置空白方塊位置到右下角
-    this.emptyPos = { row: this.size - 1, col: this.size - 1 };
-    
     for (let row = 0; row < this.size; row++) {
       const rowArray = [];
       for (let col = 0; col < this.size; col++) {
-        if (row === this.size - 1 && col === this.size - 1) {
-          rowArray.push(0); // 空白方塊
-        } else {
-          rowArray.push(value++);
-        }
+         // Place 0 at the last position
+         if (row === this.size - 1 && col === this.size - 1) {
+             rowArray.push(0);
+         } else {
+             rowArray.push(value++);
+         }
       }
       this.board.push(rowArray);
     }
-    
+    // Set initial empty position correctly
+    this.emptyPos = { row: this.size - 1, col: this.size - 1 };
+
     // 隨機打亂遊戲板
     this.shuffleBoard();
-    
-    // 重置遊戲狀態
-    this.moves = 0;
-    document.getElementById('moves').textContent = '0';
+
+    // 重置遊戲狀態 (moves is reset separately in resetGame)
+    // this.moves = 0; // Reset moves in resetGame or constructor call chain
   }
-  
+
   shuffleBoard() {
-    // 執行隨機移動來打亂遊戲板
-    // 通常需要1000次以上的隨機移動來確保充分打亂
-    const moves = 1000 + Math.floor(Math.random() * 1000);
-    
-    for (let i = 0; i < moves; i++) {
-      // 獲取空白方塊的相鄰方塊
-      const adjacentBlocks = this.getAdjacentBlocks();
-      
-      if (adjacentBlocks.length > 0) {
-        // 隨機選擇一個相鄰方塊進行移動
-        const randomIndex = Math.floor(Math.random() * adjacentBlocks.length);
-        const { row, col } = adjacentBlocks[randomIndex];
-        
-        // 交換位置
-        this.swapBlocks(row, col);
+    // Perform many random moves from the solved state to shuffle
+    // Need enough moves for a good shuffle, e.g., size^3 or more
+    const shuffleMoves = Math.max(100, Math.pow(this.size, 3) * 2); // Ensure sufficient moves
+    let lastMoved = -1; // Prevent immediately moving back
+
+    console.log(`Shuffling with ${shuffleMoves} moves...`);
+
+    for (let i = 0; i < shuffleMoves; i++) {
+      const adjacent = this.getAdjacentBlocks();
+      const possibleMoves = adjacent.filter(move => {
+          // Don't move the piece that was just moved back into the empty spot
+          const pieceValue = this.board[move.row][move.col];
+          return pieceValue !== lastMoved;
+      });
+
+      if (possibleMoves.length > 0) {
+          const randomIndex = Math.floor(Math.random() * possibleMoves.length);
+          const { row, col } = possibleMoves[randomIndex];
+          lastMoved = this.board[row][col]; // Record the value of the piece being moved
+          this.swapBlocks(row, col); // swapBlocks updates emptyPos
+      } else if (adjacent.length > 0) {
+          // If only one move possible (the one just made), allow it to prevent getting stuck
+          const { row, col } = adjacent[0];
+          lastMoved = this.board[row][col];
+          this.swapBlocks(row, col);
       }
     }
-    
-    // 確保生成的謎題可解
+     console.log("Shuffling complete.");
+
+    // Ensure the generated puzzle is solvable
     if (!this.isSolvable()) {
-      // 如果不可解，交換任意兩個非空方塊
-      this.makeGameSolvable();
+        console.warn("Generated puzzle is unsolvable, attempting to fix...");
+        this.makeGameSolvable();
+        // Double-check after fixing
+        if (!this.isSolvable()) {
+            console.error("Failed to make the puzzle solvable. Resetting shuffle.");
+            // Fallback: Re-initialize and shuffle again (could lead to infinite loop if issue persists)
+            this.initializeGame(); // This will call shuffleBoard again
+        } else {
+             console.log("Puzzle fixed to be solvable.");
+        }
     }
   }
-  
+
   getAdjacentBlocks() {
+    // Returns coordinates of blocks adjacent to the empty block
     const { row, col } = this.emptyPos;
     const adjacent = [];
-    
-    // 上方方塊
-    if (row > 0) adjacent.push({ row: row - 1, col });
-    // 下方方塊
-    if (row < this.size - 1) adjacent.push({ row: row + 1, col });
-    // 左側方塊
-    if (col > 0) adjacent.push({ row, col: col - 1 });
-    // 右側方塊
-    if (col < this.size - 1) adjacent.push({ row, col: col + 1 });
-    
+    if (row > 0) adjacent.push({ row: row - 1, col }); // Up
+    if (row < this.size - 1) adjacent.push({ row: row + 1, col }); // Down
+    if (col > 0) adjacent.push({ row, col: col - 1 }); // Left
+    if (col < this.size - 1) adjacent.push({ row, col: col + 1 }); // Right
     return adjacent;
   }
-  
+
   swapBlocks(row, col) {
-    // 交換指定位置的方塊與空白方塊
-    const temp = this.board[row][col];
+    // Swaps the block at (row, col) with the empty block
+    if (row < 0 || row >= this.size || col < 0 || col >= this.size) return; // Bounds check
+
+    const targetValue = this.board[row][col];
+    // Put target value into the current empty position
+    this.board[this.emptyPos.row][this.emptyPos.col] = targetValue;
+    // Put 0 (empty) into the target position
     this.board[row][col] = 0;
-    this.board[this.emptyPos.row][this.emptyPos.col] = temp;
-    
-    // 更新空白方塊位置
+    // Update the empty position
     this.emptyPos = { row, col };
   }
-  
+
   isSolvable() {
-    // 檢查當前遊戲板是否可解
-    // 對於N×N的遊戲板，當N為奇數時，逆序數必須為偶數才可解
-    // 當N為偶數時，逆序數+空白方塊所在行數（從底部數）的奇偶性必須與初始狀態相同才可解
-    
-    // 將二維數組轉為一維數組，忽略空白方塊
+    // Checks if the current board configuration is solvable.
     const flatBoard = [];
-    for (let row = 0; row < this.size; row++) {
-      for (let col = 0; col < this.size; col++) {
-        if (this.board[row][col] !== 0) {
-          flatBoard.push(this.board[row][col]);
+    for (let r = 0; r < this.size; r++) {
+      for (let c = 0; c < this.size; c++) {
+        if (this.board[r][c] !== 0) {
+          flatBoard.push(this.board[r][c]);
         }
       }
     }
-    
-    // 計算逆序數
+
     let inversions = 0;
     for (let i = 0; i < flatBoard.length; i++) {
       for (let j = i + 1; j < flatBoard.length; j++) {
@@ -122,374 +142,412 @@ class PuzzleGame {
         }
       }
     }
-    
-    // 根據遊戲板尺寸判斷是否可解
+
     if (this.size % 2 === 1) {
-      // 奇數尺寸：逆序數必須為偶數
+      // Odd grid size: Solvable if the number of inversions is even.
       return inversions % 2 === 0;
     } else {
-      // 偶數尺寸：逆序數+空白方塊所在行數（從底部數）的奇偶性必須為偶數
+      // Even grid size: Solvable if (inversions + row of empty block from bottom) is even.
+      // Row from bottom (1-based index): size - emptyPos.row
       const emptyRowFromBottom = this.size - this.emptyPos.row;
       return (inversions + emptyRowFromBottom) % 2 === 0;
     }
   }
-  
+
   makeGameSolvable() {
-    // 如果遊戲不可解，交換任意兩個非空方塊使其可解
-    if (this.board[0][0] !== 0 && this.board[0][1] !== 0) {
-      // 交換左上角的兩個方塊
-      const temp = this.board[0][0];
-      this.board[0][0] = this.board[0][1];
-      this.board[0][1] = temp;
-    } else {
-      // 如果左上角有空方塊，交換右下角的兩個方塊
-      const row = this.size - 1;
-      const col = this.size - 2;
-      if (this.board[row][col] !== 0 && this.board[row][col-1] !== 0) {
-        const temp = this.board[row][col];
-        this.board[row][col] = this.board[row][col-1];
-        this.board[row][col-1] = temp;
-      }
-    }
+    // If the puzzle is unsolvable, swap two non-empty tiles to change solvability.
+    // Swapping any two non-empty tiles changes the inversion count by an odd number.
+    // A simple strategy: swap tiles 1 and 2 if they exist and are not the empty tile.
+     let pos1 = null, pos2 = null;
+     for (let r = 0; r < this.size; r++) {
+         for (let c = 0; c < this.size; c++) {
+             if (this.board[r][c] === 1) pos1 = { r, c };
+             if (this.board[r][c] === 2) pos2 = { r, c };
+             if (pos1 && pos2) break;
+         }
+         if (pos1 && pos2) break;
+     }
+
+     if (pos1 && pos2) {
+         console.log("Swapping tiles 1 and 2 to fix solvability.");
+         const temp = this.board[pos1.r][pos1.c];
+         this.board[pos1.r][pos1.c] = this.board[pos2.r][pos2.c];
+         this.board[pos2.r][pos2.c] = temp;
+     } else {
+         // Fallback: swap first two non-empty tiles found in the top row
+         console.log("Tiles 1/2 not found, swapping first two top-row tiles.");
+          let first = null, second = null;
+          for (let c = 0; c < this.size; c++) {
+              if (this.board[0][c] !== 0) {
+                  if (first === null) first = c;
+                  else { second = c; break; }
+              }
+          }
+          if (first !== null && second !== null) {
+               const temp = this.board[0][first];
+               this.board[0][first] = this.board[0][second];
+               this.board[0][second] = temp;
+          } else {
+              console.error("Could not find two tiles to swap for solvability fix.");
+              // This case should be rare after a proper shuffle.
+          }
+     }
   }
-  
+
   isAdjacent(row, col) {
-    // 檢查指定位置的方塊是否與空白方塊相鄰
+    // Checks if the block at (row, col) is adjacent to the empty block
     const { row: emptyRow, col: emptyCol } = this.emptyPos;
-    
-    // 水平或垂直相鄰
-    return (
-      (Math.abs(row - emptyRow) === 1 && col === emptyCol) ||
-      (Math.abs(col - emptyCol) === 1 && row === emptyRow)
-    );
+    return (Math.abs(row - emptyRow) + Math.abs(col - emptyCol) === 1);
   }
-  
+
   moveBlock(row, col) {
+    // Attempts to move the block at (row, col) into the empty space
     if (this.isAdjacent(row, col)) {
-      // 交換方塊
-      this.swapBlocks(row, col);
-      
-      // 增加移動次數
+      this.swapBlocks(row, col); // Perform the swap
       this.moves++;
-      document.getElementById('moves').textContent = this.moves;
-      
-      // 播放移動音效
-      soundManager.playMoveSound();
-      
-      return true;
+      // soundManager.playMoveSound(); // Sound played in UI layer after successful move
+      // UI layer (ui.js) should call renderGameBoard and updateGameStats
+      return true; // Move successful
     }
-    return false;
+    return false; // Move invalid
   }
-  
+
   checkWin() {
-    // 檢查遊戲是否完成
-    let value = 1;
-    
+    // Checks if the board is in the solved state
+    let expectedValue = 1;
     for (let row = 0; row < this.size; row++) {
       for (let col = 0; col < this.size; col++) {
-        // 最後一個位置應該是空白方塊
         if (row === this.size - 1 && col === this.size - 1) {
-          if (this.board[row][col] !== 0) {
-            return false;
-          }
+          // Last position should be empty (0)
+          if (this.board[row][col] !== 0) return false;
         } else {
-          // 其他位置應該是按順序排列的數字
-          if (this.board[row][col] !== value++) {
-            return false;
-          }
+          // Other positions should match expected value
+          if (this.board[row][col] !== expectedValue) return false;
+          expectedValue++;
         }
       }
     }
-    
-    return true;
+    return true; // Board is solved
   }
-  
+
   startTimer() {
+    // Ensure timerElement is valid
+    if (!this.timerElement) {
+        console.error("計時器元素 'time' 未找到！無法啟動計時器。");
+        return;
+    }
+    // Clear any existing timer
+    this.stopTimer();
+    // Set start time
     this.startTime = new Date();
-    this.timerElement = document.getElementById('time');
-    
+    console.log("計時器啟動:", this.startTime);
+
+    // Update timer display immediately
+     this.timerElement.textContent = '00:00';
+
+    // Start interval
     this.timer = setInterval(() => {
       const currentTime = new Date();
-      const elapsedTime = Math.floor((currentTime - this.startTime) / 1000);
-      
-      const minutes = Math.floor(elapsedTime / 60).toString().padStart(2, '0');
-      const seconds = (elapsedTime % 60).toString().padStart(2, '0');
-      
-      this.timerElement.textContent = `${minutes}:${seconds}`;
+      // Use startTime if valid, otherwise default to prevent NaN
+      const start = this.startTime instanceof Date ? this.startTime : currentTime;
+      const elapsedTime = Math.floor((currentTime - start) / 1000); // in seconds
+
+      if (elapsedTime >= 0) { // Ensure time is not negative
+          const minutes = Math.floor(elapsedTime / 60).toString().padStart(2, '0');
+          const seconds = (elapsedTime % 60).toString().padStart(2, '0');
+          this.timerElement.textContent = `${minutes}:${seconds}`;
+      } else {
+           this.timerElement.textContent = '00:00'; // Reset if time is invalid
+      }
     }, 1000);
   }
-  
+
   stopTimer() {
     if (this.timer) {
       clearInterval(this.timer);
       this.timer = null;
+      console.log("計時器已停止");
     }
   }
-  
+
   resetGame() {
-    // 停止當前計時器
-    this.stopTimer();
-    
-    // 重新初始化遊戲
-    this.initializeGame();
-    
-    // 重置作弊模式相關屬性
-    this.cheatCount = 0;
+    this.stopTimer();      // Stop current timer
+    this.initializeGame(); // Re-create and shuffle board
+    this.moves = 0;        // Reset move count
+    this.cheatCount = 0;   // Reset cheat stats
     this.cheatTimes = [];
-    this.cheatEnabled = false; // 確保作弊模式被禁用
-    
-    // 重新設置開始時間，確保作弊模式時間限制重置
-    this.startTime = new Date();
-    
-    // 重置計時器顯示
-    document.getElementById('time').textContent = '00:00';
-    
-    // 重新開始計時
+    this.cheatEnabled = false; // Disable cheat mode
+
+    // Reset timer display (handled by UI layer calling updateGameStats after reset)
+    // if (this.timerElement) this.timerElement.textContent = '00:00';
+
+    // Restart timer
     this.startTimer();
   }
-  
+
+  // --- saveHighScore (修正版) ---
   saveHighScore() {
-    // 獲取當前遊戲模式、圖片和尺寸的鍵
-    let imageName = '';
-    if (this.mode === 'image' && this.imageSource) {
-      // 使用getImageName函數從imageSearch.js獲取圖片名稱
-      imageName = getImageName(this.imageSource);
-    }
-    
-    const key = `${this.mode}-${imageName}-${this.size}`;
-    
-    // 獲取當前時間和移動次數
-    const currentTime = this.timerElement.textContent;
+    // Use stored imageIdentifier for the key
+    const key = `${this.mode}-${this.imageIdentifier}-${this.size}`;
+    console.log("儲存高分榜，Key:", key); // Debugging
+
+    // Get time from the timer element
+    const currentTimeStr = this.timerElement ? this.timerElement.textContent : '00:00';
+    // Validate time format (basic check)
+    const isValidTime = /^\d{2,}:\d{2}$/.test(currentTimeStr);
+    const finalTime = isValidTime ? currentTimeStr : '00:00';
+
     const currentMoves = this.moves;
-    
-    // 使用StorageManager從存儲中獲取現有的高分記錄
+
+    // Get existing scores from storage
     const highScores = StorageManager.getItem('puzzleHighScores', {});
-    
-    // 確保該關卡有記錄陣列
-    if (!highScores[key]) {
-      highScores[key] = [];
-    }
-    
-    // 確保記錄是陣列類型
+
+    // Ensure array exists for the key
     if (!Array.isArray(highScores[key])) {
       highScores[key] = [];
     }
-    
-    // 創建當前成績記錄
+
+    // Determine Level Name and Difficulty string
+    let levelName = '';
+    if (this.mode === 'number') {
+        levelName = '數字模式';
+    } else if (this.imageIdentifier === 'custom') {
+        levelName = '自定義圖片';
+    } else if (this.imageIdentifier === 'network') {
+        levelName = '網路圖片';
+    } else {
+        levelName = this.imageIdentifier || '未知圖片'; // Use identifier or fallback
+    }
+    const difficulty = `${this.size}x${this.size}`;
+
+    // Create the new score object
     const currentScore = {
-      time: currentTime,
+      levelName: levelName,         // Store readable level name
+      difficulty: difficulty,       // Store difficulty string
+      time: finalTime,              // Store validated time string
       moves: currentMoves,
       cheatUsed: this.cheatCount > 0,
       cheatCount: this.cheatCount,
-      cheatTimes: this.cheatTimes.map(time => time.toISOString())
+      // cheatTimes: this.cheatTimes.map(time => time.toISOString()) // Optional: Store timestamps
     };
-    
-    // 檢查是否應該將當前成績添加到記錄中
-    let shouldAdd = false;
-    
-    // 如果記錄少於3個，直接添加
-    if (highScores[key].length < 3) {
-      shouldAdd = true;
-    } else {
-      // 檢查當前成績是否比任何現有記錄更好
-      for (let i = 0; i < highScores[key].length; i++) {
-        if (this.isNewHighScore(highScores[key][i], currentTime, currentMoves)) {
-          shouldAdd = true;
-          break;
-        }
-      }
-    }
-    
+
+    // Check if the new score qualifies for the top 3
+    let shouldAdd = highScores[key].length < 3 ||
+                    highScores[key].some(existing => this.isNewHighScore(existing, currentScore));
+
     if (shouldAdd) {
-      // 添加新記錄
+      // Add the new score
       highScores[key].push(currentScore);
-      
-      // 根據成績排序（無作弊優先，然後是時間，最後是移動次數）
+
+      // Sort the scores: No cheat > Less time > Fewer moves
       highScores[key].sort((a, b) => {
-        // 無作弊記錄優先於有作弊記錄
+        // 1. Cheat status (non-cheaters first)
         if (a.cheatUsed !== b.cheatUsed) {
-          return a.cheatUsed ? 1 : -1;
+          return a.cheatUsed ? 1 : -1; // false (no cheat) comes first
         }
-        
-        // 解析時間字符串為秒數
+
+        // Helper to parse "MM:SS" to seconds
         const parseTimeToSeconds = (timeStr) => {
-          const [minutes, seconds] = timeStr.split(':').map(Number);
-          return minutes * 60 + seconds;
+           if (!timeStr || !/^\d{2,}:\d{2}$/.test(timeStr)) return Infinity; // Handle invalid format
+           const parts = timeStr.split(':').map(Number);
+           return (parts[0] || 0) * 60 + (parts[1] || 0);
         };
-        
+
+        // 2. Time (less time is better)
         const aTimeSeconds = parseTimeToSeconds(a.time);
         const bTimeSeconds = parseTimeToSeconds(b.time);
-        
-        // 時間相同則比較移動次數
-        if (aTimeSeconds === bTimeSeconds) {
-          return a.moves - b.moves;
+        if (aTimeSeconds !== bTimeSeconds) {
+          return aTimeSeconds - bTimeSeconds; // Smaller time comes first
         }
-        
-        // 時間較短的排前面
-        return aTimeSeconds - bTimeSeconds;
+
+        // 3. Moves (fewer moves is better)
+        return (a.moves || 0) - (b.moves || 0); // Smaller moves comes first
       });
-      
-      // 只保留前三名
-      if (highScores[key].length > 3) {
-        highScores[key] = highScores[key].slice(0, 3);
-      }
-      
-      // 使用StorageManager保存到存儲
+
+      // Keep only the top 3 scores
+      highScores[key] = highScores[key].slice(0, 3);
+
+      // Save back to storage
       StorageManager.setItem('puzzleHighScores', highScores);
-      
+      console.log("高分已儲存:", highScores[key]); // Debugging
       return true;
     }
-    
+
+    console.log("當前分數未進入前三名");
     return false;
   }
-  
-  isNewHighScore(existingScore, currentTime, currentMoves) {
-    // 解析時間字符串為秒數
+
+  // --- isNewHighScore (修正版, 比較兩個分數物件) ---
+  isNewHighScore(existingScore, newScore) {
+    // Helper to parse "MM:SS" to seconds
     const parseTimeToSeconds = (timeStr) => {
-      const [minutes, seconds] = timeStr.split(':').map(Number);
-      return minutes * 60 + seconds;
+        if (!timeStr || !/^\d{2,}:\d{2}$/.test(timeStr)) return Infinity;
+        const parts = timeStr.split(':').map(Number);
+        return (parts[0] || 0) * 60 + (parts[1] || 0);
     };
-    
+
     const existingTimeSeconds = parseTimeToSeconds(existingScore.time);
-    const currentTimeSeconds = parseTimeToSeconds(currentTime);
-    
-    // 檢查作弊模式使用情況
+    const newTimeSeconds = parseTimeToSeconds(newScore.time);
+
     const existingCheatUsed = existingScore.cheatUsed || false;
-    const currentCheatUsed = this.cheatCount > 0;
-    
-    // 無作弊的記錄優先於有作弊的記錄
-    if (!currentCheatUsed && existingCheatUsed) {
+    const newCheatUsed = newScore.cheatUsed || false;
+
+    // Priority 1: Non-cheat scores are always better than cheat scores
+    if (!newCheatUsed && existingCheatUsed) {
       return true;
     }
-    
-    // 如果兩者作弊狀態相同，則比較時間和移動次數
-    if (currentCheatUsed === existingCheatUsed) {
-      // 首先比較時間，如果時間相同則比較移動次數
-      if (currentTimeSeconds < existingTimeSeconds) {
+    // If cheat status is the same, compare time and moves
+    if (newCheatUsed === existingCheatUsed) {
+      // Priority 2: Less time is better
+      if (newTimeSeconds < existingTimeSeconds) {
         return true;
-      } else if (currentTimeSeconds === existingTimeSeconds && currentMoves < existingScore.moves) {
+      }
+      // Priority 3: If time is equal, fewer moves is better
+      else if (newTimeSeconds === existingTimeSeconds && (newScore.moves || 0) < (existingScore.moves || 0)) {
         return true;
       }
     }
-    
+
+    // Otherwise, the new score is not better
     return false;
   }
-  
-  // 作弊模式 - 交換任意兩個方塊
+
+  // --- cheatSwap (修正版) ---
   cheatSwap(row1, col1, row2, col2) {
-    // 檢查位置是否有效
+    // 1. Check if cheat mode is actually enabled in the instance
+    if (!this.cheatEnabled) {
+        console.warn("嘗試在作弊模式禁用時進行交換 (內部檢查)");
+        // Optionally alert the user via UI callback if needed
+        return false;
+    }
+
+    // 2. Validate coordinates
     if (row1 < 0 || row1 >= this.size || col1 < 0 || col1 >= this.size ||
         row2 < 0 || row2 >= this.size || col2 < 0 || col2 >= this.size) {
+      console.warn("作弊交換：無效的位置");
       return false;
     }
-    
-    // 檢查是否選擇了相同的方塊
+
+    // 3. Check if swapping the same block
     if (row1 === row2 && col1 === col2) {
+       console.warn("作弊交換：選擇了相同的方塊");
+       // No need to alert, just don't swap
       return false;
     }
-    
-    // 檢查是否已經過了5分鐘的時間限制
+
+    // 4. Check time limit (redundant check for safety)
     const currentTime = new Date();
-    const elapsedTimeInSeconds = Math.floor((currentTime - this.startTime) / 1000);
-    const timeLimit = 5 * 60; // 5分鐘，單位為秒
-    
+    const startTime = this.startTime || currentTime;
+    const elapsedTimeInSeconds = Math.floor((currentTime - startTime) / 1000);
+    const timeLimit = 5 * 60; // 5 minutes
+
     if (elapsedTimeInSeconds < timeLimit) {
-      const remainingMinutes = Math.floor((timeLimit - elapsedTimeInSeconds) / 60);
-      const remainingSeconds = (timeLimit - elapsedTimeInSeconds) % 60;
-      alert(`作弊模式將在 ${remainingMinutes}分${remainingSeconds}秒 後可用`);
+      console.warn("作弊交換：時間限制未到 (內部檢查)");
+      // Ensure cheat mode is disabled if attempted early
+      this.cheatEnabled = false;
+      // Let the UI layer handle the alert and button state update
       return false;
     }
-    
-    // 獲取方塊值
+
+    // 5. Check if trying to swap with the empty block (value 0)
     const value1 = this.board[row1][col1];
     const value2 = this.board[row2][col2];
-    
-    // 檢查是否有空白方塊，如果有，則不進行交換
     if (value1 === 0 || value2 === 0) {
-      alert('作弊模式不能交換空白方塊，請選擇其他方塊');
-      return false;
+      console.warn("作弊交換：不能選擇或交換空白方塊");
+      // Alert is handled by UI layer based on return value
+      return false; // Indicate swap failed
     }
-    
-    // 交換方塊
+
+    // 6. Perform the swap
     this.board[row1][col1] = value2;
     this.board[row2][col2] = value1;
-    
-    // 增加移動次數
+
+    // 7. Update game state
     this.moves++;
-    document.getElementById('moves').textContent = this.moves;
-    
-    // 記錄作弊使用信息
     this.cheatCount++;
-    this.cheatTimes.push(new Date());
-    
-    // 播放作弊音效
-    soundManager.playCheatSound();
-    
-    return true;
+    this.cheatTimes.push(new Date()); // Record timestamp of cheat
+
+    // soundManager.playCheatSound(); // Sound played in UI layer
+
+    console.log("作弊交換成功:", `(${row1},${col1})[${value1}] <=> (${row2},${col2})[${value2}]`, "作弊次數:", this.cheatCount);
+    // UI layer should call renderGameBoard and updateGameStats
+    return true; // Indicate swap successful
   }
-  
+
   getHint() {
-    // 使用廣度優先搜索找到最短路徑到目標狀態
-    // 由於完整的解決方案可能需要大量計算，這裡只提供下一步的提示
-    
-    // 檢查是否已經完成
+    // Provides a hint for the next best move towards the solved state.
+    // Uses Manhattan distance heuristic.
+
     if (this.checkWin()) {
-      return null; // 已經完成，不需要提示
+      console.log("提示：遊戲已完成！");
+      return null; // No hint needed if already solved
     }
-    
-    // 獲取當前可移動的方塊
-    const adjacentBlocks = this.getAdjacentBlocks();
-    
-    // 評估每個可能的移動
+
+    const adjacentBlocks = this.getAdjacentBlocks(); // Get possible moves
+    if (adjacentBlocks.length === 0) {
+        console.log("提示：沒有可移動的方塊？(異常)");
+        return null; // Should not happen in a valid state
+    }
+
     let bestMove = null;
-    let bestScore = -Infinity;
-    
+    let minDistance = Infinity; // We want to minimize Manhattan distance
+
+    // Simulate each possible move and evaluate the resulting board state
     for (const move of adjacentBlocks) {
-      // 臨時移動方塊
       const { row, col } = move;
-      const originalBoard = JSON.parse(JSON.stringify(this.board));
-      const originalEmptyPos = {...this.emptyPos};
-      
-      // 執行移動
+
+      // Temporarily make the move
+      const valueToMove = this.board[row][col];
       this.swapBlocks(row, col);
-      
-      // 計算移動後的得分（曼哈頓距離）
-      const score = this.evaluatePosition();
-      
-      // 恢復原始狀態
-      this.board = originalBoard;
-      this.emptyPos = originalEmptyPos;
-      
-      // 更新最佳移動
-      if (score > bestScore) {
-        bestScore = score;
-        bestMove = move;
+
+      // Calculate the Manhattan distance of the new board state
+      const currentDistance = this.calculateManhattanDistance();
+
+      // Undo the move
+      this.swapBlocks(this.emptyPos.row, this.emptyPos.col); // Swap back (original empty pos is where the value moved)
+      // Need to find the moved piece to swap back correctly
+      // Find where 'valueToMove' is now (should be at the original emptyPos)
+      // Find where 0 is now (should be at 'move')
+      // Let's redo the swap back carefully:
+      // The empty spot is now at {row, col}. The moved piece is at original emptyPos.
+      // Swap the piece at original emptyPos with the empty spot at {row, col}.
+      const originalEmptyRow = this.emptyPos.row; // Capture before potential modification by swapBlocks
+      const originalEmptyCol = this.emptyPos.col;
+      // Swap back: (target row, target col) = (originalEmptyRow, originalEmptyCol)
+      this.swapBlocks(originalEmptyRow, originalEmptyCol);
+
+
+      // Check if this move leads to a state closer to the solution
+      if (currentDistance < minDistance) {
+        minDistance = currentDistance;
+        bestMove = move; // Store the coordinates of the block TO CLICK
       }
     }
-    
-    return bestMove;
+
+    console.log("提示：建議移動方塊在", bestMove);
+    return bestMove; // Return the coordinates of the block to move
   }
-  
-  evaluatePosition() {
-    // 使用曼哈頓距離評估當前位置
-    // 曼哈頓距離越小，表示越接近目標狀態
-    let score = 0;
-    
-    for (let row = 0; row < this.size; row++) {
-      for (let col = 0; col < this.size; col++) {
-        const value = this.board[row][col];
+
+  calculateManhattanDistance() {
+    // Calculates the total Manhattan distance for the current board state.
+    // Lower distance means closer to the solved state.
+    let totalDistance = 0;
+    for (let r = 0; r < this.size; r++) {
+      for (let c = 0; c < this.size; c++) {
+        const value = this.board[r][c];
         if (value !== 0) {
-          // 計算當前位置與目標位置的曼哈頓距離
+          // Calculate target position for this value
           const targetRow = Math.floor((value - 1) / this.size);
           const targetCol = (value - 1) % this.size;
-          const distance = Math.abs(row - targetRow) + Math.abs(col - targetCol);
-          
-          // 距離越小，得分越高
-          score -= distance;
+          // Add distance for this tile
+          totalDistance += Math.abs(r - targetRow) + Math.abs(c - targetCol);
         }
       }
     }
-    
-    return score;
+    return totalDistance;
   }
-}
+
+  // evaluatePosition() - Deprecated or unused, Manhattan distance is more standard
+  // evaluatePosition() { ... }
+
+} // End of PuzzleGame class
