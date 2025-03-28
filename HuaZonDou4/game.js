@@ -262,8 +262,8 @@ class PuzzleGame {
     const currentTime = this.timerElement.textContent;
     const currentMoves = this.moves;
     
-    // 從本地存儲中獲取現有的高分記錄
-    const highScores = JSON.parse(localStorage.getItem('puzzleHighScores') || '{}');
+    // 使用StorageManager從存儲中獲取現有的高分記錄
+    const highScores = StorageManager.getItem('puzzleHighScores', {});
     
     // 確保該關卡有記錄陣列
     if (!highScores[key]) {
@@ -334,8 +334,8 @@ class PuzzleGame {
         highScores[key] = highScores[key].slice(0, 3);
       }
       
-      // 保存到本地存儲
-      localStorage.setItem('puzzleHighScores', JSON.stringify(highScores));
+      // 使用StorageManager保存到存儲
+      StorageManager.setItem('puzzleHighScores', highScores);
       
       return true;
     }

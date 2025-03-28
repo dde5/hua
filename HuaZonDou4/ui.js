@@ -424,7 +424,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const highScoresList = document.getElementById('high-scores-list');
     highScoresList.innerHTML = '';
     
-    const scores = JSON.parse(localStorage.getItem('puzzleHighScores') || '{}');
+    // 使用StorageManager獲取高分榜資料
+    const scores = StorageManager.getItem('puzzleHighScores', {});
     
     // 獲取當前圖片名稱
     let imageName = '';
