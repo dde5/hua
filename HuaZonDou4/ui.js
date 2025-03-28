@@ -1,12 +1,12 @@
-// UI互動邏輯
+// ui.js (完整修正版 - 延遲處理)
 document.addEventListener('DOMContentLoaded', () => {
   // 遊戲設置變數
   let selectedMode = null;
   let selectedSize = null;
-  let selectedImage = null; // 存儲預處理後的圖片源 (Data URL 或原始路徑)
-  let selectedColor = 'default'; // 預設為暗灰條紋
+  let selectedImage = null; // 存儲原始圖片源 (路徑或 DataURL)
+  let selectedColor = 'default';
   let gameInstance = null;
-  let currentImageIdentifier = ''; // 新增：用於存儲穩定的圖片標識符 ('C1', 'custom', 'network', etc.)
+  let currentImageIdentifier = ''; // 存儲穩定的圖片標識符
 
   // 預設圖片 (原始路徑)
   const presetImages = [
@@ -25,43 +25,34 @@ document.addEventListener('DOMContentLoaded', () => {
     { name: 'H6', src: 'images/H6.jpg' }
   ];
 
-  // 處理後的預設圖片 (包含 name 和預處理後的 src)
-  let processedPresetImages = [];
-
-  // 初始化圖片選擇區域
-  async function initImageSelection() {
+  // 初始化圖片選擇區域 (不再預處理)
+  function initImageSelection() {
     const imageOptions = document.querySelector('.image-options');
-    if (!imageOptions) return; // Add guard clause
-
-    // 預處理所有預設圖片
-    // 使用 preprocessPresetImages (從 imageUtils.js)
-    if (typeof preprocessPresetImages === 'function') {
-      processedPresetImages = await preprocessPresetImages(presetImages);
-    } else {
-      console.warn("preprocessPresetImages function not found, using original images.");
-      processedPresetImages = presetImages.map(img => ({ ...img })); // Shallow copy
-    }
+    if (!imageOptions) return;
 
     imageOptions.innerHTML = ''; // Clear previous options
 
-    processedPresetImages.forEach(image => {
+    // 直接使用原始 presetImages
+    presetImages.forEach(image => {
       const img = document.createElement('img');
-      img.src = image.src; // 使用預處理後的 src
+      img.src = image.src; // <-- 使用原始路徑
       img.alt = image.name;
       img.title = image.name;
-      img.dataset.imageName = image.name; // 儲存圖片名稱用於關卡識別
+      img.dataset.imageName = image.name; // 儲存標識符
+
       img.addEventListener('click', () => {
         document.querySelectorAll('.image-options img, .image-search-results img').forEach(i => i.classList.remove('selected'));
         img.classList.add('selected');
-        selectedImage = image.src; // 存儲預處理後的 src
-        currentImageIdentifier = image.name; // <-- 使用穩定的預設圖片名稱作為標識符
-        console.log("選擇預設圖片:", currentImageIdentifier, "來源(預處理後):", selectedImage.substring(0, 30) + "...");
+        selectedImage = image.src; // <-- 存儲原始路徑
+        currentImageIdentifier = image.name; // <-- 存儲標識符
+        console.log("選擇預設圖片:", currentImageIdentifier, "原始來源:", selectedImage);
         // 清除自定義圖片輸入
         const customImageInput = document.getElementById('custom-image');
         if (customImageInput) customImageInput.value = '';
       });
       imageOptions.appendChild(img);
     });
+    console.log("預設圖片選項已載入 (未預處理)");
   }
 
   // 初始化模式選擇
@@ -118,17 +109,14 @@ document.addEventListener('DOMContentLoaded', () => {
     sizeButtons.forEach(button => {
       button.addEventListener('click', () => {
         selectedSize = parseInt(button.dataset.size);
-        // highlightSelectedButton(button.id); // highlightSelectedButton will handle this now
         document.querySelectorAll('.size-options button').forEach(btn => btn.classList.remove('selected'));
         button.classList.add('selected');
-        if(customSizeInput) customSizeInput.value = selectedSize; // Update custom input as well
+        if(customSizeInput) customSizeInput.value = selectedSize;
         console.log("選擇尺寸:", selectedSize);
       });
     });
 
-    // 自定義尺寸
     if (customSizeInput) {
-        // Set initial value if selectedSize is not set by buttons
         if (!selectedSize) {
             selectedSize = parseInt(customSizeInput.value) || 4;
         } else {
@@ -139,99 +127,122 @@ document.addEventListener('DOMContentLoaded', () => {
           const value = parseInt(e.target.value);
           if (value >= 3 && value <= 10) {
             selectedSize = value;
-            // Remove selection from preset buttons if custom size is used
             document.querySelectorAll('.size-options button').forEach(btn => btn.classList.remove('selected'));
             console.log("選擇自定義尺寸:", selectedSize);
           } else {
             alert('請輸入3到10之間的數字');
-            e.target.value = selectedSize || 4; // Revert to previous valid size or default
+            e.target.value = selectedSize || 4;
           }
         });
     } else {
-        // Default size if input doesn't exist
         if (!selectedSize) selectedSize = 4;
     }
   }
 
-  // 初始化開始遊戲按鈕
+  // 初始化開始遊戲按鈕 (邏輯調整)
   function initStartGameButton() {
     const startGameBtn = document.getElementById('start-game');
     if(!startGameBtn) return;
 
-    startGameBtn.addEventListener('click', () => {
+    // **修改點擊事件為 async**
+    startGameBtn.addEventListener('click', async () => { // <-- 改為 async
       if (!selectedMode) {
         alert('請選擇遊戲模式');
         return;
       }
-
-      // Ensure selectedSize is set (use default if necessary)
       if (!selectedSize) {
          const customInput = document.getElementById('custom-size-input');
          selectedSize = customInput ? (parseInt(customInput.value) || 4) : 4;
-         console.log("未選擇尺寸，使用預設或輸入值:", selectedSize);
       }
+      // 確保 gameSize 在有效範圍內
+      const gameSize = selectedSize >= 3 && selectedSize <= 10 ? selectedSize : 4;
 
-      if (selectedMode === 'image' && !selectedImage) {
-        const customImageInput = document.getElementById('custom-image');
-        if (customImageInput && customImageInput.files[0]) {
-          const customImage = customImageInput.files[0];
-          const reader = new FileReader();
-          reader.onload = async (e) => {
-             currentImageIdentifier = 'custom'; // 固定標識符
-             try {
-                 const sizeToProcess = selectedSize || 4;
-                 const processedSrc = await preprocessImage(e.target.result, sizeToProcess);
-                 selectedImage = processedSrc; // 更新 selectedImage 為處理後的 Data URL
-                 console.log("自定義圖片處理完成, 標識符:", currentImageIdentifier);
-                 startGame(selectedImage, currentImageIdentifier); // 傳遞標識符
-             } catch (error) {
-                 console.error('處理自定義圖片失敗:', error);
-                 alert('圖片處理失敗，請嘗試其他圖片');
-             }
-          };
-          reader.readAsDataURL(customImage);
-        } else {
-          alert('圖片模式下，請選擇一張圖片或上傳自定義圖片');
-          return;
-        }
+      let imageSourceToProcess = null; // 存儲需要處理的圖片來源 (原始路徑或原始DataURL)
+      let identifierForGame = '';    // 存儲傳給遊戲實例的標識符
+
+      if (selectedMode === 'image') {
+          const customImageInput = document.getElementById('custom-image');
+          // 優先處理自定義圖片
+          if (customImageInput && customImageInput.files[0]) {
+              console.log("檢測到自定義圖片上傳");
+              identifierForGame = 'custom';
+              try {
+                  // 從 input 讀取原始 DataURL
+                  imageSourceToProcess = await readFileAsDataURL(customImageInput.files[0]);
+                  console.log("自定義圖片讀取完成");
+              } catch (error) {
+                  console.error("讀取自定義圖片失敗:", error);
+                  alert("讀取自定義圖片失敗，請重試。");
+                  return;
+              }
+          } else if (selectedImage) { // 處理選擇的預設圖片或網路圖片
+              imageSourceToProcess = selectedImage; // 這是原始路徑
+              identifierForGame = currentImageIdentifier; // 這是標識符
+              console.log(`使用已選擇的圖片: ${identifierForGame}, 來源: ${imageSourceToProcess}`);
+          } else {
+              alert('圖片模式下，請選擇一張圖片或上傳自定義圖片');
+              return;
+          }
+
+          // --- 在 startGame 內部進行預處理 ---
+          if (imageSourceToProcess && typeof preprocessImage === 'function') {
+              console.log("開始預處理選擇的圖片...");
+              startGameBtn.disabled = true; // 禁用按鈕防止重複點擊
+              startGameBtn.textContent = '圖片處理中...';
+              try {
+                  // **調用 preprocessImage 處理原始來源**
+                  const processedDataUrl = await preprocessImage(imageSourceToProcess, gameSize);
+                  console.log("圖片預處理完成。");
+                  // **使用處理後的 DataURL 開始遊戲**
+                  startGame(processedDataUrl, identifierForGame); // <--- 傳遞處理後的 DataURL
+              } catch (error) {
+                  console.error('開始遊戲前的圖片預處理失敗:', error);
+                  alert(`圖片處理失敗: ${error.message}`);
+                  // 確保按鈕恢復
+                  startGameBtn.disabled = false;
+                  startGameBtn.textContent = '開始遊戲';
+              }
+              // Finally block is not needed here as startGame call happens inside try
+              // If startGame itself could throw, add another try...catch around it
+
+          } else if (imageSourceToProcess) {
+               // 如果 preprocessImage 函數不存在或來源無效
+               console.warn("preprocessImage 函數不存在或圖片來源無效，直接使用原始來源 (可能導致問題)");
+               startGame(imageSourceToProcess, identifierForGame);
+               // 確保按鈕恢復 (如果上面有禁用)
+               startGameBtn.disabled = false;
+               startGameBtn.textContent = '開始遊戲';
+          } else {
+               // 理論上不應執行到這裡
+               alert("無法確定圖片來源。");
+               // 確保按鈕恢復
+               startGameBtn.disabled = false;
+               startGameBtn.textContent = '開始遊戲';
+          }
+          // --- 預處理結束 ---
+
       } else {
-           // 如果 selectedImage 存在但 currentImageIdentifier 為空 (可能來自網路搜索或其他舊邏輯)
-           if (selectedMode === 'image' && !currentImageIdentifier) {
-               console.warn("圖片模式下 Identifier 為空，嘗試推斷...");
-               if (selectedImage && selectedImage.startsWith('http')) {
-                   currentImageIdentifier = 'network'; // 或嘗試從URL解析
-                   console.log("推斷為網路圖片, 標識符:", currentImageIdentifier);
-               } else if (selectedImage && selectedImage.startsWith('data:')) {
-                    currentImageIdentifier = 'custom'; // 推斷為自定義
-                    console.warn("推斷為自定義圖片 (Data URL), 標識符:", currentImageIdentifier);
-               } else {
-                   // 嘗試從預設圖片中找回標識符 (備用)
-                   const foundPreset = processedPresetImages.find(p => p.src === selectedImage);
-                   if(foundPreset) {
-                       currentImageIdentifier = foundPreset.name;
-                       console.log("從來源找回預設圖片標識符:", currentImageIdentifier);
-                   } else {
-                       currentImageIdentifier = 'unknown'; // 未知
-                       console.warn("未知圖片來源, 標識符設為 unknown");
-                   }
-               }
-           } else if (selectedMode === 'number') {
-               currentImageIdentifier = ''; // 數字模式無標識符
-               selectedImage = null; // 確保數字模式下圖片源為 null
-           }
-           // 如果 selectedMode 是 image 但 selectedImage 是 null (理論上不應發生在此處)
-           else if (selectedMode === 'image' && !selectedImage) {
-               alert('圖片模式下發生錯誤：找不到圖片來源。');
-               return;
-           }
-
-          startGame(selectedImage, currentImageIdentifier); // 傳遞標識符
+          // 數字模式
+          identifierForGame = '';
+          selectedImage = null; // 確保數字模式無圖片
+          // 直接開始遊戲，無需預處理
+          startGame(null, identifierForGame);
       }
     });
-  }
+}
 
-  // 開始遊戲
-  async function startGame(imageSource, imageIdentifier) { // <-- 接收標識符
+// 輔助函數：讀取文件為 DataURL
+function readFileAsDataURL(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = (error) => reject(error);
+        reader.readAsDataURL(file);
+    });
+}
+
+// 開始遊戲 (接收的 processedImageSource 現在應該是預處理過的 DataURL 或 null)
+function startGame(processedImageSource, imageIdentifier) {
     const gameSetupDiv = document.getElementById('game-setup');
     const gameBoardDiv = document.getElementById('game-board');
     if (!gameSetupDiv || !gameBoardDiv) return;
@@ -239,42 +250,22 @@ document.addEventListener('DOMContentLoaded', () => {
     gameSetupDiv.classList.add('hidden');
     gameBoardDiv.classList.remove('hidden');
 
-    soundManager.playGameStartSound();
+    // 延遲一點播放聲音
+    setTimeout(() => soundManager.playGameStartSound(), 100);
 
-    firstSelectedBlock = null; // 重置作弊模式選擇
+    firstSelectedBlock = null; // 重置作弊選擇
 
-    const cheatButton = document.getElementById('cheat-button'); // 作弊按鈕實例
+    const cheatButton = document.getElementById('cheat-button');
 
     try {
-      // 圖像預處理邏輯：僅在需要時進行
-      // 預設圖片和自定義上傳應已處理
-      let finalImageSource = imageSource;
-      if (selectedMode === 'image' && imageSource && typeof preprocessImage === 'function' && !imageSource.startsWith('data:image/jpeg')) { // 檢查是否為處理過的 jpeg Data URL
-          console.log('圖像模式，來源非預期 Data URL，嘗試預處理:', imageSource.substring(0, 50) + "...");
-          try {
-              const sizeToProcess = selectedSize || 4;
-              finalImageSource = await preprocessImage(imageSource, sizeToProcess);
-              console.log("遊戲開始時預處理完成");
-          } catch (error) {
-              console.error('遊戲開始時圖像預處理失敗:', error);
-              alert('圖像處理失敗，無法開始遊戲。請返回並重試。');
-              gameBoardDiv.classList.add('hidden');
-              gameSetupDiv.classList.remove('hidden');
-              return;
-          }
-      } else if (selectedMode === 'image') {
-           console.log('圖像模式，使用來源:', (finalImageSource || '').substring(0, 50) + "...");
-      }
-
-      console.log('創建遊戲實例，模式:', selectedMode, '尺寸:', selectedSize, '標識符:', imageIdentifier);
-      // 確保尺寸有效
+      const finalImageSource = processedImageSource; // 已經是處理過的
+      // 再次確認 gameSize
       const gameSize = selectedSize >= 3 && selectedSize <= 10 ? selectedSize : 4;
-      gameInstance = new PuzzleGame(gameSize, selectedMode, finalImageSource, imageIdentifier); // <-- 傳遞標識符和有效尺寸
 
-      // 確保遊戲實例的作弊狀態是關閉的
+      console.log('創建遊戲實例，模式:', selectedMode, '尺寸:', gameSize, '標識符:', imageIdentifier);
+      gameInstance = new PuzzleGame(gameSize, selectedMode, finalImageSource, imageIdentifier);
+
       gameInstance.cheatEnabled = false;
-
-      // 重置作弊按鈕視覺狀態
       if (cheatButton) {
           cheatButton.classList.remove('active');
       }
@@ -282,79 +273,81 @@ document.addEventListener('DOMContentLoaded', () => {
       renderGameBoard(); // 渲染遊戲板
       gameInstance.startTimer(); // 啟動計時器
 
-      // 載入此關卡的最高分
-      loadHighScores(selectedMode, imageIdentifier, gameSize); // <-- 傳遞參數以加載正確的記錄
+      // 載入高分
+      loadHighScores(selectedMode, imageIdentifier, gameSize);
+
     } catch (error) {
-      console.error('遊戲初始化失敗:', error);
+      console.error('遊戲實例創建或初始化失敗:', error);
       alert('遊戲初始化失敗，請重試');
       if (gameBoardDiv) gameBoardDiv.classList.add('hidden');
       if (gameSetupDiv) gameSetupDiv.classList.remove('hidden');
+      // 恢復開始按鈕狀態
+      const startGameBtn = document.getElementById('start-game');
+      if (startGameBtn) {
+            startGameBtn.disabled = false;
+            startGameBtn.textContent = '開始遊戲';
+      }
     }
-  }
+}
 
-  // 渲染遊戲板
-  // 渲染遊戲板 (修正版 v2)
-  function renderGameBoard() {
+// 渲染遊戲板 (使用上次修正的邏輯，增加日誌)
+function renderGameBoard() {
     const puzzleContainer = document.querySelector('.puzzle-container');
     if (!puzzleContainer || !gameInstance) {
         console.error("無法渲染遊戲板：容器或遊戲實例不存在。");
         return;
     }
-
     puzzleContainer.innerHTML = ''; // 清空舊板
     puzzleContainer.style.gridTemplateColumns = `repeat(${gameInstance.size}, 1fr)`;
     puzzleContainer.style.gridTemplateRows = `repeat(${gameInstance.size}, 1fr)`;
-    puzzleContainer.style.setProperty('--grid-size', gameInstance.size); // For Safari compatibility
+    puzzleContainer.style.setProperty('--grid-size', gameInstance.size);
 
-    // 確定空白塊的顏色類
     const emptyBlockColorClass = `color-${selectedColor}`;
+    const imageSourceForBoard = gameInstance.imageSource; // 獲取當前遊戲的圖片源 (應為 DataURL 或 null)
+
+    // 添加日誌，檢查圖片源是否有效
+    if (gameInstance.mode === 'image' && !imageSourceForBoard) {
+        console.error("渲染錯誤：圖片模式但遊戲實例的 imageSource 為空！");
+    } else if (gameInstance.mode === 'image' && imageSourceForBoard) {
+        // console.log(`渲染遊戲板，使用圖片源: ${imageSourceForBoard.substring(0, 60)}...`);
+    }
 
     for (let row = 0; row < gameInstance.size; row++) {
       for (let col = 0; col < gameInstance.size; col++) {
         const block = document.createElement('div');
-        block.className = 'puzzle-block'; // Base class first
-        block.dataset.row = row; // Optional: Store position for debugging
-        block.dataset.col = col; // Optional
-
+        block.className = 'puzzle-block';
+        block.dataset.row = row;
+        block.dataset.col = col;
         const value = gameInstance.board[row][col];
 
-        // --- 處理不同類型的方塊 ---
-
         if (value === 0) {
-          // --- 空白方塊 ---
           block.classList.add('empty', emptyBlockColorClass);
-          block.style.backgroundColor = 'transparent'; // 確保背景透明
-          block.style.backgroundImage = 'none';     // 確保無背景圖
-        }
-        else if (gameInstance.mode === 'image' && gameInstance.imageSource) {
-          // --- 圖片方塊 ---
-          block.classList.add('image-block');
-          // **重要：先設置透明背景，清除舊圖片**
           block.style.backgroundColor = 'transparent';
-          block.style.backgroundImage = 'none'; // 清除可能殘留的舊圖片
+          block.style.backgroundImage = 'none';
+        }
+        else if (gameInstance.mode === 'image' && imageSourceForBoard) { // <-- 使用 imageSourceForBoard
+          block.classList.add('image-block');
+          block.style.backgroundColor = 'transparent'; // **確保透明**
+          block.style.backgroundImage = 'none'; // **清除舊圖**
 
-          // 計算此方塊對應圖片的原始位置
-          // value 是該方塊在完成狀態時的數字 (1 to size*size-1)
           const originalCol = (value - 1) % gameInstance.size;
           const originalRow = Math.floor((value - 1) / gameInstance.size);
 
           try {
-            // 應用背景圖片和定位
-            block.style.backgroundImage = `url(${gameInstance.imageSource})`;
+            // **直接設置背景**
+            block.style.backgroundImage = `url(${imageSourceForBoard})`;
 
             const backgroundWidth = gameInstance.size * 100;
             const backgroundHeight = gameInstance.size * 100;
-            // backgroundPosition 的百分比是相對於方塊自身的寬高
-            // 我們需要將背景圖的左上角移動到對應位置
-            const backgroundPosX = -originalCol * 100; // 向左移動 N 個方塊寬度
-            const backgroundPosY = -originalRow * 100; // 向上移動 N 個方塊高度
+            const backgroundPosX = -originalCol * 100;
+            const backgroundPosY = -originalRow * 100;
 
             block.style.backgroundSize = `${backgroundWidth}% ${backgroundHeight}%`;
             block.style.backgroundPosition = `${backgroundPosX}% ${backgroundPosY}%`;
             block.style.backgroundRepeat = 'no-repeat';
 
-            // **移除 JS 中的邊框設定，讓 CSS 處理**
-            // block.style.border = '1px solid rgba(255, 255, 255, 0.1)'; // REMOVED
+             // 添加日誌檢查是否每個塊都嘗試設置了背景
+            // console.log(`  設置方塊 (${row},${col}) val:${value} bgImage, bgPos: ${backgroundPosX}% ${backgroundPosY}%`);
 
           } catch (e) {
             console.error(`設置圖片方塊背景錯誤: (r:${row}, c:${col}, val:${value})`, e);
@@ -364,45 +357,40 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }
         else if (gameInstance.mode === 'number') {
-          // --- 數字方塊 ---
-          block.style.backgroundImage = 'none'; // 確保無背景圖
+          block.style.backgroundImage = 'none';
           // CSS 中 :not(.image-block):not(.empty) 會處理藍色背景
-
           const numberSpan = document.createElement('span');
           numberSpan.textContent = value;
-          // 使用 Flexbox 居中 (樣式可在 CSS 中定義以保持一致)
           numberSpan.style.display = 'flex';
           numberSpan.style.alignItems = 'center';
           numberSpan.style.justifyContent = 'center';
           numberSpan.style.width = '100%';
           numberSpan.style.height = '100%';
           block.appendChild(numberSpan);
+        } else {
+           console.warn("渲染遊戲板時遇到預期外的方塊狀態", {row, col, value, mode: gameInstance.mode});
+           block.style.backgroundColor = '#ff0000'; // 使用亮紅色標示錯誤
+           block.textContent = '!';
+           block.style.backgroundImage = 'none';
         }
-        else {
-          // --- 預期外的狀態 ---
-          console.warn("渲染遊戲板時遇到預期外的方塊狀態", {row, col, value, mode: gameInstance.mode});
-          block.style.backgroundColor = '#ff0000'; // 使用亮紅色標示錯誤
-          block.textContent = '!';
-          block.style.backgroundImage = 'none';
-        }
-
         puzzleContainer.appendChild(block);
       }
     }
-     // console.log("遊戲板渲染完成"); // Optional: Debug log
-  }
+     // console.log("遊戲板渲染完成");
+}
 
-  // 更新遊戲統計
-  function updateGameStats() {
+
+// 更新遊戲統計
+function updateGameStats() {
     const movesSpan = document.getElementById('moves');
     if (movesSpan && gameInstance) {
         movesSpan.textContent = gameInstance.moves;
     }
     // 時間由計時器更新
-  }
+}
 
-   // 遊戲完成
-   function gameComplete() {
+ // 遊戲完成
+ function gameComplete() {
     if (!gameInstance) return;
 
     gameInstance.stopTimer();
@@ -448,14 +436,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // 保存高分
     gameInstance.saveHighScore(); // gameInstance 內部知道自己的 mode, identifier, size
 
-    // --- 按鈕事件監聽器 ---
-    // 為避免重複添加監聽器，先移除舊的再添加新的，或者使用 once 選項
+    // --- 按鈕事件監聽器 (使用 once) ---
     const playAgainBtn = document.getElementById('play-again');
     const backToMenuBtn = document.getElementById('back-to-menu');
 
     const playAgainHandler = () => {
         gameCompleteDiv.classList.add('hidden');
-        // 重新開始遊戲，使用相同的設置
+        // 重新開始遊戲，使用相同的設置 (processed image source, identifier)
         if (gameInstance) {
             startGame(gameInstance.imageSource, gameInstance.imageIdentifier);
         }
@@ -469,34 +456,36 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     if (playAgainBtn) {
-        playAgainBtn.removeEventListener('click', playAgainHandler); // Remove previous listener
-        playAgainBtn.addEventListener('click', playAgainHandler, { once: true }); // Add new one-time listener
+        playAgainBtn.removeEventListener('click', playAgainHandler); // Remove previous just in case
+        playAgainBtn.addEventListener('click', playAgainHandler, { once: true });
     }
     if (backToMenuBtn) {
-        backToMenuBtn.removeEventListener('click', backToMenuHandler); // Remove previous listener
-        backToMenuBtn.addEventListener('click', backToMenuHandler, { once: true }); // Add new one-time listener
+        backToMenuBtn.removeEventListener('click', backToMenuHandler);
+        backToMenuBtn.addEventListener('click', backToMenuHandler, { once: true });
     }
   }
 
-  // 重置遊戲設置
-  function resetGameSettings() {
+// 重置遊戲設置
+function resetGameSettings() {
     selectedMode = null;
     selectedSize = null;
-    selectedImage = null;
-    currentImageIdentifier = ''; // 重置標識符
+    selectedImage = null; // Reset original source
+    currentImageIdentifier = '';
 
     document.querySelectorAll('.selected').forEach(el => el.classList.remove('selected'));
     const imageSelectionDiv = document.getElementById('image-selection');
     if(imageSelectionDiv) imageSelectionDiv.classList.add('hidden');
     const customImageInput = document.getElementById('custom-image');
     if (customImageInput) customImageInput.value = ''; // Clear file input
+     // Remove custom preview if it exists
+     const customPreview = document.querySelector('.image-options .custom-preview');
+     if(customPreview) customPreview.remove();
 
-    // 重置模式和尺寸按鈕視覺狀態
+
     document.querySelectorAll('.mode-options button, .size-options button').forEach(button => button.classList.remove('selected'));
     const customSizeInput = document.getElementById('custom-size-input');
-    if(customSizeInput) customSizeInput.value = 4; // Reset custom size input to default
+    if(customSizeInput) customSizeInput.value = 4; // Reset custom size input
 
-    // 重置作弊按鈕狀態
     if (gameInstance) {
         gameInstance.cheatEnabled = false;
     }
@@ -505,13 +494,11 @@ document.addEventListener('DOMContentLoaded', () => {
       cheatButton.classList.remove('active');
     }
 
-    // 清空高分榜顯示
      const highScoresList = document.getElementById('high-scores-list');
      if (highScoresList) {
-        highScoresList.innerHTML = '<div class="no-record">選擇關卡以查看記錄</div>'; // Update placeholder text
+        highScoresList.innerHTML = '<div class="no-record">選擇關卡以查看記錄</div>';
      }
 
-     // 停止計時器（如果正在運行）
      if (gameInstance) {
          gameInstance.stopTimer();
          gameInstance = null; // Clear game instance
@@ -521,32 +508,34 @@ document.addEventListener('DOMContentLoaded', () => {
      if(timeSpan) timeSpan.textContent = '00:00';
      if(movesSpan) movesSpan.textContent = '0';
 
+     // Reset start game button state
+     const startGameBtn = document.getElementById('start-game');
+      if (startGameBtn) {
+            startGameBtn.disabled = false;
+            startGameBtn.textContent = '開始遊戲';
+      }
+
      console.log("遊戲設置已重置");
   }
 
-  // 載入最高分
-  function loadHighScores(mode, identifier, size) { // <-- 接收參數
+// 載入最高分 (與上次修正相同)
+function loadHighScores(mode, identifier, size) {
     const highScoresList = document.getElementById('high-scores-list');
     if (!highScoresList) return;
-    highScoresList.innerHTML = ''; // Clear previous list
+    highScoresList.innerHTML = '';
 
-    // 檢查參數有效性
     if (!mode || size === undefined || size === null) {
         highScoresList.innerHTML = '<div class="no-record">無法載入記錄：參數缺失</div>';
         return;
     }
-     // 對於圖片模式，identifier 不能是 undefined 或 null，但可以是空字符串 ''
-     if (mode === 'image' && identifier === undefined || identifier === null) {
+     if (mode === 'image' && (identifier === undefined || identifier === null)) {
         highScoresList.innerHTML = '<div class="no-record">無法載入記錄：圖片標識符缺失</div>';
         return;
      }
 
-
     const scores = StorageManager.getItem('puzzleHighScores', {});
-
-    // 使用傳入的參數生成 key
     const key = `${mode}-${identifier}-${size}`;
-    console.log("載入高分榜，Key:", key); // Debugging
+    console.log("載入高分榜，Key:", key);
 
     const modeScores = Array.isArray(scores[key]) ? scores[key] : [];
 
@@ -558,67 +547,38 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       const table = document.createElement('table');
       table.classList.add('high-scores-table');
-
       const thead = document.createElement('thead');
       const headerRow = document.createElement('tr');
-
       const headers = ['關卡', '難度', '排名', '時間', '步數', '作弊'];
-      headers.forEach(text => {
-          const th = document.createElement('th');
-          th.textContent = text;
-          headerRow.appendChild(th);
-      });
-
+      headers.forEach(text => { const th = document.createElement('th'); th.textContent = text; headerRow.appendChild(th); });
       thead.appendChild(headerRow);
       table.appendChild(thead);
-
       const tbody = document.createElement('tbody');
-
       modeScores.forEach((score, index) => {
         const row = document.createElement('tr');
-
-        // 直接使用儲存的數據
         const levelCell = document.createElement('td');
-        // Provide fallback based on current game state if stored data is missing
         levelCell.textContent = score.levelName || (mode === 'number' ? '數字模式' : identifier || '未知圖片');
         row.appendChild(levelCell);
-
         const difficultyCell = document.createElement('td');
         difficultyCell.textContent = score.difficulty || `${size}x${size}`;
         row.appendChild(difficultyCell);
-
-        const rankCell = document.createElement('td');
-        rankCell.textContent = `#${index + 1}`;
-        row.appendChild(rankCell);
-
-        const timeCell = document.createElement('td');
-        timeCell.textContent = score.time || 'N/A';
-        row.appendChild(timeCell);
-
-        const movesCell = document.createElement('td');
-        movesCell.textContent = score.moves !== undefined ? score.moves : 'N/A';
-        row.appendChild(movesCell);
-
+        const rankCell = document.createElement('td'); rankCell.textContent = `#${index + 1}`; row.appendChild(rankCell);
+        const timeCell = document.createElement('td'); timeCell.textContent = score.time || 'N/A'; row.appendChild(timeCell);
+        const movesCell = document.createElement('td'); movesCell.textContent = score.moves !== undefined ? score.moves : 'N/A'; row.appendChild(movesCell);
         const cheatCell = document.createElement('td');
-        if (score.cheatUsed) {
-          cheatCell.textContent = `${score.cheatCount || 1}次`; // Default to 1 if count missing
-          cheatCell.classList.add('cheat-used');
-        } else {
-          cheatCell.textContent = '無';
-          cheatCell.classList.add('cheat-not-used');
-        }
+        if (score.cheatUsed) { cheatCell.textContent = `${score.cheatCount || 1}次`; cheatCell.classList.add('cheat-used'); }
+        else { cheatCell.textContent = '無'; cheatCell.classList.add('cheat-not-used'); }
         row.appendChild(cheatCell);
-
         tbody.appendChild(row);
       });
-
       table.appendChild(tbody);
       highScoresList.appendChild(table);
     }
   }
 
-   // 初始化遊戲控制按鈕
-   function initGameControls() {
+
+// 初始化遊戲控制按鈕 (與上次修正相同)
+function initGameControls() {
     const resetBtn = document.getElementById('reset-game');
     const newGameBtn = document.getElementById('new-game');
     const muteBtn = document.getElementById('mute-button');
@@ -630,47 +590,36 @@ document.addEventListener('DOMContentLoaded', () => {
     if (resetBtn) {
         resetBtn.addEventListener('click', () => {
             if (!gameInstance) return;
-            gameInstance.resetGame(); // Resets internal state and timer
-            renderGameBoard();        // Renders the new board
-            updateGameStats();        // Updates moves display
+            gameInstance.resetGame();
+            renderGameBoard();
+            updateGameStats();
             soundManager.playGameStartSound();
-
-            // Reset cheat button state
-            gameInstance.cheatEnabled = false; // Ensure instance state is reset
+            gameInstance.cheatEnabled = false;
             const cheatButton = document.getElementById('cheat-button');
-            if (cheatButton) {
-                cheatButton.classList.remove('active');
-            }
+            if (cheatButton) cheatButton.classList.remove('active');
             console.log("遊戲已重置");
         });
     }
 
     if (newGameBtn) {
         newGameBtn.addEventListener('click', () => {
-            if (gameInstance) {
-                gameInstance.stopTimer();
-            }
+            if (gameInstance) gameInstance.stopTimer();
             const gameBoardDiv = document.getElementById('game-board');
             const gameSetupDiv = document.getElementById('game-setup');
             if(gameBoardDiv) gameBoardDiv.classList.add('hidden');
             if(gameSetupDiv) gameSetupDiv.classList.remove('hidden');
-            resetGameSettings(); // Resets UI and clears game instance
+            resetGameSettings();
         });
     }
 
     if (muteBtn) {
-        // Initialize button state based on soundManager
         muteBtn.classList.toggle('active', soundManager.muted);
         muteBtn.style.backgroundColor = soundManager.muted ? '#e74c3c' : '#3498db';
-
         muteBtn.addEventListener('click', () => {
             const isMuted = soundManager.toggleMute();
             muteBtn.classList.toggle('active', isMuted);
-            muteBtn.style.backgroundColor = isMuted ? '#e74c3c' : '#3498db'; // Update color
-            // Test sound if unmuted
-            if (!isMuted) {
-                soundManager.playGameStartSound();
-            }
+            muteBtn.style.backgroundColor = isMuted ? '#e74c3c' : '#3498db';
+            if (!isMuted) soundManager.playGameStartSound();
         });
     }
 
@@ -680,381 +629,184 @@ document.addEventListener('DOMContentLoaded', () => {
             const hintMove = gameInstance.getHint();
             if (hintMove) {
                 highlightHintBlock(hintMove.row, hintMove.col);
-                soundManager.playMoveSound(); // Play sound for hint
-            } else {
-                console.log("無法獲取提示 (可能已完成或無有效移動)");
-            }
+                soundManager.playMoveSound();
+            } else { console.log("無法獲取提示"); }
         });
     }
 
     if (showOriginalBtn) {
-        let showingOriginal = false; // State local to this button
+        let showingOriginal = false;
         showOriginalBtn.addEventListener('click', () => {
            if (gameInstance && gameInstance.mode === 'image' && gameInstance.imageSource) {
                 showingOriginal = !showingOriginal;
                 showOriginalBtn.classList.toggle('active', showingOriginal);
                 const puzzleCont = document.querySelector('.puzzle-container');
                 if (!puzzleCont) return;
-
                 let overlay = document.getElementById('original-image-overlay');
-
                 if (showingOriginal) {
                     if (!overlay) {
-                        overlay = document.createElement('div');
-                        overlay.id = 'original-image-overlay';
-                        // Basic overlay styling, adjust in CSS for better control
-                        Object.assign(overlay.style, {
-                            position: 'absolute', top: '0', left: '0',
-                            width: '100%', height: '100%',
-                            backgroundImage: `url(${gameInstance.imageSource})`,
-                            backgroundSize: 'contain', // Use contain to see the whole image
-                            backgroundPosition: 'center',
-                            backgroundRepeat: 'no-repeat',
-                            backgroundColor: 'rgba(255, 255, 255, 0.8)', // Semi-transparent background
-                            zIndex: '10', opacity: '0', transition: 'opacity 0.3s ease'
-                        });
-                        puzzleCont.style.position = 'relative'; // Ensure container is positioned
-                        puzzleCont.appendChild(overlay);
-                        // Force reflow before adding class for transition
-                        void overlay.offsetWidth;
-                        overlay.style.opacity = '1';
+                        overlay = document.createElement('div'); overlay.id = 'original-image-overlay';
+                        Object.assign(overlay.style, { position: 'absolute', top: '0', left: '0', width: '100%', height: '100%', backgroundImage: `url(${gameInstance.imageSource})`, backgroundSize: 'contain', backgroundPosition: 'center', backgroundRepeat: 'no-repeat', backgroundColor: 'rgba(255, 255, 255, 0.8)', zIndex: '10', opacity: '0', transition: 'opacity 0.3s ease' });
+                        puzzleCont.style.position = 'relative'; puzzleCont.appendChild(overlay); void overlay.offsetWidth; overlay.style.opacity = '1';
                     }
                     showOriginalBtn.textContent = '隱藏原圖';
                 } else {
-                    if (overlay) {
-                        overlay.style.opacity = '0';
-                        // Remove after transition
-                        overlay.addEventListener('transitionend', () => overlay.remove(), { once: true });
-                    }
+                    if (overlay) { overlay.style.opacity = '0'; overlay.addEventListener('transitionend', () => overlay.remove(), { once: true }); }
                     showOriginalBtn.textContent = '顯示原圖';
                 }
-           } else {
-               alert("僅在圖片模式下可用");
-           }
+           } else { alert("僅在圖片模式下可用"); }
         });
     }
 
     if (changeColorBtn) {
-        // Update button style function
-        function updateChangeColorButtonStyle(color) {
+        function updateChangeColorButtonStyle(color) { /* ... (same as before) ... */
             changeColorBtn.classList.remove('color-default-btn', 'color-blue-btn', 'color-red-btn', 'color-orange-btn');
             changeColorBtn.classList.add(`color-${color}-btn`);
-            // Update background directly (optional, CSS might handle it)
-             switch(color) {
-                case 'default': changeColorBtn.style.backgroundColor = '#555'; break;
-                case 'blue': changeColorBtn.style.backgroundColor = '#3498db'; break;
-                case 'red': changeColorBtn.style.backgroundColor = '#e74c3c'; break;
-                case 'orange': changeColorBtn.style.backgroundColor = '#f39c12'; break;
-             }
-             changeColorBtn.style.backgroundImage = (color === 'default') ? 'repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.1) 10px, rgba(255, 255, 255, 0.2) 10px, rgba(255, 255, 255, 0.2) 20px)' : 'none';
-        }
-
-        // Set initial style
+            switch(color) { case 'default': changeColorBtn.style.backgroundColor = '#555'; break; case 'blue': changeColorBtn.style.backgroundColor = '#3498db'; break; case 'red': changeColorBtn.style.backgroundColor = '#e74c3c'; break; case 'orange': changeColorBtn.style.backgroundColor = '#f39c12'; break; }
+            changeColorBtn.style.backgroundImage = (color === 'default') ? 'repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.1) 10px, rgba(255, 255, 255, 0.2) 10px, rgba(255, 255, 255, 0.2) 20px)' : 'none';
+         }
         updateChangeColorButtonStyle(selectedColor);
-
         changeColorBtn.addEventListener('click', () => {
             const colors = ['default', 'blue', 'red', 'orange'];
             const currentIndex = colors.indexOf(selectedColor);
             const nextIndex = (currentIndex + 1) % colors.length;
             selectedColor = colors[nextIndex];
-
             soundManager.playColorChangeSound();
             updateChangeColorButtonStyle(selectedColor);
-
-            // Update empty blocks
-            document.querySelectorAll('.puzzle-block.empty').forEach(block => {
-                block.classList.remove('color-default', 'color-blue', 'color-red', 'color-orange');
-                block.classList.add(`color-${selectedColor}`);
-            });
+            document.querySelectorAll('.puzzle-block.empty').forEach(block => { block.classList.remove('color-default', 'color-blue', 'color-red', 'color-orange'); block.classList.add(`color-${selectedColor}`); });
         });
     }
 
-    // --- 作弊按鈕邏輯修正 ---
+    // --- 作弊按鈕邏輯 (與上次修正相同) ---
     const gameControls = document.querySelector('.game-controls');
     let cheatButton = document.getElementById('cheat-button');
-    if (!cheatButton && gameControls) { // 如果按鈕不存在則創建
-        cheatButton = document.createElement('button');
-        cheatButton.id = 'cheat-button';
-        cheatButton.textContent = '作弊模式';
-        gameControls.appendChild(cheatButton);
-        console.log("作弊按鈕已創建");
-    } else if (!cheatButton) {
-        console.error("無法找到 .game-controls 元素以添加作弊按鈕");
-        return; // Cannot proceed without cheat button container
-    }
+    if (!cheatButton && gameControls) {
+        cheatButton = document.createElement('button'); cheatButton.id = 'cheat-button'; cheatButton.textContent = '作弊模式'; gameControls.appendChild(cheatButton); console.log("作弊按鈕已創建");
+    } else if (!cheatButton) { console.error("無法找到 .game-controls"); return; }
 
-    let firstSelectedBlock = null; // Track first selected block for cheat swap
-
+    let firstSelectedBlock = null;
     cheatButton.addEventListener('click', () => {
-        if (!gameInstance) {
-            console.warn("作弊按鈕點擊：遊戲實例未初始化");
-            alert("請先開始遊戲");
-            return;
-        }
-
-        const currentTime = new Date();
-        // Ensure startTime is valid
-        const startTime = gameInstance.startTime || currentTime;
-        const elapsedTimeInSeconds = Math.floor((currentTime - startTime) / 1000);
-        // Time limit: 5 minutes (300 seconds)
-        const timeLimit = 5 * 60;
-
-        // Check time limit
+        if (!gameInstance) { console.warn("作弊按鈕點擊：遊戲實例未初始化"); alert("請先開始遊戲"); return; }
+        const currentTime = new Date(); const startTime = gameInstance.startTime || currentTime; const elapsedTimeInSeconds = Math.floor((currentTime - startTime) / 1000); const timeLimit = 5 * 60;
         if (elapsedTimeInSeconds < timeLimit) {
-            const remainingSecondsTotal = timeLimit - elapsedTimeInSeconds;
-            const remainingMinutes = Math.floor(remainingSecondsTotal / 60);
-            const remainingSeconds = remainingSecondsTotal % 60;
+            const remainingSecondsTotal = timeLimit - elapsedTimeInSeconds; const remainingMinutes = Math.floor(remainingSecondsTotal / 60); const remainingSeconds = remainingSecondsTotal % 60;
             alert(`作弊模式將在 ${remainingMinutes}分${remainingSeconds}秒 後可用`);
-            // Ensure button and game state remain inactive
-            gameInstance.cheatEnabled = false;
-            cheatButton.classList.remove('active');
-            return; // Time not up, do not toggle
+            gameInstance.cheatEnabled = false; cheatButton.classList.remove('active'); return;
         }
-
-        // --- Core fix: Toggle gameInstance's state directly ---
         gameInstance.cheatEnabled = !gameInstance.cheatEnabled;
-
-        // Update button visual state based on the new gameInstance state
         cheatButton.classList.toggle('active', gameInstance.cheatEnabled);
-
-        // Reset block selection state
-        if (firstSelectedBlock) {
-            firstSelectedBlock.element.classList.remove('cheat-selected'); // Clear visual selection
-            firstSelectedBlock = null;
-        }
-        // Also clear any lingering selections just in case
-        document.querySelectorAll('.puzzle-block.cheat-selected').forEach(block => {
-            block.classList.remove('cheat-selected');
-        });
-
-
-        // Provide feedback
-        if (gameInstance.cheatEnabled) {
-            alert('作弊模式已啟用！點擊任意兩個非空白方塊進行交換。');
-            soundManager.playCheatSound();
-        } else {
-            // Optional: Alert when disabled, or just rely on button style
-            // alert('作弊模式已禁用。');
-        }
-        console.log("作弊模式狀態切換為:", gameInstance.cheatEnabled); // Debug
+        if (firstSelectedBlock) { firstSelectedBlock.element.classList.remove('cheat-selected'); firstSelectedBlock = null; }
+        document.querySelectorAll('.puzzle-block.cheat-selected').forEach(block => { block.classList.remove('cheat-selected'); });
+        if (gameInstance.cheatEnabled) { alert('作弊模式已啟用！點擊任意兩個非空白方塊進行交換。'); soundManager.playCheatSound(); }
+        console.log("作弊模式狀態切換為:", gameInstance.cheatEnabled);
     });
 
-
-    // --- Block Click Handling (Unified) ---
+    // --- Block Click Handling (與上次修正相同) ---
     if (puzzleContainer) {
         puzzleContainer.addEventListener('click', (e) => {
-          if (!gameInstance) return; // Ensure game is running
-
+          if (!gameInstance) return;
           const blockElement = e.target.closest('.puzzle-block');
-          if (!blockElement || blockElement.classList.contains('empty')) {
-              // Clicked on gap or empty block
-              if (firstSelectedBlock) {
-                   // If cheat mode was active and a block was selected, deselect it
-                   firstSelectedBlock.element.classList.remove('cheat-selected');
-                   firstSelectedBlock = null;
-                   console.log("作弊選擇已取消 (點擊空白處)");
+          if (!blockElement || blockElement.classList.contains('empty')) { if (firstSelectedBlock) { firstSelectedBlock.element.classList.remove('cheat-selected'); firstSelectedBlock = null; console.log("作弊選擇已取消 (點擊空白處)"); } return; }
+          const blocksArray = Array.from(puzzleContainer.children); const index = blocksArray.indexOf(blockElement); if (index === -1) return;
+          const row = Math.floor(index / gameInstance.size); const col = index % gameInstance.size;
+
+          if (gameInstance.cheatEnabled) { // 作弊模式
+              const currentTime = new Date(); const startTime = gameInstance.startTime || currentTime; const elapsedTimeInSeconds = Math.floor((currentTime - startTime) / 1000); const timeLimit = 5 * 60;
+              if (elapsedTimeInSeconds < timeLimit) { alert('作弊功能尚未啟用 (未滿5分鐘)。'); gameInstance.cheatEnabled = false; if(cheatButton) cheatButton.classList.remove('active'); if (firstSelectedBlock) { firstSelectedBlock.element.classList.remove('cheat-selected'); firstSelectedBlock = null; } return; }
+
+              if (!firstSelectedBlock) { firstSelectedBlock = { row, col, element: blockElement }; blockElement.classList.add('cheat-selected'); console.log("作弊選擇1:", `(${row},${col})`); }
+              else { console.log("作弊選擇2:", `(${row},${col})`);
+                if (firstSelectedBlock.row === row && firstSelectedBlock.col === col) { blockElement.classList.remove('cheat-selected'); firstSelectedBlock = null; console.log("作弊取消選擇 (重覆點擊)"); return; }
+                const { row: row1, col: col1 } = firstSelectedBlock; const swapped = gameInstance.cheatSwap(row1, col1, row, col);
+                firstSelectedBlock.element.classList.remove('cheat-selected'); firstSelectedBlock = null;
+                if (swapped) { requestAnimationFrame(() => { renderGameBoard(); updateGameStats(); if (gameInstance.checkWin()) { gameComplete(); } }); }
               }
-              return;
-          }
-
-          // Get block position (using gameInstance.size)
-          const blocksArray = Array.from(puzzleContainer.children);
-          const index = blocksArray.indexOf(blockElement);
-          if (index === -1) return; // Should not happen if blockElement is valid
-
-          const row = Math.floor(index / gameInstance.size);
-          const col = index % gameInstance.size;
-
-          // --- Cheat Mode Logic ---
-          if (gameInstance.cheatEnabled) {
-
-              // Check time limit again before allowing swap logic
-              const currentTime = new Date();
-              const startTime = gameInstance.startTime || currentTime;
-              const elapsedTimeInSeconds = Math.floor((currentTime - startTime) / 1000);
-              const timeLimit = 5 * 60;
-              if (elapsedTimeInSeconds < timeLimit) {
-                  alert('作弊功能尚未啟用 (未滿5分鐘)。');
-                  // Force disable cheat state if somehow activated early
-                  gameInstance.cheatEnabled = false;
-                  if(cheatButton) cheatButton.classList.remove('active');
-                  if (firstSelectedBlock) { // Clear selection
-                      firstSelectedBlock.element.classList.remove('cheat-selected');
-                      firstSelectedBlock = null;
-                  }
-                  return;
-              }
-
-
-              if (!firstSelectedBlock) {
-                // Select first block
-                firstSelectedBlock = { row, col, element: blockElement };
-                blockElement.classList.add('cheat-selected');
-                console.log("作弊選擇1:", `(${row},${col})`);
-              } else {
-                // Select second block
-                 console.log("作弊選擇2:", `(${row},${col})`);
-
-                // Check if clicking the same block again to deselect
-                if (firstSelectedBlock.row === row && firstSelectedBlock.col === col) {
-                  blockElement.classList.remove('cheat-selected');
-                  firstSelectedBlock = null;
-                  console.log("作弊取消選擇 (重覆點擊)");
-                  return;
-                }
-
-                // Perform the swap via gameInstance
-                const { row: row1, col: col1 } = firstSelectedBlock;
-                const swapped = gameInstance.cheatSwap(row1, col1, row, col);
-
-                // Clear visual selection regardless of swap success
-                firstSelectedBlock.element.classList.remove('cheat-selected');
-                firstSelectedBlock = null;
-
-                if (swapped) {
-                  // If swap was successful (not an empty block, etc.)
-                  requestAnimationFrame(() => { // Use rAF for smoother update
-                      renderGameBoard();
-                      updateGameStats();
-                      if (gameInstance.checkWin()) {
-                          gameComplete();
-                      }
-                  });
-                }
-              }
-          }
-          // --- Normal Mode Logic ---
-          else {
-            // Check if the clicked block is adjacent to the empty space
+          } else { // 普通模式
             if (gameInstance.isAdjacent(row, col)) {
-              const moved = gameInstance.moveBlock(row, col); // moveBlock handles swap & sound
-              if (moved) {
-                 requestAnimationFrame(() => { // Use rAF for smoother update
-                    renderGameBoard();
-                    updateGameStats(); // Update moves display
-                    if (gameInstance.checkWin()) {
-                       gameComplete();
-                    }
-                 });
-              }
+              const moved = gameInstance.moveBlock(row, col);
+              if (moved) { requestAnimationFrame(() => { renderGameBoard(); updateGameStats(); if (gameInstance.checkWin()) { gameComplete(); } }); }
             }
-            // Else: Clicked a non-movable block in normal mode - do nothing
           }
         }, true); // Use capture phase
-    } else {
-        console.error("無法找到 .puzzle-container 元素以添加點擊監聽器");
-    }
-  }
+    } else { console.error("無法找到 .puzzle-container"); }
+}
 
-  // 高亮提示的方塊
-  function highlightHintBlock(row, col) {
+
+// 高亮提示的方塊 (與上次修正相同)
+function highlightHintBlock(row, col) {
     if (!gameInstance) return;
-    // Remove previous hints
-    document.querySelectorAll('.puzzle-block.hint').forEach(block => {
-      block.classList.remove('hint');
-    });
+    document.querySelectorAll('.puzzle-block.hint').forEach(block => { block.classList.remove('hint'); });
+    const index = row * gameInstance.size + col; const blocks = document.querySelectorAll('.puzzle-container .puzzle-block');
+    if (blocks && blocks[index]) { blocks[index].classList.add('hint'); setTimeout(() => { if (blocks[index] && blocks[index].classList.contains('hint')) { blocks[index].classList.remove('hint'); } }, 3000); }
+}
 
-    const index = row * gameInstance.size + col;
-    const blocks = document.querySelectorAll('.puzzle-container .puzzle-block');
 
-    if (blocks && blocks[index]) {
-      blocks[index].classList.add('hint');
-
-      // Remove highlight after 3 seconds
-      setTimeout(() => {
-         // Check if the block still exists and has the class before removing
-         if (blocks[index] && blocks[index].classList.contains('hint')) {
-            blocks[index].classList.remove('hint');
-         }
-      }, 3000);
-    }
-  }
-
-  // 初始化自定义图片上传
-  function initCustomImageUpload() {
+// 初始化自定义图片上传 (只讀取，不預處理)
+function initCustomImageUpload() {
     const customImageInput = document.getElementById('custom-image');
     if (!customImageInput) return;
 
     customImageInput.addEventListener('change', (e) => {
       if (e.target.files && e.target.files[0]) {
-        const reader = new FileReader();
-        reader.onload = async (event) => {
-          try {
-            // Use currently selected size or default for preprocessing
-            const size = selectedSize || 4;
-            const processedImage = await preprocessImage(event.target.result, size);
-            selectedImage = processedImage; // Store the processed Data URL
-            currentImageIdentifier = 'custom'; // Set identifier
-            console.log("自定義圖片已選擇並預處理, 標識符:", currentImageIdentifier);
+        const file = e.target.files[0];
+        // 使用 readFileAsDataURL 讀取原始 DataURL
+        readFileAsDataURL(file).then(dataUrl => {
+             selectedImage = dataUrl; // **存儲原始 DataURL**
+             currentImageIdentifier = 'custom';
+             console.log("自定義圖片已選擇 (未預處理), 標識符:", currentImageIdentifier);
 
-            // Clear preset image selection
-             document.querySelectorAll('.image-options img, .image-search-results img').forEach(img => img.classList.remove('selected'));
+             // 清除預設圖片選擇
+             document.querySelectorAll('.image-options img.selected').forEach(img => img.classList.remove('selected'));
+             // 移除舊的自定義預覽
+             const imageOptions = document.querySelector('.image-options');
+             if(imageOptions){
+                 const existingPreview = imageOptions.querySelector('.custom-preview');
+                 if (existingPreview) existingPreview.remove();
+                 // 添加新的預覽
+                 const preview = document.createElement('img');
+                 preview.src = selectedImage; preview.alt = '自定義預覽'; preview.title = '自定義預覽';
+                 preview.classList.add('selected', 'custom-preview');
+                 preview.style.width = '100px'; preview.style.height = '100px'; preview.style.objectFit = 'cover';
+                 imageOptions.appendChild(preview);
+             }
 
-            // Optional: Show preview (could reuse image-options)
-            const imageOptions = document.querySelector('.image-options');
-            if (imageOptions) {
-                // Remove previous custom preview if exists
-                const existingPreview = imageOptions.querySelector('.custom-preview');
-                if (existingPreview) {
-                  imageOptions.removeChild(existingPreview);
-                }
-                // Add new preview
-                const preview = document.createElement('img');
-                preview.src = selectedImage;
-                preview.alt = '自定義預覽';
-                preview.title = '自定義預覽';
-                preview.classList.add('selected', 'custom-preview'); // Mark as selected and custom
-                preview.style.width = '100px'; // Match preset style
-                preview.style.height = '100px';
-                preview.style.objectFit = 'cover';
-                imageOptions.appendChild(preview);
+             // 自動選擇圖片模式
+             if (selectedMode !== 'image') {
+                  selectedMode = 'image';
+                  const imageModeBtn = document.getElementById('image-mode');
+                  const numberModeBtn = document.getElementById('number-mode');
+                  if(imageModeBtn) imageModeBtn.classList.add('selected');
+                  if(numberModeBtn) numberModeBtn.classList.remove('selected');
+                  const imageSelectionDiv = document.getElementById('image-selection');
+                  if(imageSelectionDiv) imageSelectionDiv.classList.remove('hidden');
+             }
 
-                 // Automatically select image mode if a custom image is uploaded
-                 if (selectedMode !== 'image') {
-                      selectedMode = 'image';
-                      const imageModeBtn = document.getElementById('image-mode');
-                      const numberModeBtn = document.getElementById('number-mode');
-                      if(imageModeBtn) imageModeBtn.classList.add('selected');
-                      if(numberModeBtn) numberModeBtn.classList.remove('selected');
-                      const imageSelectionDiv = document.getElementById('image-selection');
-                      if(imageSelectionDiv) imageSelectionDiv.classList.remove('hidden');
-                 }
-            }
-
-
-          } catch (error) {
-            console.error('處理上傳圖片失敗:', error);
-            alert('圖片處理失敗，請嘗試其他圖片');
-            selectedImage = null; // Clear selection on error
+        }).catch(error => {
+            console.error('讀取上傳圖片失敗:', error);
+            alert('讀取圖片失敗，請重試');
+            selectedImage = null;
             currentImageIdentifier = '';
-            e.target.value = ''; // Clear the file input
-          }
-        };
-        reader.readAsDataURL(e.target.files[0]);
-      } else {
-          // No file selected, potentially clear selection?
-          // selectedImage = null;
-          // currentImageIdentifier = '';
+            e.target.value = ''; // 清除文件輸入
+        });
       }
     });
-  }
+}
 
-  // 顏色選擇 - 保持默認
-  function initColorSelection() {
+// 顏色選擇 - 保持默認
+function initColorSelection() {
     selectedColor = 'default';
-  }
+}
 
-  // 初始化所有UI組件
-  function initUI() {
+// 初始化所有UI組件
+function initUI() {
     initModeSelection();
-    initImageSelection(); // Should be called after mode selection setup maybe? Or handle async loading
+    initImageSelection(); // Handles async loading internally now if needed
     initSizeSelection();
     initColorSelection();
     initStartGameButton();
-    initGameControls(); // Sets up buttons including cheat button listener
+    initGameControls();
     initCustomImageUpload();
 
-    // Add helper class (optional)
     document.querySelectorAll('.mode-options button, .size-options button').forEach(button => {
       button.classList.add('option-button');
     });
