@@ -290,95 +290,86 @@ function startGame(processedImageSource, imageIdentifier) {
     }
 }
 
-// 渲染遊戲板 (使用上次修正的邏輯，增加日誌)
-// ui.js (僅 renderGameBoard 函數修改)
-
+// 渲染遊戲板 (回到直接設置 backgroundImage)
 function renderGameBoard() {
     const puzzleContainer = document.querySelector('.puzzle-container');
-    if (!puzzleContainer || !gameInstance) {
-        console.error("無法渲染遊戲板：容器或遊戲實例不存在。");
-        return;
-    }
+    if (!puzzleContainer || !gameInstance) { console.error("無法渲染遊戲板：容器或遊戲實例不存在。"); return; }
 
-    puzzleContainer.innerHTML = ''; // 清空舊板
+    puzzleContainer.innerHTML = '';
     puzzleContainer.style.gridTemplateColumns = `repeat(${gameInstance.size}, 1fr)`;
     puzzleContainer.style.gridTemplateRows = `repeat(${gameInstance.size}, 1fr)`;
     puzzleContainer.style.setProperty('--grid-size', gameInstance.size);
 
-    const emptyBlockColorClass = `color-${selectedColor}`;
-    const imageSourceForBoard = gameInstance.imageSource; // 獲取預處理過的 DataURL
+    // **移除 CSS 變量設置**
+    puzzleContainer.style.removeProperty('--puzzle-image-url');
 
-    // --- **核心修改：設置 CSS 變量** ---
-    if (gameInstance.mode === 'image' && imageSourceForBoard) {
-        // 在父容器上設置 CSS 變量
-        puzzleContainer.style.setProperty('--puzzle-image-url', `url(${imageSourceForBoard})`);
-        console.log(`設置 CSS 變量 --puzzle-image-url`);
-    } else {
-        // 如果不是圖片模式或沒有圖片源，清除變量
-        puzzleContainer.style.removeProperty('--puzzle-image-url');
-    }
-    // --- **修改結束** ---
+    const emptyBlockColorClass = `color-${selectedColor}`;
+    const imageSourceForBoard = gameInstance.imageSource; // 原始來源
+
+    if (gameInstance.mode === 'image' && !imageSourceForBoard) { console.error("渲染錯誤：圖片模式但 imageSource 為空！"); }
+
+    // Debug: 打印當前的 emptyPos
+    // console.log(`渲染時 gameInstance.emptyPos: ${JSON.stringify(gameInstance.emptyPos)}`);
 
     for (let row = 0; row < gameInstance.size; row++) {
       for (let col = 0; col < gameInstance.size; col++) {
         const block = document.createElement('div');
-        block.className = 'puzzle-block';
-        block.dataset.row = row;
-        block.dataset.col = col;
-        const value = gameInstance.board[row][col];
+        block.className = 'puzzle-block'; // Start with base class
+        const value = gameInstance.board[row][col]; // Get value from logic board
 
+        // **根據邏輯值 (value) 添加樣式**
         if (value === 0) {
           block.classList.add('empty', emptyBlockColorClass);
           block.style.backgroundColor = 'transparent';
-          block.style.backgroundImage = 'none'; // 確保空塊無背景
+          block.style.backgroundImage = 'none';
+          // console.log(`  渲染空塊於 (${row},${col})`); // Debug log
         }
         else if (gameInstance.mode === 'image' && imageSourceForBoard) {
           block.classList.add('image-block');
-          block.style.backgroundColor = 'transparent'; // 背景透明，讓 CSS 變量的圖顯示
-
-          // --- **核心修改：不再設置 backgroundImage** ---
-          // block.style.backgroundImage = `url(${imageSourceForBoard})`; // REMOVED
-          // --- **修改結束** ---
+          block.style.backgroundColor = 'transparent'; // **確保透明**
 
           const originalCol = (value - 1) % gameInstance.size;
           const originalRow = Math.floor((value - 1) / gameInstance.size);
 
           try {
+            // --- **直接在循環中設置 backgroundImage** ---
+            block.style.backgroundImage = `url(${imageSourceForBoard})`; // <<< 直接設置
+            // --- **修改結束** ---
+
             const backgroundWidth = gameInstance.size * 100;
             const backgroundHeight = gameInstance.size * 100;
             const backgroundPosX = -originalCol * 100;
             const backgroundPosY = -originalRow * 100;
-
-            // **只設置 size 和 position**
             block.style.backgroundSize = `${backgroundWidth}% ${backgroundHeight}%`;
             block.style.backgroundPosition = `${backgroundPosX}% ${backgroundPosY}%`;
             block.style.backgroundRepeat = 'no-repeat';
 
           } catch (e) {
-            console.error(`設置圖片方塊樣式錯誤: (r:${row}, c:${col}, val:${value})`, e);
-            block.textContent = 'E'; // Error marker
-            block.style.backgroundColor = '#fcc'; // Error background
-            // 清除可能繼承的 CSS 變量背景
-            block.style.backgroundImage = 'none';
+             console.error(`設置圖片方塊樣式錯誤: (r:${row}, c:${col}, val:${value})`, e);
+             block.textContent = 'E'; block.style.backgroundColor = '#fcc'; block.style.backgroundImage = 'none';
           }
         }
         else if (gameInstance.mode === 'number') {
-          block.style.backgroundImage = 'none'; // 確保數字塊無誤用圖片背景
+          // **確保 number 塊沒有 image-block class**
+          // block.classList.remove('image-block'); // 雖然默認沒有，但明確一下
+          block.style.backgroundImage = 'none';
           const numberSpan = document.createElement('span');
           numberSpan.textContent = value;
-          numberSpan.style.cssText = 'display:flex; align-items:center; justify-content:center; width:100%; height:100%;'; // Inline for simplicity
+          numberSpan.style.cssText = 'display:flex; align-items:center; justify-content:center; width:100%; height:100%;';
           block.appendChild(numberSpan);
-        } else {
-           console.warn("渲染遊戲板時遇到預期外的方塊狀態", {row, col, value, mode: gameInstance.mode});
-           block.style.backgroundColor = '#ff0000'; block.textContent = '!'; block.style.backgroundImage = 'none';
         }
+        else { /* ... (意外情況) ... */ }
+
+        // **不在這裡添加 data-row/col，因為它們代表視覺位置，可能與邏輯 (row,col) 混淆**
+        // block.dataset.row = row; block.dataset.col = col;
+
         puzzleContainer.appendChild(block);
       }
     }
-     // console.log("遊戲板渲染完成 (使用 CSS 變量)");
+    console.log("遊戲板渲染完成 (直接設置 backgroundImage)");
+    // **移除強制重繪，因為問題可能不在渲染本身**
+    // void puzzleContainer.offsetHeight;
 }
-
-// 其他 ui.js 中的函數保持不變...
 
 
 // 更新遊戲統計
@@ -702,35 +693,77 @@ function initGameControls() {
         console.log("作弊模式狀態切換為:", gameInstance.cheatEnabled);
     });
 
-    // --- Block Click Handling (與上次修正相同) ---
-    if (puzzleContainer) {
-        puzzleContainer.addEventListener('click', (e) => {
-          if (!gameInstance) return;
-          const blockElement = e.target.closest('.puzzle-block');
-          if (!blockElement || blockElement.classList.contains('empty')) { if (firstSelectedBlock) { firstSelectedBlock.element.classList.remove('cheat-selected'); firstSelectedBlock = null; console.log("作弊選擇已取消 (點擊空白處)"); } return; }
-          const blocksArray = Array.from(puzzleContainer.children); const index = blocksArray.indexOf(blockElement); if (index === -1) return;
-          const row = Math.floor(index / gameInstance.size); const col = index % gameInstance.size;
+// --- Block Click Handling (調整對 empty 的處理) ---
+if (puzzleContainer) {
+    puzzleContainer.addEventListener('click', (e) => {
+      if (!gameInstance) { console.warn("點擊事件：遊戲實例不存在"); return; }
 
-          if (gameInstance.cheatEnabled) { // 作弊模式
-              const currentTime = new Date(); const startTime = gameInstance.startTime || currentTime; const elapsedTimeInSeconds = Math.floor((currentTime - startTime) / 1000); const timeLimit = 5 * 60;
-              if (elapsedTimeInSeconds < timeLimit) { alert('作弊功能尚未啟用 (未滿5分鐘)。'); gameInstance.cheatEnabled = false; if(cheatButton) cheatButton.classList.remove('active'); if (firstSelectedBlock) { firstSelectedBlock.element.classList.remove('cheat-selected'); firstSelectedBlock = null; } return; }
+      const blockElement = e.target.closest('.puzzle-block');
+      if (!blockElement) { /* console.log("點擊事件：未找到 .puzzle-block"); */ return; } // 忽略非塊點擊
 
-              if (!firstSelectedBlock) { firstSelectedBlock = { row, col, element: blockElement }; blockElement.classList.add('cheat-selected'); console.log("作弊選擇1:", `(${row},${col})`); }
-              else { console.log("作弊選擇2:", `(${row},${col})`);
-                if (firstSelectedBlock.row === row && firstSelectedBlock.col === col) { blockElement.classList.remove('cheat-selected'); firstSelectedBlock = null; console.log("作弊取消選擇 (重覆點擊)"); return; }
-                const { row: row1, col: col1 } = firstSelectedBlock; const swapped = gameInstance.cheatSwap(row1, col1, row, col);
-                firstSelectedBlock.element.classList.remove('cheat-selected'); firstSelectedBlock = null;
-                if (swapped) { requestAnimationFrame(() => { renderGameBoard(); updateGameStats(); if (gameInstance.checkWin()) { gameComplete(); } }); }
+      const blocksArray = Array.from(puzzleContainer.children);
+      const index = blocksArray.indexOf(blockElement);
+      if (index === -1) return;
+
+      const row = Math.floor(index / gameInstance.size);
+      const col = index % gameInstance.size;
+
+      // **獲取邏輯板上的值**
+      const blockValue = gameInstance.board[row][col];
+
+      console.log(`點擊: (${row},${col}), 值: ${blockValue}, 是否空塊 (視覺): ${blockElement.classList.contains('empty')}`); // Debug log
+
+      // --- 作弊模式邏輯 ---
+      if (gameInstance.cheatEnabled) {
+          // 作弊模式下，不能選擇視覺上的空塊進行交換
+          if (blockElement.classList.contains('empty')) {
+              console.log("作弊模式：不能選擇空塊");
+              // 如果之前選中了塊，點擊空塊取消選擇
+              if (firstSelectedBlock) {
+                 firstSelectedBlock.element.classList.remove('cheat-selected');
+                 firstSelectedBlock = null;
+                 console.log("作弊選擇已取消 (點擊空塊)");
               }
-          } else { // 普通模式
-            if (gameInstance.isAdjacent(row, col)) {
-              const moved = gameInstance.moveBlock(row, col);
-              if (moved) { requestAnimationFrame(() => { renderGameBoard(); updateGameStats(); if (gameInstance.checkWin()) { gameComplete(); } }); }
-            }
+              return;
           }
-        }, true); // Use capture phase
-    } else { console.error("無法找到 .puzzle-container"); }
-}
+          // (作弊模式的選擇和交換邏輯保持不變)
+          // ...
+          const currentTime = new Date(); const startTime = gameInstance.startTime || currentTime; const elapsedTimeInSeconds = Math.floor((currentTime - startTime) / 1000); const timeLimit = 5 * 60;
+          if (elapsedTimeInSeconds < timeLimit) { alert('作弊功能尚未啟用 (未滿5分鐘)。'); gameInstance.cheatEnabled = false; if(cheatButton) cheatButton.classList.remove('active'); if (firstSelectedBlock) { firstSelectedBlock.element.classList.remove('cheat-selected'); firstSelectedBlock = null; } return; }
+          if (!firstSelectedBlock) { firstSelectedBlock = { row, col, element: blockElement }; blockElement.classList.add('cheat-selected'); console.log("作弊選擇1:", `(${row},${col})`); }
+          else { console.log("作弊選擇2:", `(${row},${col})`); if (firstSelectedBlock.row === row && firstSelectedBlock.col === col) { blockElement.classList.remove('cheat-selected'); firstSelectedBlock = null; console.log("作弊取消選擇 (重覆點擊)"); return; } const { row: row1, col: col1 } = firstSelectedBlock; const swapped = gameInstance.cheatSwap(row1, col1, row, col); firstSelectedBlock.element.classList.remove('cheat-selected'); firstSelectedBlock = null; if (swapped) { requestAnimationFrame(() => { renderGameBoard(); updateGameStats(); if (gameInstance.checkWin()) { gameComplete(); } }); } }
+          // ...
+      }
+      // --- 普通模式邏輯 ---
+      else {
+          // **關鍵：只在點擊的塊 *邏輯上* 不是空塊時，才檢查是否相鄰**
+          if (blockValue !== 0) {
+              console.log(`普通模式：檢查 (${row},${col}) 是否與空塊 ${JSON.stringify(gameInstance.emptyPos)} 相鄰`);
+              if (gameInstance.isAdjacent(row, col)) {
+                  console.log(`  相鄰，嘗試移動...`);
+                  const moved = gameInstance.moveBlock(row, col);
+                  if (moved) {
+                      console.log("    移動成功，請求渲染");
+                      requestAnimationFrame(() => {
+                          renderGameBoard();
+                          updateGameStats();
+                          if (gameInstance.checkWin()) {
+                              gameComplete();
+                          }
+                      });
+                  } else {
+                      console.warn("    moveBlock 返回 false (異常)");
+                  }
+              } else {
+                   console.log("  不相鄰，無操作");
+              }
+          } else {
+              // 如果點擊的塊在邏輯上是空塊 (value === 0)，則不執行任何移動
+              console.log("普通模式：點擊了邏輯上的空塊，無操作");
+          }
+      }
+    }, true); // Use capture phase
+} else { console.error("無法找到 .puzzle-container"); }
 
 
 // 高亮提示的方塊 (與上次修正相同)

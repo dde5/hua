@@ -36,10 +36,28 @@ class PuzzleGame {
   }
 
   getAdjacentBlocks() { const {row,col}=this.emptyPos; const adj=[]; if(row>0)adj.push({row:row-1,col}); if(row<this.size-1)adj.push({row:row+1,col}); if(col>0)adj.push({row,col:col-1}); if(col<this.size-1)adj.push({row,col:col+1}); return adj; }
-  swapBlocks(row, col) { if(row<0||row>=this.size||col<0||col>=this.size)return; const val=this.board[row][col]; this.board[this.emptyPos.row][this.emptyPos.col]=val; this.board[row][col]=0; this.emptyPos={row,col}; }
+  swapBlocks(row, col) {
+    if (row < 0 || row >= this.size || col < 0 || col >= this.size) return;
+    const targetValue = this.board[row][col];
+    const oldEmptyRow = this.emptyPos.row; // 記錄舊位置
+    const oldEmptyCol = this.emptyPos.col;
+
+    this.board[oldEmptyRow][oldEmptyCol] = targetValue;
+    this.board[row][col] = 0;
+    this.emptyPos = { row, col }; // 更新空塊位置
+
+    // **添加日誌**
+    console.log(`  swapBlocks: 將 (${row},${col}) 的值 ${targetValue} 移到 (${oldEmptyRow},${oldEmptyCol}), 空塊移到 (${row},${col})。 新 emptyPos: ${JSON.stringify(this.emptyPos)}`);
+  }
   isSolvable() { const flat=[]; for(let r=0;r<this.size;r++)for(let c=0;c<this.size;c++)if(this.board[r][c]!==0)flat.push(this.board[r][c]); let inv=0; for(let i=0;i<flat.length;i++)for(let j=i+1;j<flat.length;j++)if(flat[i]>flat[j])inv++; if(this.size%2===1)return inv%2===0; else {const emptyRowFromBottom=this.size-this.emptyPos.row; return(inv+emptyRowFromBottom)%2===0;} }
   makeGameSolvable() { let p1=null,p2=null; for(let r=0;r<this.size;r++)for(let c=0;c<this.size;c++){if(this.board[r][c]===1)p1={r,c};if(this.board[r][c]===2)p2={r,c};if(p1&&p2)break;} if(p1&&p2){console.log("Swapping 1 & 2"); const t=this.board[p1.r][p1.c]; this.board[p1.r][p1.c]=this.board[p2.r][p2.c]; this.board[p2.r][p2.c]=t;} else {console.log("Fallback swap"); let f=null,s=null; for(let c=0;c<this.size;c++)if(this.board[0][c]!==0){if(f===null)f=c;else{s=c;break;}} if(f!==null&&s!==null){const t=this.board[0][f];this.board[0][f]=this.board[0][s];this.board[0][s]=t;}else{console.error("Cannot find tiles to swap.");}} }
-  isAdjacent(row, col) { const {row:er,col:ec}=this.emptyPos; return(Math.abs(row-er)+Math.abs(col-ec)===1); }
+  isAdjacent(row, col) {
+    const { row: emptyRow, col: emptyCol } = this.emptyPos;
+    const adjacent = (Math.abs(row - emptyRow) + Math.abs(col - emptyCol) === 1);
+    // **添加日誌**
+    // console.log(`    isAdjacent: 比較 (${row},${col}) 與 emptyPos (${emptyRow},${emptyCol}) -> ${adjacent}`);
+    return adjacent;
+  }
   moveBlock(row, col) { if(this.isAdjacent(row,col)){this.swapBlocks(row,col);this.moves++;return true;}return false; }
   checkWin() { let exp=1; for(let r=0;r<this.size;r++)for(let c=0;c<this.size;c++){if(r===this.size-1&&c===this.size-1){if(this.board[r][c]!==0)return false;}else{if(this.board[r][c]!==exp)return false;exp++;}}return true; }
   startTimer() { if(!this.timerElement){console.error("Timer element not found"); return;} this.stopTimer(); this.startTime=new Date(); console.log("Timer started:", this.startTime); this.timerElement.textContent='00:00'; this.timer=setInterval(()=>{const now=new Date(); const start=this.startTime instanceof Date?this.startTime:now; const elapsed=Math.floor((now-start)/1000); if(elapsed>=0){const m=Math.floor(elapsed/60).toString().padStart(2,'0'); const s=(elapsed%60).toString().padStart(2,'0'); this.timerElement.textContent=`${m}:${s}`;}else{this.timerElement.textContent='00:00';}},1000); }

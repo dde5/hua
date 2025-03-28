@@ -122,15 +122,10 @@ button.selected {
 #game-board { max-width: 600px; margin: 0 auto; }
 .game-stats { display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 1.2em; padding: 0 10px; }
 
+/* 移除 puzzle-container 上的變量設置（雖然 JS 裡也移除了，以防萬一） */
 .puzzle-container {
-  display: grid;
-  gap: 2px;
-  margin: 0 auto 20px;
-  max-width: 100%;
-  aspect-ratio: 1 / 1;
-  border: 2px solid #bdc3c7;
-  background-color: #e0e0e0; /* Background for gaps, slightly darker */
-  /* CSS 變量 --puzzle-image-url 將由 JS 設置 */
+  /* ... */
+  /* --puzzle-image-url: none; */ /* No need to set here */
 }
 
 @supports (-webkit-touch-callout: none) { .puzzle-container { grid-template-rows: repeat(var(--grid-size, 4), 1fr); grid-template-columns: repeat(var(--grid-size, 4), 1fr); } }
@@ -164,20 +159,20 @@ button.selected {
 .puzzle-block.empty.color-orange::before { border: 1px solid rgba(243, 156, 18, 0.8); box-shadow: inset 0 0 15px rgba(243, 156, 18, 0.8); animation-name: glow-border-orange; background-image: repeating-linear-gradient(45deg, rgba(243, 156, 18, 0.1), rgba(243, 156, 18, 0.1) 10px, rgba(243, 156, 18, 0.2) 10px, rgba(243, 156, 18, 0.2) 20px); }
 @keyframes glow-border-orange { from { box-shadow: inset 0 0 10px rgba(243, 156, 18, 0.6); } to { box-shadow: inset 0 0 20px rgba(243, 156, 18, 0.9); } }
 
-/* --- Image Block Style - 使用 CSS 變量 --- */
+/* --- Image Block Style - 不使用 CSS 變量 --- */
 .puzzle-block.image-block {
-  /* **使用 CSS 變量引用背景圖** */
-  background-image: var(--puzzle-image-url);
+  /* **移除 CSS 變量引用** */
+  /* background-image: var(--puzzle-image-url); */ /* REMOVED */
 
-  background-repeat: no-repeat; /* Keep */
-  /* background-size 和 background-position 將由 JS 設置 */
+  background-repeat: no-repeat;
+  /* background-image, background-size, background-position 由 JS 設置 */
   background-color: transparent; /* **確保背景透明** */
-  border: 1px solid rgba(255, 255, 255, 0.1); /* Keep border */
+  border: 1px solid rgba(255, 255, 255, 0.1);
 
-  /* 性能提示 */
+  /* ... (性能提示保持不變) ... */
   transform: translateZ(0);
   -webkit-transform: translateZ(0);
-  will-change: background-position, background-size; /* 提示瀏覽器這些會變 */
+  will-change: background-image, background-position, background-size; /* Add background-image here */
 }
 
 @supports (-webkit-touch-callout: none) {
