@@ -293,9 +293,13 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // 渲染遊戲板
+  // 渲染遊戲板 (修正版 v2)
   function renderGameBoard() {
     const puzzleContainer = document.querySelector('.puzzle-container');
-    if (!puzzleContainer || !gameInstance) return; // Guard clauses
+    if (!puzzleContainer || !gameInstance) {
+        console.error("無法渲染遊戲板：容器或遊戲實例不存在。");
+        return;
+    }
 
     puzzleContainer.innerHTML = ''; // 清空舊板
     puzzleContainer.style.gridTemplateColumns = `repeat(${gameInstance.size}, 1fr)`;
@@ -308,62 +312,85 @@ document.addEventListener('DOMContentLoaded', () => {
     for (let row = 0; row < gameInstance.size; row++) {
       for (let col = 0; col < gameInstance.size; col++) {
         const block = document.createElement('div');
-        block.className = 'puzzle-block';
-        block.dataset.row = row; // Optional: Store position for easier debugging
+        block.className = 'puzzle-block'; // Base class first
+        block.dataset.row = row; // Optional: Store position for debugging
         block.dataset.col = col; // Optional
 
         const value = gameInstance.board[row][col];
 
+        // --- 處理不同類型的方塊 ---
+
         if (value === 0) {
+          // --- 空白方塊 ---
           block.classList.add('empty', emptyBlockColorClass);
-        } else if (gameInstance.mode === 'number') {
+          block.style.backgroundColor = 'transparent'; // 確保背景透明
+          block.style.backgroundImage = 'none';     // 確保無背景圖
+        }
+        else if (gameInstance.mode === 'image' && gameInstance.imageSource) {
+          // --- 圖片方塊 ---
+          block.classList.add('image-block');
+          // **重要：先設置透明背景，清除舊圖片**
+          block.style.backgroundColor = 'transparent';
+          block.style.backgroundImage = 'none'; // 清除可能殘留的舊圖片
+
+          // 計算此方塊對應圖片的原始位置
+          // value 是該方塊在完成狀態時的數字 (1 to size*size-1)
+          const originalCol = (value - 1) % gameInstance.size;
+          const originalRow = Math.floor((value - 1) / gameInstance.size);
+
+          try {
+            // 應用背景圖片和定位
+            block.style.backgroundImage = `url(${gameInstance.imageSource})`;
+
+            const backgroundWidth = gameInstance.size * 100;
+            const backgroundHeight = gameInstance.size * 100;
+            // backgroundPosition 的百分比是相對於方塊自身的寬高
+            // 我們需要將背景圖的左上角移動到對應位置
+            const backgroundPosX = -originalCol * 100; // 向左移動 N 個方塊寬度
+            const backgroundPosY = -originalRow * 100; // 向上移動 N 個方塊高度
+
+            block.style.backgroundSize = `${backgroundWidth}% ${backgroundHeight}%`;
+            block.style.backgroundPosition = `${backgroundPosX}% ${backgroundPosY}%`;
+            block.style.backgroundRepeat = 'no-repeat';
+
+            // **移除 JS 中的邊框設定，讓 CSS 處理**
+            // block.style.border = '1px solid rgba(255, 255, 255, 0.1)'; // REMOVED
+
+          } catch (e) {
+            console.error(`設置圖片方塊背景錯誤: (r:${row}, c:${col}, val:${value})`, e);
+            block.textContent = 'X'; // 顯示錯誤標記
+            block.style.backgroundColor = '#fcc'; // 使用不同的錯誤背景色
+            block.style.backgroundImage = 'none'; // 確保無背景圖
+          }
+        }
+        else if (gameInstance.mode === 'number') {
+          // --- 數字方塊 ---
+          block.style.backgroundImage = 'none'; // 確保無背景圖
+          // CSS 中 :not(.image-block):not(.empty) 會處理藍色背景
+
           const numberSpan = document.createElement('span');
           numberSpan.textContent = value;
-          // Basic styling for centering, more robust styling in CSS
+          // 使用 Flexbox 居中 (樣式可在 CSS 中定義以保持一致)
           numberSpan.style.display = 'flex';
           numberSpan.style.alignItems = 'center';
           numberSpan.style.justifyContent = 'center';
           numberSpan.style.width = '100%';
           numberSpan.style.height = '100%';
           block.appendChild(numberSpan);
-        } else if (gameInstance.mode === 'image' && gameInstance.imageSource) {
-          block.classList.add('image-block');
-
-          const originalCol = (value - 1) % gameInstance.size;
-          const originalRow = Math.floor((value - 1) / gameInstance.size);
-
-          // Use background properties directly on the block for simplicity
-          // Ensure imageSource is valid before setting
-          try {
-              block.style.backgroundImage = `url(${gameInstance.imageSource})`;
-              // Calculate background size and position based on the grid size
-              const backgroundWidth = gameInstance.size * 100;
-              const backgroundHeight = gameInstance.size * 100;
-              const backgroundPosX = -originalCol * 100;
-              const backgroundPosY = -originalRow * 100;
-
-              block.style.backgroundSize = `${backgroundWidth}% ${backgroundHeight}%`;
-              block.style.backgroundPosition = `${backgroundPosX}% ${backgroundPosY}%`;
-              block.style.backgroundRepeat = 'no-repeat'; // Ensure no repeat
-              block.style.border = '1px solid rgba(255,255,255,0.1)'; // Subtle border
-
-              // Optimization hints for browsers (might be in CSS already)
-              block.style.willChange = 'transform';
-              block.style.transform = 'translateZ(0)'; // Promote to layer
-
-          } catch (e) {
-               console.error("Error setting background for image block:", e);
-               // Optionally add fallback text or color
-               block.textContent = '?';
-               block.style.backgroundColor = '#ccc';
-          }
+        }
+        else {
+          // --- 預期外的狀態 ---
+          console.warn("渲染遊戲板時遇到預期外的方塊狀態", {row, col, value, mode: gameInstance.mode});
+          block.style.backgroundColor = '#ff0000'; // 使用亮紅色標示錯誤
+          block.textContent = '!';
+          block.style.backgroundImage = 'none';
         }
 
         puzzleContainer.appendChild(block);
       }
     }
+     // console.log("遊戲板渲染完成"); // Optional: Debug log
   }
-
 
   // 更新遊戲統計
   function updateGameStats() {
