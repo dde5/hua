@@ -291,26 +291,33 @@ function startGame(processedImageSource, imageIdentifier) {
 }
 
 // 渲染遊戲板 (使用上次修正的邏輯，增加日誌)
+// ui.js (僅 renderGameBoard 函數修改)
+
 function renderGameBoard() {
     const puzzleContainer = document.querySelector('.puzzle-container');
     if (!puzzleContainer || !gameInstance) {
         console.error("無法渲染遊戲板：容器或遊戲實例不存在。");
         return;
     }
+
     puzzleContainer.innerHTML = ''; // 清空舊板
     puzzleContainer.style.gridTemplateColumns = `repeat(${gameInstance.size}, 1fr)`;
     puzzleContainer.style.gridTemplateRows = `repeat(${gameInstance.size}, 1fr)`;
     puzzleContainer.style.setProperty('--grid-size', gameInstance.size);
 
     const emptyBlockColorClass = `color-${selectedColor}`;
-    const imageSourceForBoard = gameInstance.imageSource; // 獲取當前遊戲的圖片源 (應為 DataURL 或 null)
+    const imageSourceForBoard = gameInstance.imageSource; // 獲取預處理過的 DataURL
 
-    // 添加日誌，檢查圖片源是否有效
-    if (gameInstance.mode === 'image' && !imageSourceForBoard) {
-        console.error("渲染錯誤：圖片模式但遊戲實例的 imageSource 為空！");
-    } else if (gameInstance.mode === 'image' && imageSourceForBoard) {
-        // console.log(`渲染遊戲板，使用圖片源: ${imageSourceForBoard.substring(0, 60)}...`);
+    // --- **核心修改：設置 CSS 變量** ---
+    if (gameInstance.mode === 'image' && imageSourceForBoard) {
+        // 在父容器上設置 CSS 變量
+        puzzleContainer.style.setProperty('--puzzle-image-url', `url(${imageSourceForBoard})`);
+        console.log(`設置 CSS 變量 --puzzle-image-url`);
+    } else {
+        // 如果不是圖片模式或沒有圖片源，清除變量
+        puzzleContainer.style.removeProperty('--puzzle-image-url');
     }
+    // --- **修改結束** ---
 
     for (let row = 0; row < gameInstance.size; row++) {
       for (let col = 0; col < gameInstance.size; col++) {
@@ -323,61 +330,55 @@ function renderGameBoard() {
         if (value === 0) {
           block.classList.add('empty', emptyBlockColorClass);
           block.style.backgroundColor = 'transparent';
-          block.style.backgroundImage = 'none';
+          block.style.backgroundImage = 'none'; // 確保空塊無背景
         }
-        else if (gameInstance.mode === 'image' && imageSourceForBoard) { // <-- 使用 imageSourceForBoard
+        else if (gameInstance.mode === 'image' && imageSourceForBoard) {
           block.classList.add('image-block');
-          block.style.backgroundColor = 'transparent'; // **確保透明**
-          block.style.backgroundImage = 'none'; // **清除舊圖**
+          block.style.backgroundColor = 'transparent'; // 背景透明，讓 CSS 變量的圖顯示
+
+          // --- **核心修改：不再設置 backgroundImage** ---
+          // block.style.backgroundImage = `url(${imageSourceForBoard})`; // REMOVED
+          // --- **修改結束** ---
 
           const originalCol = (value - 1) % gameInstance.size;
           const originalRow = Math.floor((value - 1) / gameInstance.size);
 
           try {
-            // **直接設置背景**
-            block.style.backgroundImage = `url(${imageSourceForBoard})`;
-
             const backgroundWidth = gameInstance.size * 100;
             const backgroundHeight = gameInstance.size * 100;
             const backgroundPosX = -originalCol * 100;
             const backgroundPosY = -originalRow * 100;
 
+            // **只設置 size 和 position**
             block.style.backgroundSize = `${backgroundWidth}% ${backgroundHeight}%`;
             block.style.backgroundPosition = `${backgroundPosX}% ${backgroundPosY}%`;
             block.style.backgroundRepeat = 'no-repeat';
 
-             // 添加日誌檢查是否每個塊都嘗試設置了背景
-            // console.log(`  設置方塊 (${row},${col}) val:${value} bgImage, bgPos: ${backgroundPosX}% ${backgroundPosY}%`);
-
           } catch (e) {
-            console.error(`設置圖片方塊背景錯誤: (r:${row}, c:${col}, val:${value})`, e);
-            block.textContent = 'X'; // 顯示錯誤標記
-            block.style.backgroundColor = '#fcc'; // 使用不同的錯誤背景色
-            block.style.backgroundImage = 'none'; // 確保無背景圖
+            console.error(`設置圖片方塊樣式錯誤: (r:${row}, c:${col}, val:${value})`, e);
+            block.textContent = 'E'; // Error marker
+            block.style.backgroundColor = '#fcc'; // Error background
+            // 清除可能繼承的 CSS 變量背景
+            block.style.backgroundImage = 'none';
           }
         }
         else if (gameInstance.mode === 'number') {
-          block.style.backgroundImage = 'none';
-          // CSS 中 :not(.image-block):not(.empty) 會處理藍色背景
+          block.style.backgroundImage = 'none'; // 確保數字塊無誤用圖片背景
           const numberSpan = document.createElement('span');
           numberSpan.textContent = value;
-          numberSpan.style.display = 'flex';
-          numberSpan.style.alignItems = 'center';
-          numberSpan.style.justifyContent = 'center';
-          numberSpan.style.width = '100%';
-          numberSpan.style.height = '100%';
+          numberSpan.style.cssText = 'display:flex; align-items:center; justify-content:center; width:100%; height:100%;'; // Inline for simplicity
           block.appendChild(numberSpan);
         } else {
            console.warn("渲染遊戲板時遇到預期外的方塊狀態", {row, col, value, mode: gameInstance.mode});
-           block.style.backgroundColor = '#ff0000'; // 使用亮紅色標示錯誤
-           block.textContent = '!';
-           block.style.backgroundImage = 'none';
+           block.style.backgroundColor = '#ff0000'; block.textContent = '!'; block.style.backgroundImage = 'none';
         }
         puzzleContainer.appendChild(block);
       }
     }
-     // console.log("遊戲板渲染完成");
+     // console.log("遊戲板渲染完成 (使用 CSS 變量)");
 }
+
+// 其他 ui.js 中的函數保持不變...
 
 
 // 更新遊戲統計

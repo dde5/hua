@@ -586,6 +586,42 @@ button.selected {
   padding: 10px;
 }
 
+
+/* --- Image Block Style - 使用 CSS 變量 --- */
+.puzzle-block.image-block {
+  /* **使用 CSS 變量引用背景圖** */
+  background-image: var(--puzzle-image-url);
+
+  background-repeat: no-repeat; /* Keep */
+  /* background-size 和 background-position 將由 JS 設置 */
+  background-color: transparent; /* **確保背景透明** */
+  border: 1px solid rgba(255, 255, 255, 0.1); /* Keep border */
+
+  /* 性能提示 */
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  will-change: background-position, background-size; /* 提示瀏覽器這些會變 */
+}
+
+/* 可選：為 puzzle-container 添加一個後備背景色 */
+.puzzle-container {
+  /* ... */
+  background-color: #e0e0e0; /* 淺灰色背景，用於顯示格子間隙 */
+  /* CSS 變量將由 JS 設置 */
+}
+
+
+/* --- Safari Image Block Style - 保持簡潔 --- */
+@supports (-webkit-touch-callout: none) {
+  .puzzle-block.image-block {
+    transition: none; /* Keep for perceived speed */
+    -webkit-transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    -webkit-perspective: 1000;
+  }
+}
+
+
 /* 響應式設計 */
 @media (max-width: 600px) {
   .container {
