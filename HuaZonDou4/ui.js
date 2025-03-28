@@ -503,21 +503,28 @@ document.addEventListener('DOMContentLoaded', () => {
             if (presetImg) {
               // 如果是預設圖片，直接使用其ID
               displayImageName = presetImg.id;
-            } else {
+            } else if (selectedImage.startsWith('http')) {
+              // 網路圖片處理 - 嘗試從URL中提取文件名或使用預設名稱
+              try {
+                // 嘗試從URL中提取文件名
+                const urlParts = selectedImage.split('/');
+                const fileName = urlParts[urlParts.length - 1].split('.')[0];
+                // 使用網路圖片名稱
+                displayImageName = fileName || '網路圖片';
+              } catch (e) {
+                // 如果提取失敗，使用預設名稱
+                displayImageName = '網路圖片';
+              }
+            } else if (selectedImage.match(/images\/([^.]+)\./i)) {
+              // 本地圖片處理
               const match = selectedImage.match(/images\/([^.]+)\./i);
               if (match && match[1]) {
                 // 使用完整檔名作為顯示名稱
                 displayImageName = match[1];
-              } else if (selectedImage.startsWith('http')) {
-                // 嘗試從URL中提取文件名
-                const urlParts = selectedImage.split('/');
-                const fileName = urlParts[urlParts.length - 1].split('.')[0];
-                // 使用網絡圖片前綴和文件名
-                displayImageName = '網絡圖片-' + (fileName || '未命名');
-              } else {
-                // 自定義上傳圖片
-                displayImageName = '自定義圖片';
               }
+            } else {
+              // 自定義上傳圖片
+              displayImageName = '自定義圖片';
             }
           }
           levelText = displayImageName;
