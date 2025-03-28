@@ -437,44 +437,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // 確保modeScores一定是陣列
     const modeScores = Array.isArray(scores[key]) ? scores[key] : [];
     
-    // 創建標題
-    const title = document.createElement('h4');
-    let titleText = '';
-    
-    if (selectedMode === 'number') {
-      titleText = `數字模式 ${selectedSize}×${selectedSize} 前三名記錄`;
-    } else {
-      // 從圖片路徑中提取圖片名稱
-      let displayImageName = '自定義圖片';
-      if (selectedImage) {
-        // 先檢查是否為預設圖片
-        const presetImg = presetImages.find(img => img.src === selectedImage);
-        if (presetImg) {
-          // 如果是預設圖片，直接使用其名稱
-          displayImageName = presetImg.name;
-        } else {
-          const match = selectedImage.match(/images\/([^.]+)\./i);
-          if (match && match[1]) {
-            // 使用完整檔名作為顯示名稱
-            displayImageName = match[1];
-          } else if (selectedImage.startsWith('http')) {
-            // 嘗試從URL中提取文件名
-            const urlParts = selectedImage.split('/');
-            const fileName = urlParts[urlParts.length - 1].split('.')[0];
-            // 使用網絡圖片前綴和文件名
-            displayImageName = '網絡圖片-' + (fileName || '未命名');
-          } else {
-            // 自定義上傳圖片
-            displayImageName = '自定義圖片';
-          }
-        }
-      }
-      titleText = `圖片-${displayImageName} ${selectedSize}×${selectedSize} 前三名記錄`;
-    }
-    
-    title.textContent = titleText;
-    highScoresList.appendChild(title);
-    
     if (modeScores.length === 0) {
       // 如果沒有記錄
       const noRecord = document.createElement('div');
@@ -532,14 +494,15 @@ document.addEventListener('DOMContentLoaded', () => {
         if (selectedMode === 'number') {
           levelText = '數字模式';
         } else {
-          // 從圖片路徑中提取圖片名稱
+          // 使用getImageName函數獲取圖片名稱
           let displayImageName = '自定義圖片';
           if (selectedImage) {
-            // 先檢查是否為預設圖片
-            const presetImg = presetImages.find(img => img.src === selectedImage);
+            // 獲取預設圖片列表
+            const presetImgs = getPresetImages();
+            const presetImg = presetImgs.find(img => img.url === selectedImage);
             if (presetImg) {
-              // 如果是預設圖片，直接使用其名稱
-              displayImageName = presetImg.name;
+              // 如果是預設圖片，直接使用其ID
+              displayImageName = presetImg.id;
             } else {
               const match = selectedImage.match(/images\/([^.]+)\./i);
               if (match && match[1]) {
@@ -557,7 +520,7 @@ document.addEventListener('DOMContentLoaded', () => {
               }
             }
           }
-          levelText = `圖片-${displayImageName}`;
+          levelText = displayImageName;
         }
         levelCell.textContent = levelText;
         row.appendChild(levelCell);

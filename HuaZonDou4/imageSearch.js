@@ -8,6 +8,15 @@
 function getImageName(imagePath) {
   if (!imagePath) return '';
   
+  // 先檢查是否為預設圖片
+  // 獲取預設圖片列表
+  const presetImgs = getPresetImages();
+  const presetImg = presetImgs.find(img => img.url === imagePath);
+  if (presetImg) {
+    // 如果是預設圖片，直接返回其ID
+    return presetImg.id;
+  }
+  
   // 從圖片路徑中提取圖片名稱
   const match = imagePath.match(/images\/([^.]+)\./i);
   if (match && match[1]) {
