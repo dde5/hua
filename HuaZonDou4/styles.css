@@ -435,9 +435,8 @@ button.selected {
 }
 
 #high-scores-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 10px;
+  width: 100%;
+  overflow-x: auto;
 }
 
 /* 遊戲完成界面樣式 */
@@ -732,27 +731,34 @@ button.selected {
   width: 100%;
   border-collapse: collapse;
   margin-top: 10px;
-  font-size: 0.9em;
+  font-size: 1.1em;
+  border: 1px solid #ddd;
+  background-color: #fff;
 }
 
 .high-scores-table th,
 .high-scores-table td {
-  padding: 6px;
+  padding: 12px;
   text-align: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid #ddd;
+  border-right: 1px solid #ddd;
 }
 
 .high-scores-table th {
-  background-color: rgba(0, 0, 0, 0.2);
+  background-color: #2980b9;
+  color: white;
   font-weight: bold;
+  position: sticky;
+  top: 0;
+  padding: 15px;
 }
 
 .high-scores-table tr:nth-child(even) {
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: #f2f2f2;
 }
 
 .high-scores-table tr:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: #e6f7ff;
 }
 
 .no-record {
