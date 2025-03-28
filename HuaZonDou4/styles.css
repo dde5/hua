@@ -40,7 +40,7 @@ button {
   background-color: #3498db;
   color: white;
   border: none;
-  padding: 12px 18px;
+  padding: 10px 15px; /* Slightly reduced padding */
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -70,522 +70,99 @@ button.selected {
   max-width: 600px;
 }
 
-.mode-options, .size-options, .image-options { /* Removed .color-options as it's not used in setup */
+.mode-options, .size-options, .image-options {
   display: flex;
-  gap: 15px;
+  gap: 10px; /* Reduced gap */
   margin: 0 auto 20px;
   flex-wrap: wrap;
   justify-content: center;
   align-items: center;
   max-width: 600px;
-  margin-left: auto;
-  margin-right: auto;
 }
 
 .image-options img {
-  width: 100px;
-  height: 100px;
+  width: 80px; /* Smaller previews */
+  height: 80px;
   object-fit: cover;
   border: 2px solid transparent;
   cursor: pointer;
-  border-radius: 4px; /* Add slightly rounded corners */
-  transition: transform 0.2s ease, box-shadow 0.2s ease; /* Add hover effect */
+  border-radius: 4px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 .image-options img:hover {
   transform: scale(1.05);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
-
 .image-options img.selected {
   border-color: #3498db;
   box-shadow: 0 0 10px rgba(52, 152, 219, 0.5);
 }
-/* Preview style for custom uploaded image */
 .image-options img.custom-preview {
-   border: 2px dashed #ccc; /* Differentiate custom preview */
+   border: 2px dashed #ccc;
 }
 .image-options img.custom-preview.selected {
-   border-color: #2ecc71; /* Different selected color for custom */
+   border-color: #2ecc71;
    box-shadow: 0 0 10px rgba(46, 204, 113, 0.5);
 }
 
+.upload-option { margin-top: 15px; text-align: center; }
+.upload-option label { background-color: #95a5a6; color: white; padding: 10px 15px; border-radius: 5px; cursor: pointer; display: inline-block; transition: background-color 0.3s ease; }
+.upload-option label:hover { background-color: #7f8c8d; }
+.upload-option input[type="file"] { display: none; }
 
-.upload-option {
-  margin-top: 15px;
-  text-align: center;
-}
-.upload-option label {
-  background-color: #95a5a6;
-  color: white;
-  padding: 10px 15px;
-  border-radius: 5px;
-  cursor: pointer;
-  display: inline-block; /* Allow padding and margin */
-  transition: background-color 0.3s ease;
-}
-.upload-option label:hover {
-  background-color: #7f8c8d;
-}
-.upload-option input[type="file"] {
-  display: none; /* Hide the default input */
-}
+.custom-size { display: flex; align-items: center; justify-content: center; gap: 5px; margin: 10px auto 0; }
+#custom-size-input { width: 60px; padding: 8px; border: 1px solid #bdc3c7; border-radius: 4px; text-align: center; }
 
+#start-game { display: block; margin: 30px auto; padding: 12px 25px; font-size: 1.1em; background-color: #2ecc71; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); transition: all 0.3s ease; }
+#start-game:hover { background-color: #27ae60; transform: translateY(-2px); box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15); }
+#start-game:disabled { background-color: #95a5a6; cursor: not-allowed; transform: none; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); } /* Disabled state */
 
-/* .color-options no longer needed here for setup */
-
-.custom-size {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  margin: 10px auto 0; /* Adjust margin */
-}
-
-#custom-size-input {
-  width: 60px; /* Slightly wider */
-  padding: 8px; /* More padding */
-  border: 1px solid #bdc3c7;
-  border-radius: 4px;
-  text-align: center;
-}
-
-#start-game {
-  display: block;
-  margin: 30px auto;
-  padding: 12px 25px;
-  font-size: 1.1em;
-  background-color: #2ecc71;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
-}
-
-#start-game:hover {
-  background-color: #27ae60;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
-}
 
 /* 遊戲界面樣式 */
-#game-board {
-    max-width: 600px; /* Limit game board width for consistency */
-    margin: 0 auto; /* Center the game board */
-}
-
-.game-stats {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 20px;
-  font-size: 1.2em;
-  padding: 0 10px; /* Add some padding */
-}
+#game-board { max-width: 600px; margin: 0 auto; }
+.game-stats { display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 1.2em; padding: 0 10px; }
 
 .puzzle-container {
   display: grid;
-  gap: 2px; /* Keep the gap */
+  gap: 2px;
   margin: 0 auto 20px;
-  max-width: 100%; /* Take full width of parent */
-  aspect-ratio: 1 / 1; /* Maintain square aspect ratio */
-  border: 2px solid #bdc3c7; /* Add a border around the puzzle */
-  background-color: #ecf0f1; /* Background for the gaps */
-  /* grid-template-columns and -rows set by JS */
-  /* CSS variable for Safari grid size set by JS */
+  max-width: 100%;
+  aspect-ratio: 1 / 1;
+  border: 2px solid #bdc3c7;
+  background-color: #e0e0e0; /* Background for gaps, slightly darker */
+  /* CSS 變量 --puzzle-image-url 將由 JS 設置 */
 }
 
-/* Safari瀏覽器兼容性修復 - simplified, relying on JS grid setup */
-@supports (-webkit-touch-callout: none) {
-  .puzzle-container {
-    /* Ensure grid properties are applied */
-    grid-template-rows: repeat(var(--grid-size, 4), 1fr);
-    grid-template-columns: repeat(var(--grid-size, 4), 1fr);
-  }
-}
+@supports (-webkit-touch-callout: none) { .puzzle-container { grid-template-rows: repeat(var(--grid-size, 4), 1fr); grid-template-columns: repeat(var(--grid-size, 4), 1fr); } }
 
-/* Base puzzle block style */
 .puzzle-block {
-  color: white;
-  display: flex; /* Use flex for centering content like numbers */
-  align-items: center;
-  justify-content: center;
-  font-size: 1.5em; /* Adjust as needed based on size */
-  font-weight: bold;
-  cursor: pointer;
-  box-shadow: inset 0 0 2px rgba(0,0,0,0.2); /* Subtle inset shadow */
-  border-radius: 2px; /* Slight rounding */
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
-  text-align: center;
-  line-height: 1;
-  position: relative; /* Needed for potential overlays or pseudo-elements */
-  width: 100%; /* Fill grid cell */
-  height: 100%; /* Fill grid cell */
-  padding: 0;
-  margin: 0;
-  overflow: hidden; /* Clip content/background */
-  background-color: #3498db; /* Default background for number tiles */
-
-  /* Performance hints */
-  transform: translateZ(0);
-  -webkit-transform: translateZ(0);
-  will-change: transform;
-  transition: transform 0.1s ease-out, box-shadow 0.1s ease-out; /* Faster transition for interaction */
+  color: white; display: flex; align-items: center; justify-content: center;
+  font-size: 1.5em; font-weight: bold; cursor: pointer;
+  box-shadow: inset 0 0 2px rgba(0,0,0,0.2); border-radius: 2px;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); text-align: center; line-height: 1;
+  position: relative; width: 100%; height: 100%; padding: 0; margin: 0; overflow: hidden;
+  background-color: #3498db; /* Default for numbers */
+  transform: translateZ(0); -webkit-transform: translateZ(0); will-change: transform, background-position, background-size;
+  transition: transform 0.1s ease-out, box-shadow 0.1s ease-out;
 }
 
-/* Number tile specific styling (adjust background) */
-.puzzle-block:not(.image-block):not(.empty) {
-   background-image: linear-gradient(to bottom, #3498db, #2980b9);
-   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2);
-}
+.puzzle-block:not(.image-block):not(.empty) { background-image: linear-gradient(to bottom, #3498db, #2980b9); box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2); }
+.puzzle-block:not(.empty):hover { transform: scale(0.97); box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); z-index: 1; }
+.puzzle-block.hint { box-shadow: 0 0 15px 5px #f39c12; animation: pulse 1.5s infinite; z-index: 2; }
+@keyframes pulse { 0% { box-shadow: 0 0 15px 5px #f39c12; } 50% { box-shadow: 0 0 25px 8px #f39c12; } 100% { box-shadow: 0 0 15px 5px #f39c12; } }
 
-/* Hover effect for movable blocks */
-.puzzle-block:not(.empty):hover {
-  transform: scale(0.97); /* Slightly shrink */
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* Increase shadow */
-  z-index: 1; /* Bring to front on hover */
-}
-
-/* Hint style */
-.puzzle-block.hint {
-  box-shadow: 0 0 15px 5px #f39c12; /* More prominent shadow */
-  animation: pulse 1.5s infinite;
-  z-index: 2; /* Ensure hint is visible */
-}
-
-@keyframes pulse {
-  0% { box-shadow: 0 0 15px 5px #f39c12; }
-  50% { box-shadow: 0 0 25px 8px #f39c12; } /* Brighter pulse */
-  100% { box-shadow: 0 0 15px 5px #f39c12; }
-}
-
-/* Empty block style */
-.puzzle-block.empty {
-  background-color: transparent; /* Make it truly empty */
-  background-image: none; /* Ensure no accidental background */
-  cursor: default;
-  box-shadow: none; /* No shadow for empty */
-  position: relative; /* For pseudo-element positioning */
-}
-.puzzle-block.empty:hover {
-    transform: none; /* No hover effect */
-}
-
-
-/* --- Empty Block Stripe/Glow Effects --- */
-/* Common pseudo-element style */
-.puzzle-block.empty::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  pointer-events: none;
-  z-index: 1;
-  border-radius: 2px; /* Match block rounding */
-  box-shadow: inset 0 0 15px rgba(0,0,0,0.5); /* Default inner shadow */
-  animation: glow-border-default 1.5s infinite alternate; /* Default animation */
-  /* Default stripe background */
-  background-image: repeating-linear-gradient(
-      45deg,
-      rgba(52, 52, 52, 0.1), rgba(52, 52, 52, 0.1) 10px,
-      rgba(52, 52, 52, 0.2) 10px, rgba(52, 52, 52, 0.2) 20px
-  );
-}
-
-/* Default (dark grey) */
-.puzzle-block.empty.color-default::before {
-  border: 1px solid rgba(52, 52, 52, 0.8);
-  box-shadow: inset 0 0 15px rgba(52, 52, 52, 0.8);
-  animation-name: glow-border-default;
-  background-image: repeating-linear-gradient(45deg, rgba(52, 52, 52, 0.1), rgba(52, 52, 52, 0.1) 10px, rgba(52, 52, 52, 0.2) 10px, rgba(52, 52, 52, 0.2) 20px);
-}
-@keyframes glow-border-default {
-  from { box-shadow: inset 0 0 10px rgba(52, 52, 52, 0.6); }
-  to { box-shadow: inset 0 0 20px rgba(52, 52, 52, 0.9); }
-}
-
-/* Blue */
-.puzzle-block.empty.color-blue::before {
-  border: 1px solid rgba(52, 152, 219, 0.8);
-  box-shadow: inset 0 0 15px rgba(52, 152, 219, 0.8);
-  animation-name: glow-border-blue;
-  background-image: repeating-linear-gradient(45deg, rgba(52, 152, 219, 0.1), rgba(52, 152, 219, 0.1) 10px, rgba(52, 152, 219, 0.2) 10px, rgba(52, 152, 219, 0.2) 20px);
-}
-@keyframes glow-border-blue {
-  from { box-shadow: inset 0 0 10px rgba(52, 152, 219, 0.6); }
-  to { box-shadow: inset 0 0 20px rgba(52, 152, 219, 0.9); }
-}
-
-/* Red */
-.puzzle-block.empty.color-red::before {
-  border: 1px solid rgba(231, 76, 60, 0.8);
-  box-shadow: inset 0 0 15px rgba(231, 76, 60, 0.8);
-  animation-name: glow-border-red;
-  background-image: repeating-linear-gradient(45deg, rgba(231, 76, 60, 0.1), rgba(231, 76, 60, 0.1) 10px, rgba(231, 76, 60, 0.2) 10px, rgba(231, 76, 60, 0.2) 20px);
-}
-@keyframes glow-border-red {
-  from { box-shadow: inset 0 0 10px rgba(231, 76, 60, 0.6); }
-  to { box-shadow: inset 0 0 20px rgba(231, 76, 60, 0.9); }
-}
-
-/* Orange */
-.puzzle-block.empty.color-orange::before {
-  border: 1px solid rgba(243, 156, 18, 0.8);
-  box-shadow: inset 0 0 15px rgba(243, 156, 18, 0.8);
-  animation-name: glow-border-orange;
-  background-image: repeating-linear-gradient(45deg, rgba(243, 156, 18, 0.1), rgba(243, 156, 18, 0.1) 10px, rgba(243, 156, 18, 0.2) 10px, rgba(243, 156, 18, 0.2) 20px);
-}
-@keyframes glow-border-orange {
-  from { box-shadow: inset 0 0 10px rgba(243, 156, 18, 0.6); }
-  to { box-shadow: inset 0 0 20px rgba(243, 156, 18, 0.9); }
-}
-
-
-/* --- Image Block Style - FIXED --- */
-.puzzle-block.image-block {
-  /* Remove background-size: cover from here! */
-  background-repeat: no-repeat; /* Keep */
-  /* background-image, background-size, background-position set by JS */
-  background-color: #ccc; /* Fallback color while image loads or if error */
-  border: 1px solid rgba(255, 255, 255, 0.1); /* Keep border from JS logic */
-
-  /* Inherit performance hints from base .puzzle-block */
-}
-
-/* --- Safari Image Block Style - CLEANED --- */
-@supports (-webkit-touch-callout: none) {
-  .puzzle-block.image-block {
-    /* Specific Safari performance/rendering hints */
-    transition: none; /* Keep for perceived speed */
-    -webkit-transform: translateZ(0);
-    -webkit-backface-visibility: hidden;
-    -webkit-perspective: 1000;
-  }
-  /* Remove obsolete rule for nested div */
-}
-
-
-/* Game Controls */
-.game-controls {
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 30px;
-}
-
-/* 換色按鈕樣式 */
-#change-color-button {
-  transition: all 0.3s ease; /* Keep transition */
-}
-#change-color-button.color-default-btn {
-  background-color: #555;
-  background-image: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.1) 10px, rgba(255, 255, 255, 0.2) 10px, rgba(255, 255, 255, 0.2) 20px);
-}
-#change-color-button.color-blue-btn {
-  background-color: #3498db;
-  background-image: none; /* Ensure no stripes */
-}
-#change-color-button.color-red-btn {
-  background-color: #e74c3c;
-  background-image: none;
-}
-#change-color-button.color-orange-btn {
-  background-color: #f39c12;
-  background-image: none;
-}
-
-
-/* 高分榜樣式 */
-.high-scores {
-  margin-top: 30px;
-  padding: 15px;
-  background-color: #ecf0f1;
-  border-radius: 5px;
-  border: 1px solid #ddd; /* Add border */
-}
-
-.high-scores h3 {
-  /* text-align: center; */ /* Remove centering if not needed */
-  margin-bottom: 10px;
-  color: #2c3e50;
-  /* display: none; */ /* Let's show the title */
-  font-size: 1.3em; /* Make title slightly larger */
-  border-bottom: 1px solid #bdc3c7; /* Add separator */
-  padding-bottom: 8px; /* Space below separator */
-}
-
-#high-scores-list {
-  width: 100%;
-  overflow-x: auto; /* Allow horizontal scroll on small screens */
-}
-
-
-/* 遊戲完成界面樣式 */
-#game-complete {
-  text-align: center;
-  padding: 30px;
-  background-color: #ecf0f1;
-  border-radius: 10px;
-  max-width: 500px; /* Limit width */
-  margin: 40px auto; /* Center */
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-}
-
-#game-complete h2 {
-  color: #27ae60;
-  margin-bottom: 20px;
-}
-
-.completion-stats {
-  margin-bottom: 25px;
-  font-size: 1.2em;
-  line-height: 1.6; /* Improve readability */
-}
-.completion-stats p {
-    margin-bottom: 8px; /* Space between stats */
-}
-
-.completion-buttons {
-  display: flex;
-  justify-content: center;
-  gap: 15px;
-}
-
-/* API設定 & 網路圖片搜索樣式 (Keep if still potentially needed) */
-.api-settings, .search-option {
-  margin: 15px 0;
-  padding: 15px;
-  background-color: #f8f9fa;
-  border-radius: 5px;
-  border: 1px solid #e9ecef;
-}
-.api-settings h3, .search-option h2 { /* Assuming search uses h2 */
-  margin-bottom: 10px;
-  color: #3498db;
-  text-align: center;
-}
-/* ... (rest of API/Search styles remain largely the same) ... */
-
-/* 作弊按鈕樣式 */
-#cheat-button {
-  background-color: #e74c3c; /* Default: Red (inactive) */
-  position: relative;
-  padding-left: 30px; /* Space for indicator */
-}
-
-#cheat-button:hover {
-  background-color: #c0392b; /* Darker red on hover */
-}
-
-/* Active state (Green) */
-#cheat-button.active {
-  background-color: #2ecc71;
-  /* box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.3); */ /* Optional inset shadow */
-}
-#cheat-button.active:hover {
-  background-color: #27ae60; /* Darker green on hover */
-}
-
-
-/* 靜音按鈕樣式 */
-#mute-button {
-    background-color: #3498db; /* Default blue */
-}
-#mute-button.active {
-  background-color: #e74c3c; /* Red when muted */
-}
-#mute-button.active:hover {
-  background-color: #c0392b; /* Darker red */
-}
-
-/* Cheat indicator light */
-#cheat-button::before {
-  content: '';
-  position: absolute;
-  left: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background-color: #c0392b; /* Dark Red for inactive */
-  border: 1px solid rgba(0,0,0,0.2);
-  transition: background-color 0.3s ease, box-shadow 0.3s ease;
-}
-
-#cheat-button.active::before {
-  background-color: #27ae60; /* Dark Green for active */
-  box-shadow: 0 0 8px #2ecc71; /* Add glow when active */
-}
-
-/* Cheat selection style */
-.puzzle-block.cheat-selected {
-  box-shadow: 0 0 15px 5px #e74c3c; /* Red glow */
-  animation: cheat-pulse 1.0s infinite alternate; /* Faster pulse */
-  z-index: 2; /* Ensure visibility */
-}
-@keyframes cheat-pulse {
-  from { box-shadow: 0 0 15px 5px #e74c3c; }
-  to { box-shadow: 0 0 25px 8px #ff7979; } /* Brighter red */
-}
-
-
-/* 作弊模式信息樣式 (in results/high scores) */
-.cheat-used {
-  color: #e74c3c; /* Red */
-  font-weight: bold;
-}
-.cheat-not-used {
-  color: #27ae60; /* Green */
-}
-
-/* 高分表格樣式 */
-.high-scores-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 10px;
-  font-size: 1em; /* Adjust font size */
-  border: 1px solid #ddd;
-  background-color: #fff;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.05); /* Subtle shadow */
-}
-
-.high-scores-table th,
-.high-scores-table td {
-  padding: 10px 12px; /* Adjust padding */
-  text-align: center;
-  border-bottom: 1px solid #e0e0e0; /* Lighter border */
-  border-right: 1px solid #e0e0e0;
-}
-.high-scores-table th:last-child,
-.high-scores-table td:last-child {
-    border-right: none; /* No right border on last column */
-}
-
-
-.high-scores-table th {
-  background-color: #3498db; /* Match button color */
-  color: white;
-  font-weight: bold;
-  position: sticky; /* Keep header visible on scroll */
-  top: 0;
-  z-index: 1; /* Ensure header is above content */
-  padding: 12px;
-}
-
-.high-scores-table tr:nth-child(even) {
-  background-color: #f8f9fa; /* Lighter even row color */
-}
-
-.high-scores-table tr:hover {
-  background-color: #e9ecef; /* Subtle hover */
-}
-
-.no-record {
-  font-style: italic;
-  color: #95a5a6;
-  text-align: center;
-  margin-top: 15px;
-  font-weight: bold;
-  padding: 10px;
-}
-
+.puzzle-block.empty { background-color: transparent; background-image: none; cursor: default; box-shadow: none; position: relative; }
+.puzzle-block.empty:hover { transform: none; }
+.puzzle-block.empty::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; z-index: 1; border-radius: 2px; box-shadow: inset 0 0 15px rgba(0,0,0,0.5); animation: glow-border-default 1.5s infinite alternate; background-image: repeating-linear-gradient( 45deg, rgba(52, 52, 52, 0.1), rgba(52, 52, 52, 0.1) 10px, rgba(52, 52, 52, 0.2) 10px, rgba(52, 52, 52, 0.2) 20px ); }
+/* Styles for color-default, color-blue, color-red, color-orange empty blocks remain the same */
+.puzzle-block.empty.color-default::before { border: 1px solid rgba(52, 52, 52, 0.8); box-shadow: inset 0 0 15px rgba(52, 52, 52, 0.8); animation-name: glow-border-default; background-image: repeating-linear-gradient(45deg, rgba(52, 52, 52, 0.1), rgba(52, 52, 52, 0.1) 10px, rgba(52, 52, 52, 0.2) 10px, rgba(52, 52, 52, 0.2) 20px); }
+@keyframes glow-border-default { from { box-shadow: inset 0 0 10px rgba(52, 52, 52, 0.6); } to { box-shadow: inset 0 0 20px rgba(52, 52, 52, 0.9); } }
+.puzzle-block.empty.color-blue::before { border: 1px solid rgba(52, 152, 219, 0.8); box-shadow: inset 0 0 15px rgba(52, 152, 219, 0.8); animation-name: glow-border-blue; background-image: repeating-linear-gradient(45deg, rgba(52, 152, 219, 0.1), rgba(52, 152, 219, 0.1) 10px, rgba(52, 152, 219, 0.2) 10px, rgba(52, 152, 219, 0.2) 20px); }
+@keyframes glow-border-blue { from { box-shadow: inset 0 0 10px rgba(52, 152, 219, 0.6); } to { box-shadow: inset 0 0 20px rgba(52, 152, 219, 0.9); } }
+.puzzle-block.empty.color-red::before { border: 1px solid rgba(231, 76, 60, 0.8); box-shadow: inset 0 0 15px rgba(231, 76, 60, 0.8); animation-name: glow-border-red; background-image: repeating-linear-gradient(45deg, rgba(231, 76, 60, 0.1), rgba(231, 76, 60, 0.1) 10px, rgba(231, 76, 60, 0.2) 10px, rgba(231, 76, 60, 0.2) 20px); }
+@keyframes glow-border-red { from { box-shadow: inset 0 0 10px rgba(231, 76, 60, 0.6); } to { box-shadow: inset 0 0 20px rgba(231, 76, 60, 0.9); } }
+.puzzle-block.empty.color-orange::before { border: 1px solid rgba(243, 156, 18, 0.8); box-shadow: inset 0 0 15px rgba(243, 156, 18, 0.8); animation-name: glow-border-orange; background-image: repeating-linear-gradient(45deg, rgba(243, 156, 18, 0.1), rgba(243, 156, 18, 0.1) 10px, rgba(243, 156, 18, 0.2) 10px, rgba(243, 156, 18, 0.2) 20px); }
+@keyframes glow-border-orange { from { box-shadow: inset 0 0 10px rgba(243, 156, 18, 0.6); } to { box-shadow: inset 0 0 20px rgba(243, 156, 18, 0.9); } }
 
 /* --- Image Block Style - 使用 CSS 變量 --- */
 .puzzle-block.image-block {
@@ -603,15 +180,6 @@ button.selected {
   will-change: background-position, background-size; /* 提示瀏覽器這些會變 */
 }
 
-/* 可選：為 puzzle-container 添加一個後備背景色 */
-.puzzle-container {
-  /* ... */
-  background-color: #e0e0e0; /* 淺灰色背景，用於顯示格子間隙 */
-  /* CSS 變量將由 JS 設置 */
-}
-
-
-/* --- Safari Image Block Style - 保持簡潔 --- */
 @supports (-webkit-touch-callout: none) {
   .puzzle-block.image-block {
     transition: none; /* Keep for perceived speed */
@@ -621,67 +189,74 @@ button.selected {
   }
 }
 
+/* Game Controls */
+.game-controls { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin-bottom: 30px; }
+#change-color-button { transition: all 0.3s ease; }
+#change-color-button.color-default-btn { background-color: #555; background-image: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.1) 10px, rgba(255, 255, 255, 0.2) 10px, rgba(255, 255, 255, 0.2) 20px); }
+#change-color-button.color-blue-btn { background-color: #3498db; background-image: none; }
+#change-color-button.color-red-btn { background-color: #e74c3c; background-image: none; }
+#change-color-button.color-orange-btn { background-color: #f39c12; background-image: none; }
+
+/* 高分榜樣式 */
+.high-scores { margin-top: 30px; padding: 15px; background-color: #ecf0f1; border-radius: 5px; border: 1px solid #ddd; }
+.high-scores h3 { margin-bottom: 10px; color: #2c3e50; font-size: 1.3em; border-bottom: 1px solid #bdc3c7; padding-bottom: 8px; }
+#high-scores-list { width: 100%; overflow-x: auto; }
+
+/* 遊戲完成界面樣式 */
+#game-complete { text-align: center; padding: 30px; background-color: #ecf0f1; border-radius: 10px; max-width: 500px; margin: 40px auto; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); }
+#game-complete h2 { color: #27ae60; margin-bottom: 20px; }
+.completion-stats { margin-bottom: 25px; font-size: 1.2em; line-height: 1.6; }
+.completion-stats p { margin-bottom: 8px; }
+.completion-buttons { display: flex; justify-content: center; gap: 15px; }
+
+/* API & Search styles remain the same */
+.api-settings, .search-option { margin: 15px 0; padding: 15px; background-color: #f8f9fa; border-radius: 5px; border: 1px solid #e9ecef; }
+.api-settings h3, .search-option h2 { margin-bottom: 10px; color: #3498db; text-align: center; }
+/* ... (rest of API/Search styles) ... */
+
+/* 作弊按鈕樣式 */
+#cheat-button { background-color: #e74c3c; position: relative; padding-left: 30px; }
+#cheat-button:hover { background-color: #c0392b; }
+#cheat-button.active { background-color: #2ecc71; }
+#cheat-button.active:hover { background-color: #27ae60; }
+#mute-button { background-color: #3498db; }
+#mute-button.active { background-color: #e74c3c; }
+#mute-button.active:hover { background-color: #c0392b; }
+#cheat-button::before { content: ''; position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 12px; height: 12px; border-radius: 50%; background-color: #c0392b; border: 1px solid rgba(0,0,0,0.2); transition: background-color 0.3s ease, box-shadow 0.3s ease; }
+#cheat-button.active::before { background-color: #27ae60; box-shadow: 0 0 8px #2ecc71; }
+.puzzle-block.cheat-selected { box-shadow: 0 0 15px 5px #e74c3c; animation: cheat-pulse 1.0s infinite alternate; z-index: 2; }
+@keyframes cheat-pulse { from { box-shadow: 0 0 15px 5px #e74c3c; } to { box-shadow: 0 0 25px 8px #ff7979; } }
+
+/* 作弊模式信息樣式 */
+.cheat-used { color: #e74c3c; font-weight: bold; }
+.cheat-not-used { color: #27ae60; }
+
+/* 高分表格樣式 */
+.high-scores-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 1em; border: 1px solid #ddd; background-color: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+.high-scores-table th, .high-scores-table td { padding: 10px 12px; text-align: center; border-bottom: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0; }
+.high-scores-table th:last-child, .high-scores-table td:last-child { border-right: none; }
+.high-scores-table th { background-color: #3498db; color: white; font-weight: bold; position: sticky; top: 0; z-index: 1; padding: 12px; }
+.high-scores-table tr:nth-child(even) { background-color: #f8f9fa; }
+.high-scores-table tr:hover { background-color: #e9ecef; }
+.no-record { font-style: italic; color: #95a5a6; text-align: center; margin-top: 15px; font-weight: bold; padding: 10px; }
 
 /* 響應式設計 */
 @media (max-width: 600px) {
-  .container {
-      padding: 15px; /* Reduce padding */
-  }
-  h1 {
-      font-size: 2em; /* Smaller title */
-  }
-
-  .game-stats {
-    flex-direction: column; /* Stack stats */
-    align-items: center;
-    gap: 8px; /* Space between stats */
-    margin-bottom: 15px;
-    font-size: 1.1em;
-  }
-
-  .game-controls {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); /* More flexible grid */
-    gap: 8px;
-    width: 100%;
-  }
-
-  .game-controls button {
-    width: 100%; /* Full width within grid cell */
-    padding: 10px;
-    font-size: 0.9em;
-  }
-
-  .puzzle-block {
-    font-size: 1.2em; /* Adjust font size based on preference */
-     /* Consider reducing font size further for very small screens or large grids */
-  }
-
-  /* Adjust high score table font size on small screens */
-  .high-scores-table {
-      font-size: 0.9em;
-  }
-   .high-scores-table th,
-   .high-scores-table td {
-       padding: 8px 6px;
-   }
-
-   /* Setup options smaller */
-   .mode-options, .size-options, .image-options {
-       gap: 10px;
-   }
-   .image-options img {
-       width: 80px;
-       height: 80px;
-   }
-   button { /* Reduce base button padding slightly */
-       padding: 10px 15px;
-   }
+  .container { padding: 15px; }
+  h1 { font-size: 2em; }
+  .game-stats { flex-direction: column; align-items: center; gap: 8px; margin-bottom: 15px; font-size: 1.1em; }
+  .game-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; width: 100%; }
+  .game-controls button { width: 100%; padding: 10px; font-size: 0.9em; }
+  .puzzle-block { font-size: 1.2em; }
+  .high-scores-table { font-size: 0.9em; }
+  .high-scores-table th, .high-scores-table td { padding: 8px 6px; }
+  .mode-options, .size-options, .image-options { gap: 10px; }
+  .image-options img { width: 80px; height: 80px; }
+  button { padding: 10px 15px; }
 }
-
 @media (max-width: 400px) {
     h1 { font-size: 1.8em; }
-    .puzzle-block { font-size: 1em; } /* Even smaller font for small grids */
-    .game-controls { grid-template-columns: 1fr 1fr; } /* Force 2 columns */
+    .puzzle-block { font-size: 1em; }
+    .game-controls { grid-template-columns: 1fr 1fr; }
     .high-scores-table { font-size: 0.8em; }
 }

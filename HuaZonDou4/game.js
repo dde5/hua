@@ -1,178 +1,50 @@
-// game.js (完整修正版 - 增加洗牌次數)
+// game.js (完整 - 與前次相同，增加洗牌次數版本)
 class PuzzleGame {
-  constructor(size, mode, imageSource, imageIdentifier) { // <-- imageSource is preprocessed DataURL or null
-    if (!size || size < 3 || size > 10) {
-        console.error(`無效的遊戲尺寸: ${size}, 將使用預設值 4`);
-        size = 4;
-    }
+  constructor(size, mode, imageSource, imageIdentifier) { // imageSource is original path or raw DataURL
+    if (!size || size < 3 || size > 10) { size = 4; }
     this.size = size;
     this.mode = mode;
     this.imageSource = (mode === 'image' && imageSource) ? imageSource : null;
     this.imageIdentifier = imageIdentifier || '';
-
-    this.moves = 0;
-    this.startTime = null;
-    this.timer = null;
+    this.moves = 0; this.startTime = null; this.timer = null;
     this.timerElement = document.getElementById('time');
-
-    this.board = [];
-    this.emptyPos = { row: this.size - 1, col: this.size - 1 };
-
-    this.cheatCount = 0;
-    this.cheatTimes = [];
-    this.cheatEnabled = false;
-
+    this.board = []; this.emptyPos = { row: this.size - 1, col: this.size - 1 };
+    this.cheatCount = 0; this.cheatTimes = []; this.cheatEnabled = false;
     this.initializeGame();
     console.log(`遊戲實例已創建: ${this.size}x${this.size}, 模式: ${this.mode}, 標識符: '${this.imageIdentifier}'`);
   }
 
   initializeGame() {
-    this.board = [];
-    let value = 1;
-    for (let row = 0; row < this.size; row++) {
-      const rowArray = [];
-      for (let col = 0; col < this.size; col++) {
-         if (row === this.size - 1 && col === this.size - 1) rowArray.push(0);
-         else rowArray.push(value++);
-      }
-      this.board.push(rowArray);
-    }
+    this.board = []; let value = 1;
+    for (let r=0; r<this.size; r++){ const row=[]; for(let c=0; c<this.size; c++){ if(r===this.size-1 && c===this.size-1)row.push(0); else row.push(value++);} this.board.push(row);}
     this.emptyPos = { row: this.size - 1, col: this.size - 1 };
     this.shuffleBoard();
   }
 
   shuffleBoard() {
-    // **增加隨機移動次數**
-    const shuffleMoves = Math.max(200, Math.pow(this.size, 4)); // <--- 增加次數 (e.g., size^4)
-    let lastMoved = -1;
-    console.log(`Shuffling with ${shuffleMoves} moves...`);
-
+    const shuffleMoves = Math.max(200, Math.pow(this.size, 4)); // Increased moves
+    let lastMoved = -1; console.log(`Shuffling with ${shuffleMoves} moves...`);
     for (let i = 0; i < shuffleMoves; i++) {
       const adjacent = this.getAdjacentBlocks();
-      const possibleMoves = adjacent.filter(move => {
-          const pieceValue = this.board[move.row][move.col];
-          return pieceValue !== lastMoved;
-      });
-
-      let moveTarget;
-      if (possibleMoves.length > 0) {
-          const randomIndex = Math.floor(Math.random() * possibleMoves.length);
-          moveTarget = possibleMoves[randomIndex];
-      } else if (adjacent.length > 0) {
-          // Allow moving back if it's the only option
-          moveTarget = adjacent[0];
-      } else {
-          continue; // Should not happen if board is valid
-      }
-
-      lastMoved = this.board[moveTarget.row][moveTarget.col];
-      this.swapBlocks(moveTarget.row, moveTarget.col);
+      const possibleMoves = adjacent.filter(m => this.board[m.row][m.col] !== lastMoved);
+      let moveTarget = (possibleMoves.length > 0) ? possibleMoves[Math.floor(Math.random() * possibleMoves.length)] : (adjacent.length > 0 ? adjacent[0] : null);
+      if (!moveTarget) continue;
+      lastMoved = this.board[moveTarget.row][moveTarget.col]; this.swapBlocks(moveTarget.row, moveTarget.col);
     }
-     console.log("Shuffling complete.");
-
-    if (!this.isSolvable()) {
-        console.warn("Generated puzzle is unsolvable, attempting to fix...");
-        this.makeGameSolvable();
-        if (!this.isSolvable()) {
-            console.error("Failed to make the puzzle solvable after fix attempt. Re-shuffling.");
-            // Avoid infinite loop by just initializing again (should shuffle differently)
-            this.initializeGame();
-        } else {
-             console.log("Puzzle fixed to be solvable.");
-        }
-    }
+    console.log("Shuffling complete.");
+    if (!this.isSolvable()) { console.warn("Generated puzzle unsolvable, fixing..."); this.makeGameSolvable(); if (!this.isSolvable()) { console.error("Fix failed. Re-shuffling."); this.initializeGame(); } else { console.log("Puzzle fixed."); } }
   }
 
-  getAdjacentBlocks() {
-    const { row, col } = this.emptyPos;
-    const adjacent = [];
-    if (row > 0) adjacent.push({ row: row - 1, col });
-    if (row < this.size - 1) adjacent.push({ row: row + 1, col });
-    if (col > 0) adjacent.push({ row, col: col - 1 });
-    if (col < this.size - 1) adjacent.push({ row, col: col + 1 });
-    return adjacent;
-  }
-
-  swapBlocks(row, col) {
-    if (row < 0 || row >= this.size || col < 0 || col >= this.size) return;
-    const targetValue = this.board[row][col];
-    this.board[this.emptyPos.row][this.emptyPos.col] = targetValue;
-    this.board[row][col] = 0;
-    this.emptyPos = { row, col };
-  }
-
-  isSolvable() {
-    const flatBoard = [];
-    for (let r = 0; r < this.size; r++) { for (let c = 0; c < this.size; c++) { if (this.board[r][c] !== 0) flatBoard.push(this.board[r][c]); } }
-    let inversions = 0;
-    for (let i = 0; i < flatBoard.length; i++) { for (let j = i + 1; j < flatBoard.length; j++) { if (flatBoard[i] > flatBoard[j]) inversions++; } }
-    if (this.size % 2 === 1) return inversions % 2 === 0;
-    else { const emptyRowFromBottom = this.size - this.emptyPos.row; return (inversions + emptyRowFromBottom) % 2 === 0; }
-  }
-
-  makeGameSolvable() {
-     let pos1 = null, pos2 = null;
-     for (let r = 0; r < this.size; r++) { for (let c = 0; c < this.size; c++) { if (this.board[r][c] === 1) pos1 = { r, c }; if (this.board[r][c] === 2) pos2 = { r, c }; if (pos1 && pos2) break; } if (pos1 && pos2) break; }
-     if (pos1 && pos2) {
-         console.log("交換方塊 1 和 2 以修復可解性。");
-         const temp = this.board[pos1.r][pos1.c]; this.board[pos1.r][pos1.c] = this.board[pos2.r][pos2.c]; this.board[pos2.r][pos2.c] = temp;
-     } else {
-          console.log("後備交換：交換第一行的前兩個非空方塊。");
-          let first = null, second = null;
-          for (let c = 0; c < this.size; c++) { if (this.board[0][c] !== 0) { if (first === null) first = c; else { second = c; break; } } }
-          if (first !== null && second !== null) { const temp = this.board[0][first]; this.board[0][first] = this.board[0][second]; this.board[0][second] = temp; }
-          else { console.error("無法找到兩個方塊進行交換以修復可解性。"); }
-     }
-     // Optional: Check solvability again after swap for debugging
-     // console.log(`交換後可解性: ${this.isSolvable()}`);
-  }
-
-  isAdjacent(row, col) {
-    const { row: emptyRow, col: emptyCol } = this.emptyPos;
-    return (Math.abs(row - emptyRow) + Math.abs(col - emptyCol) === 1);
-  }
-
-  moveBlock(row, col) {
-    if (this.isAdjacent(row, col)) {
-      this.swapBlocks(row, col);
-      this.moves++;
-      // UI layer handles sound, render, stats update
-      return true;
-    }
-    return false;
-  }
-
-  checkWin() {
-    let expectedValue = 1;
-    for (let row = 0; row < this.size; row++) { for (let col = 0; col < this.size; col++) { if (row === this.size - 1 && col === this.size - 1) { if (this.board[row][col] !== 0) return false; } else { if (this.board[row][col] !== expectedValue) return false; expectedValue++; } } }
-    return true;
-  }
-
-  startTimer() {
-    if (!this.timerElement) { console.error("計時器元素 'time' 未找到！"); return; }
-    this.stopTimer();
-    this.startTime = new Date();
-    console.log("計時器啟動:", this.startTime);
-    this.timerElement.textContent = '00:00';
-    this.timer = setInterval(() => {
-      const currentTime = new Date(); const start = this.startTime instanceof Date ? this.startTime : currentTime; const elapsedTime = Math.floor((currentTime - start) / 1000);
-      if (elapsedTime >= 0) { const minutes = Math.floor(elapsedTime / 60).toString().padStart(2, '0'); const seconds = (elapsedTime % 60).toString().padStart(2, '0'); this.timerElement.textContent = `${minutes}:${seconds}`; }
-      else { this.timerElement.textContent = '00:00'; }
-    }, 1000);
-  }
-
-  stopTimer() {
-    if (this.timer) { clearInterval(this.timer); this.timer = null; console.log("計時器已停止"); }
-  }
-
-  resetGame() {
-    this.stopTimer();
-    this.initializeGame(); // Re-shuffle
-    this.moves = 0;
-    this.cheatCount = 0; this.cheatTimes = []; this.cheatEnabled = false;
-    // UI layer should reset timer display
-    this.startTimer(); // Restart timer with new startTime
-  }
+  getAdjacentBlocks() { const {row,col}=this.emptyPos; const adj=[]; if(row>0)adj.push({row:row-1,col}); if(row<this.size-1)adj.push({row:row+1,col}); if(col>0)adj.push({row,col:col-1}); if(col<this.size-1)adj.push({row,col:col+1}); return adj; }
+  swapBlocks(row, col) { if(row<0||row>=this.size||col<0||col>=this.size)return; const val=this.board[row][col]; this.board[this.emptyPos.row][this.emptyPos.col]=val; this.board[row][col]=0; this.emptyPos={row,col}; }
+  isSolvable() { const flat=[]; for(let r=0;r<this.size;r++)for(let c=0;c<this.size;c++)if(this.board[r][c]!==0)flat.push(this.board[r][c]); let inv=0; for(let i=0;i<flat.length;i++)for(let j=i+1;j<flat.length;j++)if(flat[i]>flat[j])inv++; if(this.size%2===1)return inv%2===0; else {const emptyRowFromBottom=this.size-this.emptyPos.row; return(inv+emptyRowFromBottom)%2===0;} }
+  makeGameSolvable() { let p1=null,p2=null; for(let r=0;r<this.size;r++)for(let c=0;c<this.size;c++){if(this.board[r][c]===1)p1={r,c};if(this.board[r][c]===2)p2={r,c};if(p1&&p2)break;} if(p1&&p2){console.log("Swapping 1 & 2"); const t=this.board[p1.r][p1.c]; this.board[p1.r][p1.c]=this.board[p2.r][p2.c]; this.board[p2.r][p2.c]=t;} else {console.log("Fallback swap"); let f=null,s=null; for(let c=0;c<this.size;c++)if(this.board[0][c]!==0){if(f===null)f=c;else{s=c;break;}} if(f!==null&&s!==null){const t=this.board[0][f];this.board[0][f]=this.board[0][s];this.board[0][s]=t;}else{console.error("Cannot find tiles to swap.");}} }
+  isAdjacent(row, col) { const {row:er,col:ec}=this.emptyPos; return(Math.abs(row-er)+Math.abs(col-ec)===1); }
+  moveBlock(row, col) { if(this.isAdjacent(row,col)){this.swapBlocks(row,col);this.moves++;return true;}return false; }
+  checkWin() { let exp=1; for(let r=0;r<this.size;r++)for(let c=0;c<this.size;c++){if(r===this.size-1&&c===this.size-1){if(this.board[r][c]!==0)return false;}else{if(this.board[r][c]!==exp)return false;exp++;}}return true; }
+  startTimer() { if(!this.timerElement){console.error("Timer element not found"); return;} this.stopTimer(); this.startTime=new Date(); console.log("Timer started:", this.startTime); this.timerElement.textContent='00:00'; this.timer=setInterval(()=>{const now=new Date(); const start=this.startTime instanceof Date?this.startTime:now; const elapsed=Math.floor((now-start)/1000); if(elapsed>=0){const m=Math.floor(elapsed/60).toString().padStart(2,'0'); const s=(elapsed%60).toString().padStart(2,'0'); this.timerElement.textContent=`${m}:${s}`;}else{this.timerElement.textContent='00:00';}},1000); }
+  stopTimer() { if(this.timer){clearInterval(this.timer);this.timer=null;console.log("Timer stopped");} }
+  resetGame() { this.stopTimer(); this.initializeGame(); this.moves=0; this.cheatCount=0; this.cheatTimes=[]; this.cheatEnabled=false; this.startTimer(); }
 
   // saveHighScore (與上次修正相同)
   saveHighScore() {
