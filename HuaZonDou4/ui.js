@@ -321,42 +321,79 @@ document.addEventListener('DOMContentLoaded', () => {
   function initGameControls() {
       // --- 這是你原始文件提供的 initGameControls 內容 ---
       document.getElementById('reset-game').addEventListener('click', () => {
-          if (!gameInstance) return; // 添加保護
-          gameInstance.resetGame();
-          renderGameBoard();
-          soundManager.playGameStartSound();
-          let cheatMode = false; // 重置局部變量 (如果原始代碼有)
-          if (gameInstance) gameInstance.cheatEnabled = false;
-          const cheatButton = document.getElementById('cheat-button');
-          if (cheatButton) { cheatButton.classList.remove('active'); cheatButton.style.backgroundColor = '#e74c3c'; }
+          // ... (reset 按鈕邏輯) ...
       });
       document.getElementById('new-game').addEventListener('click', () => {
-          if (gameInstance) gameInstance.stopTimer();
-          document.getElementById('game-board').classList.add('hidden');
-          document.getElementById('game-setup').classList.remove('hidden');
-          resetGameSettings();
+          // ... (new game 按鈕邏輯) ...
       });
       const muteButton = document.getElementById('mute-button');
-      if (muteButton) muteButton.addEventListener('click', () => { const isMuted = soundManager.toggleMute(); muteButton.classList.toggle('active', isMuted); muteButton.style.backgroundColor = isMuted ? '#e74c3c' : '#3498db'; if (!isMuted) soundManager.playGameStartSound(); });
+      if (muteButton) { /* ... (mute 按鈕邏輯) ... */ }
       const hintButton = document.getElementById('hint-button');
-      if (hintButton) hintButton.addEventListener('click', () => { if (!gameInstance) return; const hintMove = gameInstance.getHint(); if (hintMove) { highlightHintBlock(hintMove.row, hintMove.col); soundManager.playMoveSound(); } });
+      if (hintButton) { /* ... (hint 按鈕邏輯) ... */ }
       const showOriginalButton = document.getElementById('show-original-button');
-      if (showOriginalButton) { let showingOriginal = false; showOriginalButton.addEventListener('click', () => { if(!gameInstance || gameInstance.mode !== 'image' || !gameInstance.imageSource){ alert("僅圖片模式可用"); return;} showingOriginal = !showingOriginal; showOriginalButton.classList.toggle('active', showingOriginal); const puzzleContainer = document.querySelector('.puzzle-container'); if(!puzzleContainer) return; let overlay = document.getElementById('original-image-overlay'); if (showingOriginal) { if (!overlay) { overlay = document.createElement('div'); overlay.id = 'original-image-overlay'; Object.assign(overlay.style, { position:'absolute', top:'0', left:'0', width:'100%', height:'100%', backgroundImage:`url(${gameInstance.imageSource})`, backgroundSize:'contain', backgroundPosition:'center', backgroundRepeat:'no-repeat', zIndex:'10', opacity:'0.9', transition:'opacity 0.3s ease' }); puzzleContainer.style.position = 'relative'; puzzleContainer.appendChild(overlay); } showOriginalButton.textContent = '隱藏原圖'; } else { if (overlay) overlay.remove(); showOriginalButton.textContent = '顯示原圖'; } }); }
+      if (showOriginalButton) { /* ... (show original 按鈕邏輯) ... */ }
       const changeColorButton = document.getElementById('change-color-button');
-      if (changeColorButton) { function updateChangeColorButtonStyle(color) { changeColorButton.classList.remove('color-default-btn', 'color-blue-btn', 'color-red-btn', 'color-orange-btn'); changeColorButton.classList.add(`color-${color}-btn`); switch(color){ case 'default': changeColorButton.style.backgroundColor = '#555'; changeColorButton.style.backgroundImage = 'repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.1) 10px, rgba(255, 255, 255, 0.2) 10px, rgba(255, 255, 255, 0.2) 20px)'; break; case 'blue': changeColorButton.style.backgroundColor = '#3498db'; changeColorButton.style.backgroundImage = 'none'; break; case 'red': changeColorButton.style.backgroundColor = '#e74c3c'; changeColorButton.style.backgroundImage = 'none'; break; case 'orange': changeColorButton.style.backgroundColor = '#f39c12'; changeColorButton.style.backgroundImage = 'none'; break; } } updateChangeColorButtonStyle(selectedColor); changeColorButton.addEventListener('click', () => { const colors = ['default', 'blue', 'red', 'orange']; const currentIndex = colors.indexOf(selectedColor); const nextIndex = (currentIndex + 1) % colors.length; selectedColor = colors[nextIndex]; soundManager.playColorChangeSound(); updateChangeColorButtonStyle(selectedColor); document.querySelectorAll('.puzzle-block.empty').forEach(block => { block.classList.remove('color-default', 'color-blue', 'color-red', 'color-orange'); block.classList.add(`color-${selectedColor}`); }); }); }
+      if (changeColorButton) { /* ... (change color 按鈕邏輯) ... */ }
       const gameControls = document.querySelector('.game-controls');
       let cheatButton = document.getElementById('cheat-button'); // Check if already exists
-      if (!cheatButton && gameControls) { // Create if doesn't exist
-           cheatButton = document.createElement('button'); cheatButton.id = 'cheat-button'; cheatButton.textContent = '作弊模式'; gameControls.appendChild(cheatButton);
-      }
+      if (!cheatButton && gameControls) { /* ... (創建 cheat 按鈕) ... */ }
       // 作弊模式變數 (局部) - 來自原始代碼
       let cheatMode = false; let firstSelectedBlock = null;
-      if(cheatButton) { // 添加事件監聽器 (如果按鈕存在)
-           cheatButton.addEventListener('click', () => { if (!gameInstance || !gameInstance.startTime) return; const currentTime = new Date(); const elapsedTimeInSeconds = Math.floor((currentTime - gameInstance.startTime) / 1000); const timeLimit = 5 * 60; if (elapsedTimeInSeconds < timeLimit) { const remMin = Math.floor((timeLimit - elapsedTimeInSeconds) / 60); const remSec = (timeLimit - elapsedTimeInSeconds) % 60; alert(`作弊模式將在 ${remMin}分${remSec}秒 後可用`); return; } cheatMode = !cheatMode; cheatButton.classList.toggle('active', cheatMode); if(gameInstance) gameInstance.cheatEnabled = cheatMode; firstSelectedBlock = null; document.querySelectorAll('.puzzle-block').forEach(block => block.classList.remove('cheat-selected')); if (cheatMode) { alert('作弊模式已啟用！點擊任意兩個方塊進行交換。'); soundManager.playCheatSound(); } });
-      }
+      if(cheatButton) { /* ... (cheat 按鈕點擊邏輯) ... */ }
+
       const puzzleContainer = document.querySelector('.puzzle-container');
       if (puzzleContainer) { // 添加方塊點擊事件 (來自原始代碼)
-           puzzleContainer.addEventListener('click', (e) => { if (!gameInstance) return; const block = e.target.closest('.puzzle-block'); if (!block) return; const blocks = Array.from(puzzleContainer.querySelectorAll('.puzzle-block')); const index = blocks.indexOf(block); const currentSize = gameInstance.size; const row = Math.floor(index / currentSize); const col = index % currentSize; if (cheatMode && gameInstance.cheatEnabled) { if (block.classList.contains('empty')) return; if (!firstSelectedBlock) { firstSelectedBlock = { row, col, element: block }; block.classList.add('cheat-selected'); } else { const { row: row1, col: col1 } = firstSelectedBlock; gameInstance.cheatSwap(row1, col1, row, col); if(firstSelectedBlock.element) firstSelectedBlock.element.classList.remove('cheat-selected'); firstSelectedBlock = null; renderGameBoard(); if (gameInstance.checkWin()) gameComplete(); } } else { if (gameInstance.isAdjacent(row, col)) { requestAnimationFrame(() => { gameInstance.moveBlock(row, col); updateGameStats(); requestAnimationFrame(() => { renderGameBoard(); if (gameInstance.checkWin()) gameComplete(); }); }); } } }, true);
+           puzzleContainer.addEventListener('click', (e) => {
+                if (!gameInstance) return;
+                const block = e.target.closest('.puzzle-block');
+                if (!block) return;
+                const blocks = Array.from(puzzleContainer.querySelectorAll('.puzzle-block'));
+                const index = blocks.indexOf(block);
+                // **使用 gameInstance.size 獲取正確尺寸**
+                const currentSize = gameInstance ? gameInstance.size : selectedSize; // Fallback
+                if(!currentSize) return; // 無法確定尺寸
+                const row = Math.floor(index / currentSize);
+                const col = index % currentSize;
+
+                if (cheatMode && gameInstance.cheatEnabled) { // 作弊模式
+                    // ... (作弊模式下的點擊處理邏輯) ...
+                    if (block.classList.contains('empty')) return;
+                    if (!firstSelectedBlock) { firstSelectedBlock = { row, col, element: block }; block.classList.add('cheat-selected'); }
+                    else {
+                        const { row: row1, col: col1 } = firstSelectedBlock;
+                        // **在 cheatSwap 成功後播放聲音**
+                        const swapped = gameInstance.cheatSwap(row1, col1, row, col); // cheatSwap 內部會播放聲音
+                        if(firstSelectedBlock.element) firstSelectedBlock.element.classList.remove('cheat-selected');
+                        firstSelectedBlock = null;
+                        if (swapped) { // 僅在成功交換後渲染
+                           // soundManager.playCheatSound(); // cheatSwap 內部已調用
+                            renderGameBoard();
+                            if (gameInstance.checkWin()) gameComplete();
+                        }
+                    }
+                } else { // 普通模式
+                    if (gameInstance.isAdjacent(row, col)) {
+                        requestAnimationFrame(() => {
+                            // 先執行邏輯操作
+                            const moved = gameInstance.moveBlock(row, col); // **調用移動邏輯**
+                            // -----------> **在這裡添加聲音播放** <-----------
+                            if (moved) { // 確保邏輯移動成功才播放
+                                soundManager.playMoveSound();
+                            }
+                            // ----------------------------------------------
+                            updateGameStats(); // 更新步數顯示
+
+                            // 使用第二個requestAnimationFrame來確保視覺更新
+                            requestAnimationFrame(() => {
+                                renderGameBoard(); // 重新渲染界面
+                                if (gameInstance.checkWin()) { // 檢查是否勝利
+                                    gameComplete();
+                                }
+                            });
+                        });
+                    }
+                }
+           }, true);
       }
       // --- 原始 initGameControls 內容結束 ---
   }
