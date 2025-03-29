@@ -420,6 +420,50 @@ document.addEventListener('DOMContentLoaded', () => {
   // 顏色選擇
   function initColorSelection() { selectedColor = 'default'; }
 
+  // 初始化網路搜圖功能
+  function initWebImageSearch() {
+    const webSearchBtn = document.getElementById('web-image-search-btn');
+    if (!webSearchBtn) return;
+    
+    webSearchBtn.addEventListener('click', () => {
+      // 顯示網路搜圖彈出層
+      WebImageSearch.showModal();
+    });
+    
+    // 初始化網路搜圖模組
+    WebImageSearch.init((imageUrl, imageName) => {
+      // 清除預設圖片選中
+      document.querySelectorAll('.image-options img.selected').forEach(img => img.classList.remove('selected'));
+      
+      // 清除自定義上傳
+      const customInput = document.getElementById('custom-image');
+      if (customInput) customInput.value = '';
+      
+      // 移除舊的預覽
+      const existingPreview = document.querySelector('.image-options .custom-preview');
+      if (existingPreview) existingPreview.remove();
+      
+      // 設置選中的圖片
+      selectedImage = imageUrl;
+      currentImageIdentifier = imageName;
+      console.log("選擇網路圖片:", currentImageIdentifier);
+      
+      // 顯示預覽
+      const imageOptions = document.querySelector('.image-options');
+      if (imageOptions) {
+        const preview = document.createElement('img');
+        preview.src = selectedImage;
+        preview.alt = '網路圖片';
+        preview.title = currentImageIdentifier;
+        preview.classList.add('selected', 'custom-preview');
+        preview.style.width = '100px';
+        preview.style.height = '100px';
+        preview.style.objectFit = 'cover';
+        imageOptions.appendChild(preview);
+      }
+    });
+  }
+
   // 初始化所有UI組件
   function initUI() {
     initModeSelection();
@@ -429,6 +473,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initStartGameButton();
     initGameControls(); // <<< 使用你的原始版本
     initCustomImageUpload();
+    initWebImageSearch(); // 初始化網路搜圖功能
     document.querySelectorAll('.mode-options button, .size-options button, .color-options button').forEach(button => { button.classList.add('option-button'); });
     console.log("UI 初始化完成 (基於原始代碼)");
   }

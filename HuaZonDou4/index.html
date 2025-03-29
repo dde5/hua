@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>華容道拼圖遊戲</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="webImageSearch.css">
     <link rel="icon" href="favicon.ico" type="image/x-icon">
 </head>
 <body>
@@ -30,7 +31,9 @@
           <label for="custom-image">上傳自定義圖片</label>
           <input type="file" id="custom-image" accept="image/*">
         </div>
-
+        <div class="web-search-option">
+          <button id="web-image-search-btn">網路搜圖</button>
+        </div>
       </div>
       
       <div class="size-selection">
@@ -96,6 +99,7 @@
   <script src="cacheManager.js"></script>
   <script src="imageUtils.js"></script>
   <script src="imageSearch.js"></script>
+  <script src="webImageSearch.js"></script>
   <script src="soundManager.js"></script>
   <script src="storageManager.js"></script>
   <script src="game.js"></script>
