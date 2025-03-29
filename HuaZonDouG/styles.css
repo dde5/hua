@@ -177,24 +177,15 @@ button.selected {
   background-color: #ecf0f1; /* 輕微背景色 */
   padding: 2px; /* 內邊距配合gap */
   border-radius: 4px;
+  position: relative; /* 確保 positioning context */
+  /* --- 添加 CSS Containment --- */
+  contain: layout style; /* 提示瀏覽器佈局和樣式相對獨立 */
+  /* -------------------------- */
 }
 
-/* Safari瀏覽器兼容性修復 - 簡化版 */
-@supports (-webkit-touch-callout: none) {
-  .puzzle-container {
-    display: grid;
-    gap: 2px;
-    margin: 0 auto 20px;
-    max-width: 100%;
-    aspect-ratio: 1/1;
-    grid-template-rows: repeat(var(--grid-size, 4), 1fr);
-    grid-template-columns: repeat(var(--grid-size, 4), 1fr);
-    border: 2px solid #bdc3c7;
-    background-color: #ecf0f1;
-    padding: 2px;
-    border-radius: 4px;
-  }
-}
+/* Safari瀏覽器兼容性修復 - 保持 grid 設置 */
+/* @supports (-webkit-touch-callout: none) { ... } */ /* 不再需要針對 grid 佈局的特殊處理 */
+
 
 .puzzle-block {
   background-color: #3498db;
@@ -205,12 +196,10 @@ button.selected {
   font-size: 1.5em;
   font-weight: bold;
   cursor: pointer;
-  /* 移除transition屬性，提高Safari中的交換速度 */
-  /* 添加3D效果，提升數字模式的視覺體驗 */
+  transition: none !important; /* 保持禁用 transition */
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   border-radius: 4px;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
-  /* 確保數字完全居中 */
   text-align: center;
   line-height: 1;
   position: relative;
@@ -219,13 +208,13 @@ button.selected {
   padding: 0;
   margin: 0;
   overflow: hidden;
-  /* 添加硬件加速相關屬性 */
   transform: translateZ(0);
   -webkit-transform: translateZ(0);
+  /* 移除 grid-column/row 的 will-change，因為重繪模式下意義不大 */
   will-change: transform;
 }
 
-/* Safari特定的數字方塊樣式 - 簡化版 */
+/* Safari特定的數字方塊樣式 - 保持 */
 @supports (-webkit-touch-callout: none) {
   .puzzle-block:not(.image-block):not(.empty) {
     background-image: linear-gradient(to bottom, #3498db, #2980b9);
@@ -245,14 +234,10 @@ button.selected {
   }
 }
 
-/* 移除 puzzle-block:hover 的 transform: scale，避免抖動 */
-/* .puzzle-block:hover {
-  transform: scale(0.98);
-} */
-
 .puzzle-block.hint {
-  box-shadow: 0 0 15px #f39c12;
+  box-shadow: 0 0 15px #f39c12 !important;
   animation: pulse 1.5s infinite;
+  z-index: 5;
 }
 
 @keyframes pulse {
@@ -262,12 +247,13 @@ button.selected {
 }
 
 .puzzle-block.empty {
-  background-color: transparent;
+  background-color: transparent !important;
   cursor: default;
   position: relative;
   box-sizing: border-box;
-  /* 移除內嵌陰影，使其更像一個空格 */
-  box-shadow: none;
+  box-shadow: none !important;
+  border: none !important;
+  z-index: 1;
 }
 
 /* 使用 ::before 偽元素來創建空塊的視覺效果 */
@@ -278,11 +264,11 @@ button.selected {
   left: 0;
   right: 0;
   bottom: 0;
-  border: 1px solid rgba(0, 0, 0, 0.1); /* 細邊框 */
+  border: 1px solid rgba(0, 0, 0, 0.1);
   pointer-events: none;
   z-index: 1;
-  border-radius: 4px; /* 匹配方塊圓角 */
-  transition: box-shadow 0.3s ease, background-image 0.3s ease; /* 添加過渡 */
+  border-radius: 4px;
+  transition: box-shadow 0.3s ease, background-image 0.3s ease;
 }
 
 /* 預設暗灰條紋樣式 */
@@ -292,12 +278,6 @@ button.selected {
   background-image: repeating-linear-gradient(45deg, rgba(52, 52, 52, 0.05), rgba(52, 52, 52, 0.05) 10px, rgba(52, 52, 52, 0.1) 10px, rgba(52, 52, 52, 0.1) 20px);
   animation: glow-border-default 1.5s infinite alternate;
 }
-
-@keyframes glow-border-default {
-  from { box-shadow: inset 0 0 8px rgba(52, 52, 52, 0.3); }
-  to { box-shadow: inset 0 0 15px rgba(52, 52, 52, 0.6); }
-}
-
 /* 淡藍色樣式 */
 .puzzle-block.empty.color-blue::before {
   border-color: rgba(52, 152, 219, 0.8);
@@ -305,12 +285,6 @@ button.selected {
   background-image: repeating-linear-gradient(45deg, rgba(52, 152, 219, 0.05), rgba(52, 152, 219, 0.05) 10px, rgba(52, 152, 219, 0.1) 10px, rgba(52, 152, 219, 0.1) 20px);
   animation: glow-border-blue 1.5s infinite alternate;
 }
-
-@keyframes glow-border-blue {
-  from { box-shadow: inset 0 0 8px rgba(52, 152, 219, 0.3); }
-  to { box-shadow: inset 0 0 15px rgba(52, 152, 219, 0.6); }
-}
-
 /* 淡紅色樣式 */
 .puzzle-block.empty.color-red::before {
   border-color: rgba(231, 76, 60, 0.8);
@@ -318,12 +292,6 @@ button.selected {
   background-image: repeating-linear-gradient(45deg, rgba(231, 76, 60, 0.05), rgba(231, 76, 60, 0.05) 10px, rgba(231, 76, 60, 0.1) 10px, rgba(231, 76, 60, 0.1) 20px);
   animation: glow-border-red 1.5s infinite alternate;
 }
-
-@keyframes glow-border-red {
-  from { box-shadow: inset 0 0 8px rgba(231, 76, 60, 0.3); }
-  to { box-shadow: inset 0 0 15px rgba(231, 76, 60, 0.6); }
-}
-
 /* 淡橘色樣式 */
 .puzzle-block.empty.color-orange::before {
   border-color: rgba(243, 156, 18, 0.8);
@@ -332,62 +300,58 @@ button.selected {
   animation: glow-border-orange 1.5s infinite alternate;
 }
 
-@keyframes glow-border-orange {
-  from { box-shadow: inset 0 0 8px rgba(243, 156, 18, 0.3); }
-  to { box-shadow: inset 0 0 15px rgba(243, 156, 18, 0.6); }
-}
+/* 定義動畫 Keyframes (保持) */
+@keyframes glow-border-default { from { box-shadow: inset 0 0 8px rgba(52, 52, 52, 0.3); } to { box-shadow: inset 0 0 15px rgba(52, 52, 52, 0.6); } }
+@keyframes glow-border-blue { from { box-shadow: inset 0 0 8px rgba(52, 152, 219, 0.3); } to { box-shadow: inset 0 0 15px rgba(52, 152, 219, 0.6); } }
+@keyframes glow-border-red { from { box-shadow: inset 0 0 8px rgba(231, 76, 60, 0.3); } to { box-shadow: inset 0 0 15px rgba(231, 76, 60, 0.6); } }
+@keyframes glow-border-orange { from { box-shadow: inset 0 0 8px rgba(243, 156, 18, 0.3); } to { box-shadow: inset 0 0 15px rgba(243, 156, 18, 0.6); } }
 
 
 .puzzle-block.image-block {
-  background-size: cover;
-  background-repeat: no-repeat;
   position: relative;
   overflow: hidden;
   width: 100%;
   height: 100%;
-  transform: translateZ(0); /* 強制硬件加速，適用於所有現代瀏覽器 */
-  will-change: transform; /* 提示瀏覽器此元素將會變化，優化性能 */
-  backface-visibility: hidden; /* 防止3D變換時的閃爍 */
-  background-color: #ddd; /* 圖片載入前的底色 */
-  border: none; /* 移除圖片方塊的默認邊框 */
-  box-shadow: none; /* 移除圖片方塊的默認陰影 */
+  transform: translateZ(0);
+  will-change: transform;
+  backface-visibility: hidden;
+  background-color: #ddd;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: none;
+  transition: none !important;
 }
 
-/* 專門針對Safari的圖片模式樣式 - 優化版 */
+/* 專門針對Safari的圖片模式樣式 */
 @supports (-webkit-touch-callout: none) {
+  /* --- 添加：在 Safari 中禁用空塊動畫 --- */
+  .puzzle-block.empty.color-default::before,
+  .puzzle-block.empty.color-blue::before,
+  .puzzle-block.empty.color-red::before,
+  .puzzle-block.empty.color-orange::before {
+    animation: none !important; /* 禁用動畫 */
+    /* 保留基礎的 box-shadow 以維持視覺效果 */
+  }
+  /* --------------------------------- */
+
   .puzzle-block.image-block {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    cursor: pointer;
-    transform: translateZ(0);
-    -webkit-transform: translateZ(0);
-    -webkit-backface-visibility: hidden;
-    -webkit-perspective: 1000;
-    will-change: transform;
-    transition: none; /* 移除過渡效果，提高交換速度 */
-    background-color: #ddd;
-    border: none;
-    box-shadow: none;
+    /* -webkit-backface-visibility: hidden; (已在上面設置) */
   }
 
   /* 圖片容器 (內部 div) */
   .puzzle-block.image-block > div {
     position: absolute;
-    /* 移除強制覆蓋的樣式，讓ui.js中的設置生效 */
     background-size: cover !important;
     background-repeat: no-repeat !important;
     transform: translateZ(0);
     -webkit-transform: translateZ(0);
     -webkit-backface-visibility: hidden;
-    -webkit-perspective: 1000;
-    will-change: transform;
-    transition: none; /* 移除過渡效果，提高交換速度 */
-    width: var(--img-container-width, 100%); /* 從 JS 設置 */
-    height: var(--img-container-height, 100%); /* 從 JS 設置 */
-    top: var(--img-container-top, 0); /* 從 JS 設置 */
-    left: var(--img-container-left, 0); /* 從 JS 設置 */
+    will-change: transform, top, left;
+    transition: none !important;
+    /* 移除 Safari 特定的 width/height/top/left 變量，因為 renderGameBoard 會直接設置 */
+    /* width: var(--img-container-width, 100%); */
+    /* height: var(--img-container-height, 100%); */
+    /* top: var(--img-container-top, 0); */
+    /* left: var(--img-container-left, 0); */
   }
 }
 
@@ -400,273 +364,60 @@ button.selected {
   margin-bottom: 30px;
 }
 
-/* 換色按鈕樣式 */
-#change-color-button {
-  transition: all 0.3s ease;
-}
+/* 換色按鈕樣式 (保持) */
+#change-color-button { transition: all 0.3s ease; }
+#change-color-button.color-default-btn { background-color: #555; background-image: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.1) 10px, rgba(255, 255, 255, 0.2) 10px, rgba(255, 255, 255, 0.2) 20px); }
+#change-color-button.color-blue-btn { background-color: #3498db; background-image: none; }
+#change-color-button.color-red-btn { background-color: #e74c3c; background-image: none; }
+#change-color-button.color-orange-btn { background-color: #f39c12; background-image: none; }
 
-#change-color-button.color-default-btn {
-  background-color: #555;
-  background-image: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.1) 10px, rgba(255, 255, 255, 0.2) 10px, rgba(255, 255, 255, 0.2) 20px);
-}
+/* 遊戲完成界面樣式 (保持) */
+#game-complete { text-align: center; padding: 30px; background-color: #ecf0f1; border-radius: 10px; margin: 20px auto; max-width: 600px; }
+#game-complete h2 { color: #27ae60; margin-bottom: 20px; }
+.completion-stats { margin-bottom: 25px; font-size: 1.2em; line-height: 1.6; }
+#game-complete .completion-stats .cheat-used, #game-complete .completion-stats .cheat-not-used { display: inline; margin-left: 5px; }
+#game-complete .completion-stats strong { color: #555; }
+.completion-buttons { display: flex; justify-content: center; gap: 15px; }
 
-#change-color-button.color-blue-btn {
-  background-color: #3498db;
-  background-image: none; /* 確保純色背景 */
-}
+/* 作弊按鈕樣式 (保持) */
+#cheat-button { background-color: #e74c3c; position: relative; padding-left: 30px; }
+#cheat-button:hover { background-color: #c0392b; }
+#cheat-button.active { background-color: #2ecc71; box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.3); }
+#cheat-button::before { content: ''; position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 12px; height: 12px; border-radius: 50%; background-color: #e74c3c; transition: background-color 0.3s ease, box-shadow 0.3s ease; }
+#cheat-button.active::before { background-color: #2ecc71; box-shadow: 0 0 8px #2ecc71; }
+/* 靜音按鈕樣式 (保持) */
+#mute-button.active { background-color: #e74c3c; }
+.puzzle-block.cheat-selected { box-shadow: 0 0 15px #e74c3c !important; animation: cheat-pulse 1.5s infinite; z-index: 5; }
+@keyframes cheat-pulse { 0% { box-shadow: 0 0 15px #e74c3c; } 50% { box-shadow: 0 0 25px #e74c3c; } 100% { box-shadow: 0 0 15px #e74c3c; } }
 
-#change-color-button.color-red-btn {
-  background-color: #e74c3c;
-  background-image: none;
-}
+/* 高分榜相關樣式 (保持) */
+.high-scores { margin-top: 30px; padding: 15px; background-color: #ecf0f1; border-radius: 5px; border: 1px solid #ddd; }
+.high-scores h3 { text-align: center; margin-bottom: 15px; color: #2c3e50; display: block; font-size: 1.3em; padding-bottom: 10px; border-bottom: 1px solid #bdc3c7; }
+#high-scores-list { width: 100%; overflow-x: auto; }
+.high-scores-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 1em; border: 1px solid #ddd; background-color: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+.high-scores-table th, .high-scores-table td { padding: 10px 8px; text-align: center; border-bottom: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0; white-space: nowrap; }
+.high-scores-table th:last-child, .high-scores-table td:last-child { border-right: none; }
+.high-scores-table th { background-color: #3498db; color: white; font-weight: bold; position: sticky; top: 0; z-index: 1; padding: 12px 8px; }
+.high-scores-table tr:nth-child(even) { background-color: #f8f9fa; }
+.high-scores-table tr:hover { background-color: #e9ecef; }
+.no-record { font-style: italic; color: #95a5a6; text-align: center; margin-top: 15px; font-weight: bold; padding: 10px; }
+.cheat-used { color: #e74c3c; font-weight: bold; }
+.cheat-not-used { color: #27ae60; }
 
-#change-color-button.color-orange-btn {
-  background-color: #f39c12;
-  background-image: none;
-}
-
-/* 移除重複的高分榜樣式定義 (保留後面詳細的) */
-
-/* 遊戲完成界面樣式 */
-#game-complete {
-  text-align: center;
-  padding: 30px;
-  background-color: #ecf0f1;
-  border-radius: 10px;
-  margin: 20px auto; /* 添加上下邊距 */
-  max-width: 600px; /* 限制寬度 */
-}
-
-#game-complete h2 {
-  color: #27ae60;
-  margin-bottom: 20px;
-}
-
-.completion-stats {
-  margin-bottom: 25px;
-  font-size: 1.2em;
-  line-height: 1.6; /* 增加行高 */
-}
-
-/* 在完成界面添加作弊信息樣式 */
-#game-complete .completion-stats .cheat-used,
-#game-complete .completion-stats .cheat-not-used {
-    display: inline;
-    margin-left: 5px; /* 增加左邊距 */
-}
-#game-complete .completion-stats strong {
-    color: #555; /* 標籤顏色 */
-}
-
-
-.completion-buttons {
-  display: flex;
-  justify-content: center;
-  gap: 15px;
-}
-
-/* 移除未使用的 API 設定樣式 */
-/* 移除未使用的內嵌圖片搜索樣式 */
-
-/* 作弊按鈕樣式 */
-#cheat-button {
-  background-color: #e74c3c; /* 預設紅色表示未啟用 */
-  position: relative;
-  padding-left: 30px; /* 為指示燈留出空間 */
-}
-
-#cheat-button:hover {
-  background-color: #c0392b;
-}
-
-#cheat-button.active {
-  background-color: #2ecc71; /* 綠色表示啟用 */
-  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.3);
-}
-
-/* 靜音按鈕樣式 */
-#mute-button.active {
-  background-color: #e74c3c;
-}
-
-#cheat-button::before {
-  content: '';
-  position: absolute;
-  left: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background-color: #e74c3c; /* 預設紅色 */
-  transition: background-color 0.3s ease, box-shadow 0.3s ease; /* 添加陰影過渡 */
-}
-
-#cheat-button.active::before {
-  background-color: #2ecc71; /* 啟用時為綠色 */
-  box-shadow: 0 0 8px #2ecc71; /* 添加輝光效果 */
-}
-
-.puzzle-block.cheat-selected {
-  box-shadow: 0 0 15px #e74c3c;
-  animation: cheat-pulse 1.5s infinite;
-}
-
-@keyframes cheat-pulse {
-  0% { box-shadow: 0 0 15px #e74c3c; }
-  50% { box-shadow: 0 0 25px #e74c3c; }
-  100% { box-shadow: 0 0 15px #e74c3c; }
-}
-
-/* 作弊模式信息樣式 (已包含在下方高分榜樣式中) */
-
-/* --- 新增：高分榜相關樣式 (保留此詳細版本) --- */
-.high-scores {
-  margin-top: 30px;
-  padding: 15px;
-  background-color: #ecf0f1;
-  border-radius: 5px;
-  border: 1px solid #ddd; /* 可選邊框 */
-}
-
-.high-scores h3 {
-  text-align: center;
-  margin-bottom: 15px; /* 增加間距 */
-  color: #2c3e50;
-  display: block; /* **確保標題顯示** */
-  font-size: 1.3em;
-  padding-bottom: 10px;
-  border-bottom: 1px solid #bdc3c7;
-}
-
-#high-scores-list {
-  width: 100%;
-  overflow-x: auto; /* 在小屏幕上允許水平滾動 */
-}
-
-/* 表格樣式 */
-.high-scores-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 10px;
-  font-size: 1em; /* 可調整字體大小 */
-  border: 1px solid #ddd;
-  background-color: #fff;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05); /* 細微陰影 */
-}
-
-.high-scores-table th,
-.high-scores-table td {
-  padding: 10px 8px; /* 調整內邊距 */
-  text-align: center;
-  border-bottom: 1px solid #e0e0e0;
-  border-right: 1px solid #e0e0e0;
-  white-space: nowrap; /* 防止文字換行 */
-}
-
-.high-scores-table th:last-child,
-.high-scores-table td:last-child {
-    border-right: none; /* 移除最後一列的右邊框 */
-}
-
-.high-scores-table th {
-  background-color: #3498db; /* 表頭背景色 */
-  color: white;
-  font-weight: bold;
-  position: sticky; /* 表頭固定 */
-  top: 0;
-  z-index: 1;
-  padding: 12px 8px;
-}
-
-.high-scores-table tr:nth-child(even) {
-  background-color: #f8f9fa; /* 斑馬紋 */
-}
-
-.high-scores-table tr:hover {
-  background-color: #e9ecef; /* 懸停效果 */
-}
-
-/* 無記錄提示 */
-.no-record {
-  font-style: italic;
-  color: #95a5a6;
-  text-align: center;
-  margin-top: 15px;
-  font-weight: bold;
-  padding: 10px;
-}
-
-/* 作弊信息顏色 */
-.cheat-used {
-  color: #e74c3c; /* 紅色 */
-  font-weight: bold;
-}
-
-.cheat-not-used {
-  color: #27ae60; /* 綠色 */
-  /* font-weight: bold; 可選 */
-}
-
-/* 響應式設計 */
+/* 響應式設計 (保持) */
 @media (max-width: 600px) {
-  .container {
-    padding: 10px; /* 減少容器邊距 */
-  }
-
-  h1 {
-    font-size: 2em; /* 調整標題大小 */
-  }
-
-  .game-stats {
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-    font-size: 1.1em; /* 調整字體 */
-  }
-
-  .game-controls {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); /* 更靈活的網格 */
-    gap: 8px;
-    width: 100%;
-  }
-
-  .game-controls button {
-    width: 100%;
-    padding: 10px;
-    font-size: 0.9em;
-  }
-
-  .puzzle-block {
-    font-size: 1.2em; /* 調整方塊內字體大小 */
-  }
-
-  .mode-options, .size-options, .image-options {
-    gap: 10px; /* 減少選項間距 */
-  }
-
-  .high-scores-table {
-      font-size: 0.9em;
-  }
-   .high-scores-table th,
-   .high-scores-table td {
-       padding: 8px 5px; /* 在小屏幕上進一步減小內邊距 */
-   }
-
-   /* 調整完成界面 */
-   #game-complete {
-       padding: 20px;
-   }
-   .completion-stats {
-       font-size: 1.1em;
-   }
-   .completion-buttons {
-       flex-direction: column; /* 垂直排列按鈕 */
-       gap: 10px;
-   }
-   .completion-buttons button {
-       width: 100%;
-   }
+  .container { padding: 10px; }
+  h1 { font-size: 2em; }
+  .game-stats { flex-direction: column; align-items: center; gap: 10px; font-size: 1.1em; }
+  .game-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; width: 100%; }
+  .game-controls button { width: 100%; padding: 10px; font-size: 0.9em; }
+  .puzzle-block { font-size: 1.2em; }
+  .mode-options, .size-options, .image-options { gap: 10px; }
+  .high-scores-table { font-size: 0.9em; }
+   .high-scores-table th, .high-scores-table td { padding: 8px 5px; }
+   #game-complete { padding: 20px; }
+   .completion-stats { font-size: 1.1em; }
+   .completion-buttons { flex-direction: column; gap: 10px; }
+   .completion-buttons button { width: 100%; }
 }
 /* --- 樣式結束 --- */
