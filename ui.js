@@ -1,907 +1,525 @@
-// UI互動邏輯
+// ui.js (完整修正版 - 恢復 renderGameBoard 調用以確保穩定性)
 document.addEventListener('DOMContentLoaded', () => {
   // 遊戲設置變數
   let selectedMode = null;
   let selectedSize = null;
   let selectedImage = null;
-  let selectedColor = 'default'; // 預設為暗灰條紋
+  let selectedColor = 'default';
   let gameInstance = null;
-  
-  // 預設圖片
+  let currentImageIdentifier = '';
+  // let blockElements = []; // 不再需要全局存儲用於單獨更新
+
+  // 預設圖片 (保持不變)
   const presetImages = [
-    { name: 'C1', src: 'images/C1.jpg' },
-    { name: 'C2', src: 'images/C2.jpg' },
-    { name: 'C3', src: 'images/C3.jpg' },
-    { name: 'C4', src: 'images/C4.jpg' },
-    { name: 'C5', src: 'images/C5.jpg' },
-    { name: 'C6', src: 'images/C6.jpg' },
-    { name: 'C7', src: 'images/C7.jpg' },
-    { name: 'C8', src: 'images/C8.jpg' },
-    { name: 'E1', src: 'images/E1.jpg' },
-    { name: 'E2', src: 'images/E2.jpg' },
-    { name: 'E3', src: 'images/E3.jpg' },
-    { name: 'E4', src: 'images/E4.jpg' },
-    { name: 'E5', src: 'images/E5.jpg' },
-    { name: 'E6', src: 'images/E6.jpg' },
-    { name: 'M1', src: 'images/M1.jpg' },
-    { name: 'M2', src: 'images/M2.jpg' },
-    { name: 'M3', src: 'images/M3.jpg' },
-    { name: 'M4', src: 'images/M4.jpg' },
-    { name: 'M5', src: 'images/M5.jpg' },
-    { name: 'H1', src: 'images/H1.jpg' },
-    { name: 'H2', src: 'images/H2.jpg' },
-    { name: 'H3', src: 'images/H3.jpg' },
-    { name: 'H4', src: 'images/H4.jpg' },
-    { name: 'H5', src: 'images/H5.jpg' },
+    { name: 'C1', src: 'images/C1.jpg' }, { name: 'C2', src: 'images/C2.jpg' },
+    { name: 'C3', src: 'images/C3.jpg' }, { name: 'C4', src: 'images/C4.jpg' },
+    { name: 'C5', src: 'images/C5.jpg' }, { name: 'C6', src: 'images/C6.jpg' },
+    { name: 'C7', src: 'images/C7.jpg' }, { name: 'C8', src: 'images/C8.jpg' },
+    { name: 'E1', src: 'images/E1.jpg' }, { name: 'E2', src: 'images/E2.jpg' },
+    { name: 'E3', src: 'images/E3.jpg' }, { name: 'E4', src: 'images/E4.jpg' },
+    { name: 'E5', src: 'images/E5.jpg' }, { name: 'E6', src: 'images/E6.jpg' },
+    { name: 'M1', src: 'images/M1.jpg' }, { name: 'M2', src: 'images/M2.jpg' },
+    { name: 'M3', src: 'images/M3.jpg' }, { name: 'M4', src: 'images/M4.jpg' },
+    { name: 'M5', src: 'images/M5.jpg' }, { name: 'H1', src: 'images/H1.jpg' },
+    { name: 'H2', src: 'images/H2.jpg' }, { name: 'H3', src: 'images/H3.jpg' },
+    { name: 'H4', src: 'images/H4.jpg' }, { name: 'H5', src: 'images/H5.jpg' },
     { name: 'H6', src: 'images/H6.jpg' }
   ];
-
-  
-  // 處理後的預設圖片
   let processedPresetImages = [];
-  
-  // 初始化圖片選擇區域
+
   async function initImageSelection() {
     const imageOptions = document.querySelector('.image-options');
-    
-    // 預處理所有預設圖片
-    processedPresetImages = await preprocessPresetImages(presetImages);
-    
+    if (!imageOptions) return;
+    try {
+        if (typeof preprocessPresetImages === 'function') {
+            processedPresetImages = await preprocessPresetImages(presetImages);
+        } else {
+            processedPresetImages = presetImages.map(img => ({ ...img }));
+        }
+    } catch (error) {
+        console.error("預處理預設圖片時出錯:", error);
+        processedPresetImages = presetImages.map(img => ({ ...img }));
+    }
+    imageOptions.innerHTML = '';
     processedPresetImages.forEach(image => {
       const img = document.createElement('img');
       img.src = image.src;
-      img.alt = image.name;
-      img.title = image.name;
+      img.alt = image.name; img.title = image.name; img.dataset.imageName = image.name;
       img.addEventListener('click', () => {
-        document.querySelectorAll('.image-options img').forEach(i => i.classList.remove('selected'));
+        document.querySelectorAll('.image-options img.selected').forEach(i => i.classList.remove('selected'));
         img.classList.add('selected');
         selectedImage = image.src;
+        currentImageIdentifier = image.name;
+        const customInput = document.getElementById('custom-image'); if (customInput) customInput.value = '';
+        const customPreview = document.querySelector('.image-options .custom-preview'); if (customPreview) customPreview.remove();
       });
       imageOptions.appendChild(img);
     });
   }
-  
-  // 初始化模式選擇
+
   function initModeSelection() {
     document.getElementById('number-mode').addEventListener('click', () => {
-      selectedMode = 'number';
-      document.getElementById('image-selection').classList.add('hidden');
-      highlightSelectedButton('number-mode');
+      selectedMode = 'number'; document.getElementById('image-selection').classList.add('hidden'); highlightSelectedButton('number-mode');
+      selectedImage = null; currentImageIdentifier = '';
+      document.querySelectorAll('.image-options img.selected').forEach(i => i.classList.remove('selected'));
+      const cp = document.querySelector('.image-options .custom-preview'); if (cp) cp.remove();
+      const ci = document.getElementById('custom-image'); if (ci) ci.value = '';
     });
-    
     document.getElementById('image-mode').addEventListener('click', () => {
-      selectedMode = 'image';
-      document.getElementById('image-selection').classList.remove('hidden');
-      highlightSelectedButton('image-mode');
+      selectedMode = 'image'; document.getElementById('image-selection').classList.remove('hidden'); highlightSelectedButton('image-mode');
     });
   }
-  
-  // 高亮選中的按鈕
+
   function highlightSelectedButton(id) {
     const buttons = document.querySelectorAll('.mode-options button, .size-options button');
     buttons.forEach(button => button.classList.remove('selected'));
-    document.getElementById(id).classList.add('selected');
+    const element = document.getElementById(id); if (element) element.classList.add('selected');
+    document.querySelectorAll('.size-options button').forEach(btn => { if(parseInt(btn.dataset.size) === selectedSize) btn.classList.add('selected'); else btn.classList.remove('selected'); });
   }
-  
-  // 初始化尺寸選擇
+
   function initSizeSelection() {
     const sizeButtons = document.querySelectorAll('.size-options button');
-    sizeButtons.forEach(button => {
-      button.addEventListener('click', () => {
-        selectedSize = parseInt(button.dataset.size);
-        highlightSelectedButton(button.id);
-      });
-    });
-    
-    // 自定義尺寸
-    document.getElementById('custom-size-input').addEventListener('change', (e) => {
-      const value = parseInt(e.target.value);
-      if (value >= 3 && value <= 10) {
-        selectedSize = value;
-      } else {
-        alert('請輸入3到10之間的數字');
-        e.target.value = 4;
-      }
-    });
+    const customSizeInput = document.getElementById('custom-size-input');
+    sizeButtons.forEach(button => { button.addEventListener('click', () => { selectedSize = parseInt(button.dataset.size); document.querySelectorAll('.size-options button').forEach(b => b.classList.remove('selected')); button.classList.add('selected'); if(customSizeInput) customSizeInput.value = selectedSize; }); });
+    if (customSizeInput) { if(!selectedSize) selectedSize = parseInt(customSizeInput.value) || 4; else customSizeInput.value = selectedSize; customSizeInput.addEventListener('change', (e) => { const v = parseInt(e.target.value); if (v>=3&&v<=10) { selectedSize = v; document.querySelectorAll('.size-options button').forEach(b => b.classList.remove('selected'));} else { alert('請輸入3到10'); e.target.value = selectedSize||4; } }); }
+    else if (!selectedSize) selectedSize = 4;
   }
-  
-  // 初始化開始遊戲按鈕
+
   function initStartGameButton() {
     document.getElementById('start-game').addEventListener('click', () => {
-      if (!selectedMode) {
-        alert('請選擇遊戲模式');
-        return;
-      }
-      
-      if (!selectedSize) {
-        selectedSize = parseInt(document.getElementById('custom-size-input').value);
-      }
-      
-      if (selectedMode === 'image' && !selectedImage) {
-        const customImage = document.getElementById('custom-image').files[0];
-        if (customImage) {
-          const reader = new FileReader();
-          reader.onload = (e) => {
-            startGame(e.target.result);
-          };
-          reader.readAsDataURL(customImage);
-        } else {
-          alert('請選擇一張圖片');
-          return;
-        }
-      } else {
-        startGame(selectedImage);
-      }
+      if (!selectedMode) { alert('請選擇遊戲模式'); return; }
+      if (!selectedSize) selectedSize = parseInt(document.getElementById('custom-size-input').value) || 4;
+      const gameSize = selectedSize >= 3 && selectedSize <= 10 ? selectedSize : 4;
+      let imageSourceForGame = selectedImage; let identifierForGame = '';
+
+      if (selectedMode === 'image') {
+          const customImageInput = document.getElementById('custom-image');
+          if (customImageInput && customImageInput.files[0]) {
+              identifierForGame = 'custom';
+              const reader = new FileReader();
+              reader.onload = (e) => { imageSourceForGame = e.target.result; startGame(imageSourceForGame, identifierForGame, gameSize); };
+              reader.onerror = () => { alert("讀取自定義圖片失敗"); }; reader.readAsDataURL(customImageInput.files[0]); return;
+          }
+          else if (selectedImage && currentImageIdentifier) {
+              identifierForGame = currentImageIdentifier; startGame(imageSourceForGame, identifierForGame, gameSize);
+          } else { alert('圖片模式下，請選擇或上傳圖片'); return; }
+      } else { identifierForGame = ''; imageSourceForGame = null; startGame(imageSourceForGame, identifierForGame, gameSize); }
     });
   }
-  
-  // 開始遊戲
-  async function startGame(imageSource) {
-    document.getElementById('game-setup').classList.add('hidden');
-    document.getElementById('game-board').classList.remove('hidden');
-    
-    // 播放遊戲開始音效
-    soundManager.playGameStartSound();
-    
-    // 重置作弊模式相關變數
-    cheatMode = false;
-    firstSelectedBlock = null;
-    
-    // 確保遊戲實例的作弊模式也被禁用
-    if (gameInstance) {
-      gameInstance.cheatEnabled = false;
-    }
-    
-    // 確保作弊按鈕顯示為未啟用狀態（紅色）
-    const cheatButton = document.getElementById('cheat-button');
-    if (cheatButton) {
-      cheatButton.classList.remove('active');
-      cheatButton.style.backgroundColor = '#e74c3c';
-    }
-    
-    // 確保圖片已經過預處理
-    try {
-      // 如果是自定義上傳的圖片，它已經在上傳時預處理過了
-      // 如果是預設圖片，確保使用處理後的版本
-      if (selectedMode === 'image' && imageSource) {
-        // 查找是否是預設圖片中的一個
-        const isPreset = presetImages.some(img => img.src === imageSource);
-        
-        if (isPreset) {
-          // 找到對應的處理後的圖片
-          const processedImage = processedPresetImages.find(img => {
-            const originalSrc = presetImages.find(original => original.name === img.name)?.src;
-            return originalSrc === imageSource;
-          });
-          
-          if (processedImage) {
-            imageSource = processedImage.src;
-          } else {
-            // 如果找不到處理後的圖片，重新處理一次
-            imageSource = await preprocessImage(imageSource, selectedSize);
-          }
-        } else if (imageSource.startsWith('http')) {
-          // 處理從Google搜圖獲取的網絡圖片
-          try {
-            // 預處理網絡圖片
-            imageSource = await preprocessImage(imageSource, selectedSize);
-          } catch (error) {
-            console.error('處理網絡圖片失敗:', error);
-            alert('無法載入網絡圖片，請嘗試其他圖片或使用預設圖片');
-            // 回到設置界面
-            document.getElementById('game-board').classList.add('hidden');
-            document.getElementById('game-setup').classList.remove('hidden');
+
+  async function startGame(imageSource, identifier, size) {
+    const gameSetupDiv = document.getElementById('game-setup'); const gameBoardDiv = document.getElementById('game-board');
+    if (!gameSetupDiv || !gameBoardDiv) return;
+    gameSetupDiv.classList.add('hidden'); gameBoardDiv.classList.remove('hidden');
+    // blockElements = []; // 不再需要
+
+    let finalImageSource = imageSource;
+    if (selectedMode === 'image' && imageSource && typeof preprocessImage === 'function') {
+        try {
+            finalImageSource = await preprocessImage(imageSource, size);
+        } catch (error) {
+            console.error("startGame: 圖片預處理失敗:", error);
+            alert("圖片處理失敗，無法開始遊戲");
+            if (gameBoardDiv) gameBoardDiv.classList.add('hidden');
+            if (gameSetupDiv) gameSetupDiv.classList.remove('hidden');
             return;
-          }
         }
-      }
-      
-      gameInstance = new PuzzleGame(selectedSize, selectedMode, imageSource);
-      renderGameBoard();
-      gameInstance.startTimer();
-      
-      // 載入最高分
-      loadHighScores();
-    } catch (error) {
-      console.error('遊戲初始化失敗:', error);
-      alert('遊戲初始化失敗，請重試');
-      document.getElementById('game-board').classList.add('hidden');
-      document.getElementById('game-setup').classList.remove('hidden');
     }
-  }
-  
-  // 渲染遊戲板
-  function renderGameBoard() {
-    const puzzleContainer = document.querySelector('.puzzle-container');
-    puzzleContainer.innerHTML = '';
-    puzzleContainer.style.gridTemplateColumns = `repeat(${selectedSize}, 1fr)`;
-    puzzleContainer.style.gridTemplateRows = `repeat(${selectedSize}, 1fr)`;
-    
-    // 設置CSS變量，用於Safari兼容性
-    puzzleContainer.style.setProperty('--grid-size', selectedSize);
-    
-    for (let row = 0; row < selectedSize; row++) {
-      for (let col = 0; col < selectedSize; col++) {
-        const block = document.createElement('div');
-        block.className = 'puzzle-block';
-        
-        const value = gameInstance.board[row][col];
-        if (value === 0) {
-          block.classList.add('empty');
-          block.classList.add(`color-${selectedColor}`);
-        } else if (selectedMode === 'number') {
-          // 創建一個span元素來包裝數字，以便更精確控制其位置
-          const numberSpan = document.createElement('span');
-          numberSpan.textContent = value;
-          numberSpan.style.display = 'flex';
-          numberSpan.style.alignItems = 'center';
-          numberSpan.style.justifyContent = 'center';
-          numberSpan.style.width = '100%';
-          numberSpan.style.height = '100%';
-          block.appendChild(numberSpan);
-        } else {
-          block.classList.add('image-block');
-          // 設置背景圖片位置 - 將整張圖片切割成小塊
-          // 計算這個值對應的原始位置 - 使用固定的網格位置而不是方塊的值
-          // 這樣可以確保無論方塊如何移動，顯示的圖片部分都保持不變
-          
-          // 獲取方塊的值，這個值表示方塊在完成狀態下應該在的位置
-          const originalCol = (value - 1) % selectedSize;
-          const originalRow = Math.floor((value - 1) / selectedSize);
-          
-          // 創建一個包含圖片的容器
-          block.style.position = 'relative';
-          block.style.overflow = 'hidden';
-          
-          // 創建一個內部容器來放置完整圖片
-          const imgContainer = document.createElement('div');
-          imgContainer.style.position = 'absolute';
-          imgContainer.style.width = `${selectedSize * 100}%`;
-          imgContainer.style.height = `${selectedSize * 100}%`;
-          imgContainer.style.backgroundImage = `url(${gameInstance.imageSource})`;
-          imgContainer.style.backgroundSize = 'cover';
-          imgContainer.style.backgroundRepeat = 'no-repeat';
-          
-          // 添加Safari特定的樣式 - 優化版
-          imgContainer.style.transform = 'translateZ(0)';
-          imgContainer.style.webkitTransform = 'translateZ(0)';
-          imgContainer.style.webkitBackfaceVisibility = 'hidden';
-          imgContainer.style.webkitPerspective = '1000';
-          imgContainer.style.willChange = 'transform';
-          imgContainer.style.transition = 'none'; // 移除可能的過渡效果，提高交換速度
-          
-          // 計算偏移量，使圖片的正確部分顯示在方塊中
-          // 這裡使用方塊的值來確定應該顯示的圖片部分
-          // 這確保了無論方塊移動到哪個位置，它顯示的圖片部分都是固定的
-          const offsetX = -originalCol * 100;
-          const offsetY = -originalRow * 100;
-          
-          // 確保在Safari中正確顯示
-          if (/^((?!chrome|android).)*safari/i.test(navigator.userAgent)) {
-            // 修復Safari中的圖片顯示問題
-            imgContainer.style.width = `${selectedSize * 100}%`;
-            imgContainer.style.height = `${selectedSize * 100}%`;
-            imgContainer.style.backgroundSize = 'cover';
-            // 確保圖片正確定位
-            imgContainer.style.left = `${offsetX}%`;
-            imgContainer.style.top = `${offsetY}%`;
-          }
-          
-          // 設置偏移量，將圖片的正確部分定位到方塊中
-          imgContainer.style.left = `${offsetX}%`;
-          imgContainer.style.top = `${offsetY}%`;
-          
-          // 添加圖片容器到方塊中
-          block.appendChild(imgContainer);
-          
-          // 添加邊框以便於區分各個方塊
-          block.style.boxSizing = 'border-box';
-          block.style.border = '1px solid rgba(255,255,255,0.2)';
-          block.style.backgroundRepeat = 'no-repeat'; // 确保背景不重复
-        }
-        
-        // 移除方塊點擊事件處理程序，因為我們已經在作弊模式的點擊事件處理程序中處理了所有的邏輯
-        
-        puzzleContainer.appendChild(block);
-      }
-    }
-  }
-  
-  // 更新遊戲統計
-  function updateGameStats() {
-    document.getElementById('moves').textContent = gameInstance.moves;
-    // 時間更新由計時器處理
-  }
-  
-  // 遊戲完成
-  function gameComplete() {
-    gameInstance.stopTimer();
-    
-    // 播放勝利音效
-    soundManager.playWinSound();
-    
-    // 關閉作弊模式
-    cheatMode = false;
-    gameInstance.cheatEnabled = false;
+
     const cheatButton = document.getElementById('cheat-button');
-    if (cheatButton) {
-      cheatButton.classList.remove('active');
-    }
-    
-    document.getElementById('game-board').classList.add('hidden');
-    document.getElementById('game-complete').classList.remove('hidden');
-    
-    document.getElementById('completion-time').textContent = document.getElementById('time').textContent;
-    document.getElementById('completion-moves').textContent = gameInstance.moves;
-    
-    // 顯示作弊模式使用信息
-    const completionStats = document.querySelector('.completion-stats');
-    
-    // 移除之前可能存在的作弊信息
-    const existingCheatInfo = document.getElementById('completion-cheat-info');
-    if (existingCheatInfo) {
-      completionStats.removeChild(existingCheatInfo);
-    }
-    
-    // 添加作弊模式使用信息
-    const cheatInfo = document.createElement('p');
-    cheatInfo.id = 'completion-cheat-info';
-    
-    if (gameInstance.cheatCount > 0) {
-      cheatInfo.innerHTML = `<strong>作弊模式:</strong> 使用了 ${gameInstance.cheatCount} 次`;
-      cheatInfo.classList.add('cheat-used');
-    } else {
-      cheatInfo.innerHTML = `<strong>作弊模式:</strong> 未使用`;
-      cheatInfo.classList.add('cheat-not-used');
-    }
-    
-    completionStats.appendChild(cheatInfo);
-    
-    // 保存高分，確保作弊次數被記錄
-    gameInstance.saveHighScore();
-    
-    // 初始化完成界面按鈕
-    document.getElementById('play-again').addEventListener('click', () => {
-      document.getElementById('game-complete').classList.add('hidden');
-      // 不需要在這裡設置 startTime，讓 PuzzleGame 構造函數處理
-      // 重置作弊按鈕狀態
-      const cheatButton = document.getElementById('cheat-button');
-      if (cheatButton) {
-        cheatButton.classList.remove('active');
+    if (cheatButton) { cheatButton.classList.remove('active'); cheatButton.style.backgroundColor = '#e74c3c'; }
+
+    try {
+      // --- 確保 game.js 已加載且 PuzzleGame 可用 ---
+      if (typeof PuzzleGame === 'undefined') {
+          throw new Error("PuzzleGame is not defined. Check game.js loading order or syntax errors.");
       }
-      startGame(gameInstance.imageSource);
-    });
-    
-    document.getElementById('back-to-menu').addEventListener('click', () => {
-      document.getElementById('game-complete').classList.add('hidden');
-      document.getElementById('game-setup').classList.remove('hidden');
-      resetGameSettings();
-    });
-  }
-  
-  // 重置遊戲設置
-  function resetGameSettings() {
-    selectedMode = null;
-    selectedSize = null;
-    selectedImage = null;
-    document.querySelectorAll('.selected').forEach(el => el.classList.remove('selected'));
-    document.getElementById('image-selection').classList.add('hidden');
-    
-    // 重置作弊模式狀態和按鈕顏色
-    cheatMode = false;
-    if (gameInstance) {
-      gameInstance.cheatEnabled = false;
-    }
-    const cheatButton = document.getElementById('cheat-button');
-    if (cheatButton) {
-      cheatButton.classList.remove('active');
-      cheatButton.style.backgroundColor = '#e74c3c'; // 設置為紅色（未啟用狀態）
-    }
-  }
-  
-  // 載入最高分
-  function loadHighScores() {
-    const highScoresList = document.getElementById('high-scores-list');
-    highScoresList.innerHTML = '';
-    
-    const scores = JSON.parse(localStorage.getItem('puzzleHighScores') || '{}');
-    const key = `${selectedMode}-${selectedSize}`;
-    const modeScores = scores[key] || [];
-    
-    // 創建標題
-    const title = document.createElement('h4');
-    title.textContent = '前三名記錄';
-    highScoresList.appendChild(title);
-    
-    if (modeScores.length === 0) {
-      // 如果沒有記錄
-      const noRecord = document.createElement('div');
-      noRecord.textContent = '暫無記錄';
-      noRecord.classList.add('no-record');
-      highScoresList.appendChild(noRecord);
-    } else {
-      // 創建記錄表格
-      const table = document.createElement('table');
-      table.classList.add('high-scores-table');
-      
-      // 創建表頭
-      const thead = document.createElement('thead');
-      const headerRow = document.createElement('tr');
-      
-      const rankHeader = document.createElement('th');
-      rankHeader.textContent = '排名';
-      
-      const timeHeader = document.createElement('th');
-      timeHeader.textContent = '時間';
-      
-      const movesHeader = document.createElement('th');
-      movesHeader.textContent = '步數';
-      
-      const cheatHeader = document.createElement('th');
-      cheatHeader.textContent = '作弊';
-      
-      headerRow.appendChild(rankHeader);
-      headerRow.appendChild(timeHeader);
-      headerRow.appendChild(movesHeader);
-      headerRow.appendChild(cheatHeader);
-      thead.appendChild(headerRow);
-      table.appendChild(thead);
-      
-      // 創建表格內容
-      const tbody = document.createElement('tbody');
-      
-      modeScores.forEach((score, index) => {
-        const row = document.createElement('tr');
-        
-        // 排名
-        const rankCell = document.createElement('td');
-        rankCell.textContent = `#${index + 1}`;
-        
-        // 時間
-        const timeCell = document.createElement('td');
-        timeCell.textContent = score.time;
-        
-        // 步數
-        const movesCell = document.createElement('td');
-        movesCell.textContent = score.moves;
-        
-        // 作弊信息
-        const cheatCell = document.createElement('td');
-        if (score.cheatUsed) {
-          cheatCell.textContent = `${score.cheatCount}次`;
-          cheatCell.classList.add('cheat-used');
-        } else {
-          cheatCell.textContent = '無';
-          cheatCell.classList.add('cheat-not-used');
-        }
-        
-        row.appendChild(rankCell);
-        row.appendChild(timeCell);
-        row.appendChild(movesCell);
-        row.appendChild(cheatCell);
-        
-        tbody.appendChild(row);
-      });
-      
-      table.appendChild(tbody);
-      highScoresList.appendChild(table);
-    }
-  }
-  
-  // 初始化遊戲控制按鈕
-  function initGameControls() {
-    document.getElementById('reset-game').addEventListener('click', () => {
-      gameInstance.resetGame();
-      renderGameBoard();
-      // 播放重置遊戲音效
-      soundManager.playGameStartSound();
-      
-      // 重置作弊模式狀態和按鈕顏色
-      cheatMode = false;
+      // ---------------------------------------------
+      gameInstance = new PuzzleGame(size, selectedMode, finalImageSource);
       if (gameInstance) {
-        gameInstance.cheatEnabled = false;
-      }
-      const cheatButton = document.getElementById('cheat-button');
-      if (cheatButton) {
-        cheatButton.classList.remove('active');
-        cheatButton.style.backgroundColor = '#e74c3c'; // 設置為紅色（未啟用狀態）
-      }
-    });
-    
-    document.getElementById('new-game').addEventListener('click', () => {
-      document.getElementById('game-board').classList.add('hidden');
-      document.getElementById('game-setup').classList.remove('hidden');
-      gameInstance.stopTimer();
-      resetGameSettings();
-      // 播放遊戲開始音效
-    });
-    
-    // 添加靜音按鈕功能
-    const muteButton = document.getElementById('mute-button');
-    muteButton.addEventListener('click', () => {
-      const isMuted = soundManager.toggleMute();
-      
-      // 更新按鈕樣式
-      if (isMuted) {
-        muteButton.classList.add('active');
-        muteButton.style.backgroundColor = '#e74c3c'; // 紅色
-      } else {
-        muteButton.classList.remove('active');
-        muteButton.style.backgroundColor = '#3498db'; // 恢復原本的藍色
-      }
-      
-      // 播放音效測試（如果未靜音）
-      if (!isMuted) {
-        soundManager.playGameStartSound();
-      }
-    });
-    
-    // 添加提示按鈕功能
-    document.getElementById('hint-button').addEventListener('click', () => {
-      const hintMove = gameInstance.getHint();
-      if (hintMove) {
-        // 高亮提示的方块
-        highlightHintBlock(hintMove.row, hintMove.col);
-        // 播放提示音效
-        soundManager.playMoveSound();
-      }
-    });
-    
-    // 添加顯示原圖按鈕功能
-    let showingOriginal = false;
-    const showOriginalButton = document.getElementById('show-original-button');
-    showOriginalButton.addEventListener('click', () => {
-      showingOriginal = !showingOriginal;
-      
-      // 切換按鈕樣式
-      showOriginalButton.classList.toggle('active', showingOriginal);
-      
-      // 獲取所有拼圖方塊
-      const puzzleBlocks = document.querySelectorAll('.puzzle-block');
-      
-      if (showingOriginal) {
-        // 顯示原圖 - 創建一個覆蓋層
-        const overlay = document.createElement('div');
-        overlay.id = 'original-image-overlay';
-        overlay.style.position = 'absolute';
-        overlay.style.top = '0';
-        overlay.style.left = '0';
-        overlay.style.width = '100%';
-        overlay.style.height = '100%';
-        overlay.style.backgroundImage = `url(${gameInstance.imageSource})`;
-        overlay.style.backgroundSize = 'cover';
-        overlay.style.backgroundPosition = 'center';
-        overlay.style.zIndex = '10';
-        overlay.style.opacity = '0.9';
-        overlay.style.transition = 'opacity 0.3s ease';
-        
-        // 添加到拼圖容器
-        const puzzleContainer = document.querySelector('.puzzle-container');
-        puzzleContainer.style.position = 'relative';
-        puzzleContainer.appendChild(overlay);
-        
-        // 更新按鈕文字
-        showOriginalButton.textContent = '隱藏原圖';
-      } else {
-        // 隱藏原圖 - 移除覆蓋層
-        const overlay = document.getElementById('original-image-overlay');
-        if (overlay) {
-          overlay.parentNode.removeChild(overlay);
-        }
-        
-        // 恢復按鈕文字
-        showOriginalButton.textContent = '顯示原圖';
-      }
-    });
-    
-    // 添加換色按鈕功能
-    const changeColorButton = document.getElementById('change-color-button');
-    // 設置初始按鈕顏色
-    updateChangeColorButtonStyle(selectedColor);
-    
-    // 換色按鈕點擊事件
-    changeColorButton.addEventListener('click', () => {
-      // 顏色選項
-      const colors = ['default', 'blue', 'red', 'orange'];
-      // 獲取當前顏色的索引
-      const currentIndex = colors.indexOf(selectedColor);
-      // 計算下一個顏色的索引（循環）
-      const nextIndex = (currentIndex + 1) % colors.length;
-      // 設置新的顏色
-      selectedColor = colors[nextIndex];
-      
-      // 播放換色音效
-      soundManager.playColorChangeSound();
-      
-      // 更新按鈕樣式
-      updateChangeColorButtonStyle(selectedColor);
-      
-      // 更新所有空白方塊的顏色
-      document.querySelectorAll('.puzzle-block.empty').forEach(block => {
-        // 移除所有顏色類
-        block.classList.remove('color-default', 'color-blue', 'color-red', 'color-orange');
-        // 添加新的顏色類
-        block.classList.add(`color-${selectedColor}`);
-      });
-    });
-    
-    // 更新換色按鈕樣式的函數
-    function updateChangeColorButtonStyle(color) {
-      const button = document.getElementById('change-color-button');
-      
-      // 移除所有可能的顏色類
-      button.classList.remove('color-default-btn', 'color-blue-btn', 'color-red-btn', 'color-orange-btn');
-      
-      // 添加對應的顏色類
-      button.classList.add(`color-${color}-btn`);
-      
-      // 根據顏色設置按鈕的背景樣式
-      switch(color) {
-        case 'default':
-          button.style.backgroundColor = '#555';
-          button.style.backgroundImage = 'repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.1) 10px, rgba(255, 255, 255, 0.2) 10px, rgba(255, 255, 255, 0.2) 20px)';
-          break;
-        case 'blue':
-          button.style.backgroundColor = '#3498db';
-          button.style.backgroundImage = 'none';
-          break;
-        case 'red':
-          button.style.backgroundColor = '#e74c3c';
-          button.style.backgroundImage = 'none';
-          break;
-        case 'orange':
-          button.style.backgroundColor = '#f39c12';
-          button.style.backgroundImage = 'none';
-          break;
-      }
+          gameInstance.imageIdentifier = identifier || gameInstance.determineImageIdentifier(finalImageSource);
+          renderGameBoard(); // 首次渲染
+          gameInstance.startTimer();
+          loadHighScores(selectedMode, gameInstance.imageIdentifier, size);
+          soundManager.playGameStartSound();
+          gameInstance.cheatEnabled = false;
+      } else { throw new Error("遊戲實例創建失敗"); }
+    } catch (error) {
+      console.error('遊戲初始化或啟動失敗:', error); alert('遊戲初始化失敗: ' + error.message); // 顯示更詳細的錯誤
+      if (gameBoardDiv) gameBoardDiv.classList.add('hidden'); if (gameSetupDiv) gameSetupDiv.classList.remove('hidden');
     }
-    
-    // 添加作弊按鈕
-    const gameControls = document.querySelector('.game-controls');
-    const cheatButton = document.createElement('button');
-    cheatButton.id = 'cheat-button';
-    cheatButton.textContent = '作弊模式';
-    gameControls.appendChild(cheatButton);
-    
-    // 作弊模式變數
-    let cheatMode = false;
-    let firstSelectedBlock = null;
-    
-    // 作弊按鈕點擊事件
-    cheatButton.addEventListener('click', () => {
-      // 檢查是否已經過了5分鐘的時間限制
-      const currentTime = new Date();
-      const elapsedTimeInSeconds = Math.floor((currentTime - gameInstance.startTime) / 1000);
-      const timeLimit = 5 * 60; // 5分鐘，單位為秒
-      
-      if (elapsedTimeInSeconds < timeLimit) {
-        const remainingMinutes = Math.floor((timeLimit - elapsedTimeInSeconds) / 60);
-        const remainingSeconds = (timeLimit - elapsedTimeInSeconds) % 60;
-        alert(`作弊模式將在 ${remainingMinutes}分${remainingSeconds}秒 後可用`);
-        return;
-      }
-      
-      cheatMode = !cheatMode;
-      cheatButton.classList.toggle('active', cheatMode);
-      
-      // 更新遊戲實例的作弊模式狀態
-      gameInstance.cheatEnabled = cheatMode;
-      
-      // 重置選中狀態
-      firstSelectedBlock = null;
-      document.querySelectorAll('.puzzle-block').forEach(block => {
-        block.classList.remove('cheat-selected');
-      });
-      
-      // 更新提示文字
-      if (cheatMode) {
-        alert('作弊模式已啟用！點擊任意兩個方塊進行交換。');
-        // 播放作弊音效
-        soundManager.playCheatSound();
-      }
-    });
-    
-    // 修改方塊點擊事件處理，支持作弊模式
-    document.querySelector('.puzzle-container').addEventListener('click', (e) => {
-      // 獲取點擊的方塊
-      const block = e.target.closest('.puzzle-block');
-      if (!block) return;
-      
-      // 獲取方塊位置
-      const blocks = Array.from(document.querySelectorAll('.puzzle-container .puzzle-block'));
-      const index = blocks.indexOf(block);
-      const row = Math.floor(index / selectedSize);
-      const col = index % selectedSize;
-      
-      // 作弊模式處理邏輯
-      if (cheatMode && gameInstance.cheatEnabled) {
-        
-        // 空白方塊不能被選中
-        if (block.classList.contains('empty')) return;
-      
-      if (!firstSelectedBlock) {
-        // 選中第一個方塊
-        firstSelectedBlock = { row, col, element: block };
-        block.classList.add('cheat-selected');
-      } else {
-        // 選中第二個方塊，執行交換
-        const { row: row1, col: col1 } = firstSelectedBlock;
-        
-        // 執行交換
-        gameInstance.cheatSwap(row1, col1, row, col);
-        
-        // 重置選中狀態
-        firstSelectedBlock.element.classList.remove('cheat-selected');
-        firstSelectedBlock = null;
-        
-        // 更新遊戲板
-        renderGameBoard();
-        
-        // 檢查是否完成
-        if (gameInstance.checkWin()) {
-          gameComplete();
-        }
-      }
-      } else {
-        // 非作弊模式下，處理正常的方塊移動
-        if (gameInstance.isAdjacent(row, col)) {
-          // 使用requestAnimationFrame優化渲染性能
-          // 在Safari中，使用多層requestAnimationFrame來確保更平滑的動畫
-          requestAnimationFrame(() => {
-            // 先執行邏輯操作
-            gameInstance.moveBlock(row, col);
-            updateGameStats();
-            
-            // 使用第二個requestAnimationFrame來確保視覺更新在下一幀進行
-            // 這有助於減少Safari中的渲染延遲
-            requestAnimationFrame(() => {
-              renderGameBoard();
-              
-              if (gameInstance.checkWin()) {
-                gameComplete();
-              }
-            });
-          });
-        }
-      }
-    }, true); // 使用捕獲階段以確保事件處理
   }
-  
-  // 高亮提示的方塊
+
+  // --- renderGameBoard: 恢復到只負責渲染當前 gameInstance.board 狀態 ---
+  function renderGameBoard() {
+      const puzzleContainer = document.querySelector('.puzzle-container');
+      if (!puzzleContainer || !gameInstance) { console.error("Render Error: No container or game instance"); return; }
+
+      puzzleContainer.innerHTML = ''; // 清空容器是必要的，因為要完全重繪
+      // blockElements = []; // 不再需要全局存儲用於單獨更新
+
+      const currentSize = gameInstance.size;
+      puzzleContainer.style.gridTemplateColumns = `repeat(${currentSize}, 1fr)`;
+      puzzleContainer.style.gridTemplateRows = `repeat(${currentSize}, 1fr)`;
+      puzzleContainer.style.setProperty('--grid-size', currentSize);
+
+      const fragment = document.createDocumentFragment();
+
+      for (let row = 0; row < currentSize; row++) {
+        for (let col = 0; col < currentSize; col++) {
+          const block = document.createElement('div');
+          block.className = 'puzzle-block'; // 基礎 class
+          const value = gameInstance.board[row][col];
+
+          // --- 添加 data-* 屬性，主要用於點擊時識別位置 ---
+          block.dataset.row = row;
+          block.dataset.col = col;
+          block.dataset.value = value; // 可以用於調試
+          // -------------------------------------------
+
+          // --- 不再設置 grid-row/column-start，因為元素順序決定位置 ---
+          // block.style.gridRowStart = row + 1;
+          // block.style.gridColumnStart = col + 1;
+          // --------------------------------------------------------
+
+          if (value === 0) {
+            block.classList.add('empty', `color-${selectedColor}`);
+          } else if (selectedMode === 'number') {
+            const numberSpan = document.createElement('span');
+            numberSpan.textContent = value;
+            numberSpan.style.cssText = 'display:flex; align-items:center; justify-content:center; width:100%; height:100%;';
+            block.appendChild(numberSpan);
+          } else { // 圖片模式
+            block.classList.add('image-block');
+            const originalCol = (value - 1) % currentSize;
+            const originalRow = Math.floor((value - 1) / currentSize);
+            block.style.position = 'relative';
+            block.style.overflow = 'hidden';
+            const imgContainer = document.createElement('div');
+            imgContainer.style.position = 'absolute';
+            imgContainer.style.width = `${currentSize * 100}%`;
+            imgContainer.style.height = `${currentSize * 100}%`;
+            if (gameInstance.imageSource) {
+                 imgContainer.style.backgroundImage = `url(${gameInstance.imageSource})`;
+                 imgContainer.style.backgroundSize = 'cover';
+                 imgContainer.style.backgroundRepeat = 'no-repeat';
+            } else {
+                 block.textContent = 'X'; block.style.backgroundColor = 'red';
+            }
+            imgContainer.style.transform = 'translateZ(0)'; imgContainer.style.webkitTransform = 'translateZ(0)'; imgContainer.style.webkitBackfaceVisibility = 'hidden'; /* imgContainer.style.webkitPerspective = '1000'; */ imgContainer.style.willChange = 'transform'; imgContainer.style.transition = 'none';
+            const offsetX = -originalCol * 100; const offsetY = -originalRow * 100;
+            imgContainer.style.left = `${offsetX}%`; imgContainer.style.top = `${offsetY}%`;
+            block.appendChild(imgContainer);
+            block.style.border = '1px solid rgba(255,255,255,0.2)';
+            block.style.backgroundColor = '#ddd';
+          }
+          fragment.appendChild(block);
+          // 不再需要 blockElements.push(block);
+        }
+      }
+      puzzleContainer.appendChild(fragment); // 一次性添加到 DOM
+      // console.log("遊戲板重新渲染完成"); // 可以取消註釋用於調試
+  }
+  // --- renderGameBoard 結束 ---
+
+  // --- updateGameBoardView 函數不再需要，可以刪除或註釋掉 ---
+  /*
+  function updateGameBoardView(moveDetails) {
+      // ... 原來的優化邏輯 ...
+  }
+  */
+  // --- updateGameBoardView 結束 ---
+
+  function updateGameStats() { if(gameInstance) document.getElementById('moves').textContent = gameInstance.moves; }
+
+  function gameComplete() {
+    if (!gameInstance) return;
+    gameInstance.stopTimer();
+    soundManager.playWinSound();
+    const cheatButton = document.getElementById('cheat-button'); if (cheatButton) cheatButton.classList.remove('active');
+    if (gameInstance) gameInstance.cheatEnabled = false;
+
+    const gameBoardDiv = document.getElementById('game-board'); const gameCompleteDiv = document.getElementById('game-complete');
+    if (!gameBoardDiv || !gameCompleteDiv) return;
+    gameBoardDiv.classList.add('hidden'); gameCompleteDiv.classList.remove('hidden');
+    const timeEl = document.getElementById('time'); const completionTimeEl = document.getElementById('completion-time'); const completionMovesEl = document.getElementById('completion-moves');
+    if (completionTimeEl && timeEl) completionTimeEl.textContent = timeEl.textContent; if (completionMovesEl) completionMovesEl.textContent = gameInstance.moves;
+    const completionStats = document.querySelector('.completion-stats');
+    if (completionStats) {
+        const existingCheatInfo = document.getElementById('completion-cheat-info'); if (existingCheatInfo) completionStats.removeChild(existingCheatInfo);
+        const cheatInfo = document.createElement('p'); cheatInfo.id = 'completion-cheat-info';
+        if (gameInstance.cheatCount > 0) { cheatInfo.innerHTML = `<strong>作弊模式:</strong> <span class="cheat-used">使用了 ${gameInstance.cheatCount} 次</span>`; } else { cheatInfo.innerHTML = `<strong>作弊模式:</strong> <span class="cheat-not-used">未使用</span>`; }
+        completionStats.appendChild(cheatInfo);
+    }
+    gameInstance.saveHighScore();
+    const playAgainBtn = document.getElementById('play-again'); const backToMenuBtn = document.getElementById('back-to-menu');
+
+    const playAgainHandler = () => {
+        gameCompleteDiv.classList.add('hidden');
+        if (gameInstance) { startGame(gameInstance.imageSource, gameInstance.imageIdentifier, gameInstance.size); }
+    };
+    const backToMenuHandler = () => {
+        gameCompleteDiv.classList.add('hidden');
+        document.getElementById('game-setup').classList.remove('hidden');
+        resetGameSettings();
+    };
+    if(playAgainBtn){ playAgainBtn.removeEventListener('click', playAgainHandler); playAgainBtn.addEventListener('click', playAgainHandler, {once: true});}
+    if(backToMenuBtn){ backToMenuBtn.removeEventListener('click', backToMenuHandler); backToMenuBtn.addEventListener('click', backToMenuHandler, {once: true});}
+  }
+
+  function resetGameSettings() {
+    selectedMode = null; selectedSize = null; selectedImage = null; currentImageIdentifier = '';
+    document.querySelectorAll('.selected').forEach(el => el.classList.remove('selected'));
+    const imgSel = document.getElementById('image-selection'); if(imgSel) imgSel.classList.add('hidden');
+    if (gameInstance) gameInstance.cheatEnabled = false;
+    const cheatButton = document.getElementById('cheat-button'); if (cheatButton) { cheatButton.classList.remove('active'); cheatButton.style.backgroundColor = '#e74c3c'; }
+    const customPreview = document.querySelector('.image-options .custom-preview'); if(customPreview) customPreview.remove();
+    const customInput = document.getElementById('custom-image'); if(customInput) customInput.value='';
+    const highScoresList = document.getElementById('high-scores-list'); if (highScoresList) highScoresList.innerHTML = '<div class="no-record">選擇關卡以查看記錄</div>';
+    if (gameInstance) { gameInstance.stopTimer(); gameInstance = null; }
+    // blockElements = []; // 不再需要
+    console.log("遊戲設置已重置");
+  }
+
+  function loadHighScores(mode, identifier, size) {
+      const highScoresList = document.getElementById('high-scores-list');
+      if (!highScoresList) return;
+      highScoresList.innerHTML = '';
+      if (!mode || size === undefined || size === null || (mode === 'image' && (identifier === undefined || identifier === null))) { highScoresList.innerHTML = '<div class="no-record">參數錯誤無法載入記錄</div>'; return; }
+      const scores = StorageManager.getItem('puzzleHighScores', {}); const key = `${mode}-${identifier}-${size}`;
+      const modeScores = Array.isArray(scores[key]) ? scores[key] : [];
+      if (modeScores.length === 0) { const noRec = document.createElement('div'); noRec.textContent = '此關卡暫無記錄'; noRec.classList.add('no-record'); highScoresList.appendChild(noRec); }
+      else {
+        const table = document.createElement('table'); table.classList.add('high-scores-table'); const thead = document.createElement('thead'); const headerRow = document.createElement('tr'); const headers = ['關卡', '難度', '排名', '時間', '步數', '作弊']; headers.forEach(text => { const th = document.createElement('th'); th.textContent = text; headerRow.appendChild(th); }); thead.appendChild(headerRow); table.appendChild(thead);
+        const tbody = document.createElement('tbody');
+        modeScores.forEach((score, index) => {
+          const row = document.createElement('tr');
+          const levelCell = document.createElement('td'); levelCell.textContent = score.levelName || (mode === 'number' ? '數字模式' : identifier || '未知'); row.appendChild(levelCell);
+          const diffCell = document.createElement('td'); diffCell.textContent = score.difficulty || `${size}x${size}`; row.appendChild(diffCell);
+          const rankCell = document.createElement('td'); rankCell.textContent = `#${index + 1}`; row.appendChild(rankCell);
+          const timeCell = document.createElement('td'); timeCell.textContent = score.time || 'N/A'; row.appendChild(timeCell);
+          const movesCell = document.createElement('td'); movesCell.textContent = score.moves !== undefined ? score.moves : 'N/A'; row.appendChild(movesCell);
+          const cheatCell = document.createElement('td'); if (score.cheatUsed) { cheatCell.textContent = `${score.cheatCount || 1}次`; cheatCell.classList.add('cheat-used'); } else { cheatCell.textContent = '無'; cheatCell.classList.add('cheat-not-used'); } row.appendChild(cheatCell);
+          tbody.appendChild(row);
+        });
+        table.appendChild(tbody); highScoresList.appendChild(table);
+      }
+      const scoreTitle = document.querySelector('.high-scores h3'); if(scoreTitle) scoreTitle.style.display = 'block';
+  }
+
+  // --- 修改 initGameControls: 恢復調用 renderGameBoard ---
+  function initGameControls() {
+      document.getElementById('reset-game').addEventListener('click', () => {
+          if (!gameInstance) return;
+          gameInstance.resetGame();
+          renderGameBoard(); // <--- 完全重繪
+          soundManager.playGameStartSound();
+          if (gameInstance) gameInstance.cheatEnabled = false;
+          const cheatButton = document.getElementById('cheat-button');
+          if (cheatButton) { cheatButton.classList.remove('active'); cheatButton.style.backgroundColor = '#e74c3c'; }
+          document.querySelectorAll('.puzzle-block.hint, .puzzle-block.cheat-selected').forEach(b => b.classList.remove('hint', 'cheat-selected'));
+          firstSelectedBlock = null;
+      });
+
+      document.getElementById('new-game').addEventListener('click', () => {
+          if (gameInstance) gameInstance.stopTimer();
+          document.getElementById('game-board').classList.add('hidden');
+          document.getElementById('game-setup').classList.remove('hidden');
+          resetGameSettings();
+      });
+
+      const muteButton = document.getElementById('mute-button');
+      if (muteButton) muteButton.addEventListener('click', () => { const isMuted = soundManager.toggleMute(); muteButton.classList.toggle('active', isMuted); muteButton.style.backgroundColor = isMuted ? '#e74c3c' : '#3498db'; if (!isMuted) soundManager.playGameStartSound(); });
+
+      const hintButton = document.getElementById('hint-button');
+      if (hintButton) hintButton.addEventListener('click', () => { if (!gameInstance) return; const hintMove = gameInstance.getHint(); if (hintMove) { highlightHintBlock(hintMove.row, hintMove.col); soundManager.playMoveSound(); } });
+
+      const showOriginalButton = document.getElementById('show-original-button');
+      if (showOriginalButton) { let showingOriginal = false; showOriginalButton.addEventListener('click', () => { if(!gameInstance || gameInstance.mode !== 'image' || !gameInstance.imageSource){ alert("僅圖片模式可用"); return;} showingOriginal = !showingOriginal; showOriginalButton.classList.toggle('active', showingOriginal); const puzzleContainer = document.querySelector('.puzzle-container'); if(!puzzleContainer) return; let overlay = document.getElementById('original-image-overlay'); if (showingOriginal) { if (!overlay) { overlay = document.createElement('div'); overlay.id = 'original-image-overlay'; Object.assign(overlay.style, { position:'absolute', top:'0', left:'0', width:'100%', height:'100%', backgroundImage:`url(${gameInstance.imageSource})`, backgroundSize:'contain', backgroundPosition:'center', backgroundRepeat:'no-repeat', zIndex:'10', opacity:'0.9', transition:'opacity 0.3s ease' }); puzzleContainer.style.position = 'relative'; puzzleContainer.appendChild(overlay); } showOriginalButton.textContent = '隱藏原圖'; } else { if (overlay) overlay.remove(); showOriginalButton.textContent = '顯示原圖'; } }); }
+
+      const changeColorButton = document.getElementById('change-color-button');
+      if (changeColorButton) { function updateChangeColorButtonStyle(color) { changeColorButton.classList.remove('color-default-btn', 'color-blue-btn', 'color-red-btn', 'color-orange-btn'); changeColorButton.classList.add(`color-${color}-btn`); switch(color){ case 'default': changeColorButton.style.backgroundColor = '#555'; changeColorButton.style.backgroundImage = 'repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.1) 10px, rgba(255, 255, 255, 0.2) 10px, rgba(255, 255, 255, 0.2) 20px)'; break; case 'blue': changeColorButton.style.backgroundColor = '#3498db'; changeColorButton.style.backgroundImage = 'none'; break; case 'red': changeColorButton.style.backgroundColor = '#e74c3c'; changeColorButton.style.backgroundImage = 'none'; break; case 'orange': changeColorButton.style.backgroundColor = '#f39c12'; changeColorButton.style.backgroundImage = 'none'; break; } } updateChangeColorButtonStyle(selectedColor); changeColorButton.addEventListener('click', () => { const colors = ['default', 'blue', 'red', 'orange']; const currentIndex = colors.indexOf(selectedColor); const nextIndex = (currentIndex + 1) % colors.length; selectedColor = colors[nextIndex]; soundManager.playColorChangeSound(); updateChangeColorButtonStyle(selectedColor); document.querySelectorAll('.puzzle-block.empty').forEach(block => { block.classList.remove('color-default', 'color-blue', 'color-red', 'color-orange'); block.classList.add(`color-${selectedColor}`); }); }); }
+
+      const gameControls = document.querySelector('.game-controls');
+      let cheatButton = document.getElementById('cheat-button');
+      if (!cheatButton && gameControls) {
+           cheatButton = document.createElement('button'); cheatButton.id = 'cheat-button'; cheatButton.textContent = '作弊模式'; gameControls.appendChild(cheatButton);
+      }
+      let cheatMode = false;
+      let firstSelectedBlock = null; // 保持局部變量
+      if(cheatButton) {
+           cheatButton.addEventListener('click', () => {
+               if (!gameInstance || !gameInstance.startTime) return;
+               const currentTime = new Date();
+               const elapsedTimeInSeconds = Math.floor((currentTime - (gameInstance.startTime || currentTime)) / 1000);
+               const timeLimit = 5 * 60;
+               if (elapsedTimeInSeconds < timeLimit && gameInstance.cheatCount === 0) {
+                  const remMin = Math.floor((timeLimit - elapsedTimeInSeconds) / 60);
+                  const remSec = (timeLimit - elapsedTimeInSeconds) % 60;
+                  alert(`作弊模式將在 ${remMin}分${remSec}秒 後可用`); return;
+               }
+               cheatMode = !cheatMode;
+               cheatButton.classList.toggle('active', cheatMode);
+               if(gameInstance) gameInstance.cheatEnabled = cheatMode; // 同步到實例
+               firstSelectedBlock = null;
+               document.querySelectorAll('.puzzle-block.cheat-selected').forEach(block => block.classList.remove('cheat-selected'));
+               if (cheatMode) { alert('作弊模式已啟用！點擊任意兩個非空方塊進行交換。'); soundManager.playCheatSound(); }
+               else { alert('作弊模式已關閉。'); }
+           });
+      }
+
+      const puzzleContainer = document.querySelector('.puzzle-container');
+      if (puzzleContainer) {
+           puzzleContainer.addEventListener('click', (e) => {
+               if (!gameInstance) return; // 檢查 gameInstance 是否存在
+               const block = e.target.closest('.puzzle-block');
+               if (!block) return;
+               // --- 從 data-* 讀取點擊位置 ---
+               const row = parseInt(block.dataset.row);
+               const col = parseInt(block.dataset.col);
+               if (isNaN(row) || isNaN(col)) {
+                   console.error("Click Error: Invalid row/col data attributes", block);
+                   return; // 無效座標，不處理
+               }
+               // ---------------------------
+
+               if (cheatMode && gameInstance.cheatEnabled) { // 作弊模式
+                   if (block.classList.contains('empty')) { alert('作弊模式不能選擇空白方塊'); return; }
+                   if (!firstSelectedBlock) {
+                       firstSelectedBlock = { row, col, element: block };
+                       block.classList.add('cheat-selected');
+                   } else {
+                       const swapResult = gameInstance.cheatSwap(firstSelectedBlock.row, firstSelectedBlock.col, row, col);
+                       if (swapResult) { // cheatSwap 成功才更新
+                           renderGameBoard(); // <--- 恢復調用 renderGameBoard
+                           soundManager.playCheatSound();
+                           requestAnimationFrame(() => { if (gameInstance.checkWin()) gameComplete(); });
+                       }
+                       // 清理選擇狀態
+                       if(firstSelectedBlock.element) firstSelectedBlock.element.classList.remove('cheat-selected');
+                       block.classList.remove('cheat-selected'); // 確保當前點擊的也移除
+                       firstSelectedBlock = null;
+                   }
+               } else { // 正常移動模式
+                   const moveResult = gameInstance.moveBlock(row, col); // game.js 判斷相鄰並更新內部狀態
+                   if (moveResult) { // moveResult 不為 null 表示移動成功
+                       updateGameStats();
+                       soundManager.playMoveSound();
+                       renderGameBoard(); // <--- 恢復調用 renderGameBoard
+                       requestAnimationFrame(() => { if (gameInstance.checkWin()) gameComplete(); });
+                   } else {
+                       // console.log("Invalid move clicked"); // 可以取消註釋調試無效點擊
+                   }
+               }
+           }, true);
+      }
+  }
+  // --- initGameControls 結束 ---
+
+  // --- highlightHintBlock: 需要基於 renderGameBoard 後的新 DOM 結構 ---
   function highlightHintBlock(row, col) {
-    // 移除之前的提示高亮
-    document.querySelectorAll('.puzzle-block').forEach(block => {
-      block.classList.remove('hint');
-    });
-    
-    // 計算方塊索引
-    const index = row * selectedSize + col;
-    const blocks = document.querySelectorAll('.puzzle-block');
-    
-    if (blocks[index]) {
-      blocks[index].classList.add('hint');
-      
-      // 3秒後移除高亮
-      setTimeout(() => {
-        blocks[index].classList.remove('hint');
-      }, 3000);
-    }
+      // 先移除舊的提示
+      document.querySelectorAll('.puzzle-block.hint').forEach(block => { block.classList.remove('hint'); });
+
+      // renderGameBoard 後，DOM 元素的順序就是 board 的順序
+      const puzzleContainer = document.querySelector('.puzzle-container');
+      if (!puzzleContainer || !gameInstance) return;
+
+      const currentSize = gameInstance.size;
+      const index = row * currentSize + col; // 計算在一維 DOM 列表中的索引
+      const blocks = puzzleContainer.querySelectorAll('.puzzle-block'); // 獲取當前所有方塊
+
+      if (blocks && blocks[index]) { // 檢查索引是否有效
+          blocks[index].classList.add('hint');
+          setTimeout(() => {
+              // 再次查找以防 DOM 變化
+              const currentBlocks = puzzleContainer.querySelectorAll('.puzzle-block');
+              if (currentBlocks && currentBlocks[index]) {
+                   currentBlocks[index].classList.remove('hint');
+              }
+          }, 3000);
+      } else {
+          console.warn(`Hint Error: Cannot find block at index ${index} for (${row}, ${col})`);
+      }
   }
-  
-  // 初始化自定义图片上传
+  // --- highlightHintBlock 結束 ---
+
+
   function initCustomImageUpload() {
-    document.getElementById('custom-image').addEventListener('change', (e) => {
+    const customInput = document.getElementById('custom-image');
+    if (!customInput) return;
+    customInput.addEventListener('change', (e) => {
       if (e.target.files && e.target.files[0]) {
         const reader = new FileReader();
         reader.onload = async (event) => {
-          // 预处理上传的图片
-          try {
-            // 使用当前选择的尺寸或默认尺寸4进行预处理
-            const size = selectedSize || 4;
-            const processedImage = await preprocessImage(event.target.result, size);
-            selectedImage = processedImage;
-            
-            // 显示预览
-            const preview = document.createElement('img');
-            preview.src = selectedImage;
-            preview.alt = '自定义图片';
-            preview.classList.add('selected');
-            
+            selectedImage = event.target.result;
+            currentImageIdentifier = 'custom';
+            document.querySelectorAll('.image-options img.selected').forEach(img => img.classList.remove('selected'));
             const imageOptions = document.querySelector('.image-options');
-            document.querySelectorAll('.image-options img').forEach(img => img.classList.remove('selected'));
-            
-            // 移除之前的自定义图片预览
-            const existingPreview = document.querySelector('.image-options .custom-preview');
-            if (existingPreview) {
-              imageOptions.removeChild(existingPreview);
+            if (imageOptions) {
+                 const existingPreview = imageOptions.querySelector('.image-options .custom-preview');
+                 if (existingPreview) existingPreview.remove();
+                 const preview = document.createElement('img');
+                 preview.src = selectedImage; preview.alt = '預覽'; preview.title = '預覽';
+                 preview.classList.add('selected', 'custom-preview');
+                 preview.style.width = '100px'; preview.style.height = '100px'; preview.style.objectFit = 'cover';
+                 imageOptions.appendChild(preview);
             }
-            
-            preview.classList.add('custom-preview');
-            imageOptions.appendChild(preview);
-          } catch (error) {
-            console.error('处理图片失败:', error);
-            alert('图片处理失败，请尝试其他图片');
-          }
+             if (selectedMode !== 'image') {
+                  selectedMode = 'image';
+                  const imgBtn=document.getElementById('image-mode'); if(imgBtn) imgBtn.classList.add('selected');
+                  const numBtn=document.getElementById('number-mode'); if(numBtn) numBtn.classList.remove('selected');
+                  const imgSelDiv=document.getElementById('image-selection'); if(imgSelDiv) imgSelDiv.classList.remove('hidden');
+             }
         };
+        reader.onerror = () => { alert("讀取自定義圖片失敗"); };
         reader.readAsDataURL(e.target.files[0]);
       }
     });
   }
-  
-  // 顏色選擇已從設置界面移除，預設使用暗灰條紋
-  function initColorSelection() {
-    // 設置預設顏色為暗灰條紋
-    selectedColor = 'default';
-  }
-  
-  // 初始化API設定
-  function initApiSettings() {
-    const apiCheckbox = document.getElementById('enable-api');
-    const searchOptionContainer = document.getElementById('search-option-container');
-    
-    // 檢查是否有保存的API設定
-    const apiEnabled = localStorage.getItem('api_enabled') === 'true';
-    
-    if (apiEnabled) {
-      apiCheckbox.checked = true;
-      searchOptionContainer.classList.remove('hidden');
-      
-      // 初始化圖片搜索界面 - 使用Google搜圖
-      const searchContainer = document.getElementById('image-search-container');
-      initImageSearch(searchContainer, (imageUrl) => {
-        selectedImage = imageUrl;
-      });
-    }
-    
-    // 啟用/禁用Google搜圖功能
-    apiCheckbox.addEventListener('change', () => {
-      if (apiCheckbox.checked) {
-        searchOptionContainer.classList.remove('hidden');
-        localStorage.setItem('api_enabled', 'true');
-        
-        // 初始化圖片搜索界面 - 使用Google搜圖
-        // 先清空容器，避免重複添加搜索界面
-        const searchContainer = document.getElementById('image-search-container');
-        searchContainer.innerHTML = '';
-        initImageSearch(searchContainer, (imageUrl) => {
-          selectedImage = imageUrl;
-        });
-      } else {
-        searchOptionContainer.classList.add('hidden');
-        localStorage.setItem('api_enabled', 'false');
-      }
-    });
-  }
-  
-  // 初始化網路圖片搜索
-  function initNetworkImageSearch() {
-    const searchContainer = document.getElementById('image-search-container');
-    
-    // 使用imageSearch.js中的函數初始化搜索界面
-    initImageSearch(searchContainer, (imageUrl) => {
-      // 當用戶選擇了一張網路圖片時
+
+  function initColorSelection() { selectedColor = 'default'; }
+
+  function initWebImageSearch() {
+    const webSearchBtn = document.getElementById('web-image-search-btn');
+    if (!webSearchBtn) return;
+    webSearchBtn.addEventListener('click', () => WebImageSearch.showModal());
+    WebImageSearch.init((imageUrl, imageName) => {
+      document.querySelectorAll('.image-options img.selected').forEach(img => img.classList.remove('selected'));
+      const customInput = document.getElementById('custom-image'); if (customInput) customInput.value = '';
+      const existingPreview = document.querySelector('.image-options .custom-preview'); if (existingPreview) existingPreview.remove();
       selectedImage = imageUrl;
+      currentImageIdentifier = imageName;
+      const imageOptions = document.querySelector('.image-options');
+      if (imageOptions) {
+        const preview = document.createElement('img');
+        preview.src = selectedImage; preview.alt = '網路圖片'; preview.title = currentImageIdentifier;
+        preview.classList.add('selected', 'custom-preview');
+        preview.style.width = '100px'; preview.style.height = '100px'; preview.style.objectFit = 'cover';
+        imageOptions.appendChild(preview);
+      }
+       if (selectedMode !== 'image') {
+            selectedMode = 'image';
+            const imgBtn=document.getElementById('image-mode'); if(imgBtn) imgBtn.classList.add('selected');
+            const numBtn=document.getElementById('number-mode'); if(numBtn) numBtn.classList.remove('selected');
+            const imgSelDiv=document.getElementById('image-selection'); if(imgSelDiv) imgSelDiv.classList.remove('hidden');
+       }
     });
   }
-  
-  // 初始化所有UI組件
+
   function initUI() {
     initModeSelection();
     initImageSelection();
     initSizeSelection();
     initColorSelection();
     initStartGameButton();
-    initGameControls();
+    initGameControls(); // 使用恢復 renderGameBoard 的版本
     initCustomImageUpload();
-    initApiSettings(); // 初始化Google搜圖功能
-    
-    // 添加CSS類
-    document.querySelectorAll('.mode-options button, .size-options button, .color-options button').forEach(button => {
-      button.classList.add('option-button');
-    });
+    initWebImageSearch();
+    document.querySelectorAll('.mode-options button, .size-options button, .color-options button').forEach(button => { button.classList.add('option-button'); });
+    console.log("UI 初始化完成 (恢復 renderGameBoard 調用)");
   }
-  
-  // 啟動UI初始化
+
   initUI();
 
-}); // Close DOMContentLoaded event listener
+});
