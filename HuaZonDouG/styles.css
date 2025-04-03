@@ -178,7 +178,7 @@ button.selected {
   padding: 2px;
   border-radius: 4px;
   position: relative;
-  contain: layout style; /* 保持 Containment */
+  contain: layout style; /* 應用 Containment */
 }
 
 
@@ -205,7 +205,7 @@ button.selected {
   overflow: hidden;
   transform: translateZ(0);
   -webkit-transform: translateZ(0);
-  will-change: transform;
+  will-change: transform; /* 主要優化 transform */
 }
 
 /* 提示和作弊選中樣式保持 */
@@ -230,11 +230,11 @@ button.selected {
   content: '';
   position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.1); /* 保持基礎邊框 */
   pointer-events: none;
   z-index: 1;
   border-radius: 4px;
-  transition: box-shadow 0.3s ease, background-image 0.3s ease;
+  transition: box-shadow 0.3s ease, background-image 0.3s ease; /* 顏色切換時可能需要 */
 }
 .puzzle-block.empty.color-default::before {
   border-color: rgba(52, 52, 52, 0.8);
@@ -283,34 +283,39 @@ button.selected {
 
 /* --- Safari 特定優化 --- */
 @supports (-webkit-touch-callout: none) {
-  /* 1. 禁用空塊動畫 (保持) */
+  /* 1. 禁用空塊動畫並移除內陰影 */
   .puzzle-block.empty.color-default::before,
   .puzzle-block.empty.color-blue::before,
   .puzzle-block.empty.color-red::before,
   .puzzle-block.empty.color-orange::before {
     animation: none !important;
-    /* --- 添加：移除空塊 ::before 的內陰影 --- */
-    box-shadow: none !important;
-    /* ----------------------------------- */
+    box-shadow: none !important; /* 移除內陰影 */
   }
 
-  /* 2. 簡化/移除數字塊的陰影和漸變 */
+  /* 2. 簡化數字塊樣式 (移除漸變、陰影、文字陰影) */
   .puzzle-block:not(.image-block):not(.empty) {
-    /* 移除漸變背景，使用純色 */
-    background-image: none !important;
-    background-color: #3498db; /* 或者 #2980b9 */
-    /* 移除陰影 */
-    box-shadow: none !important;
+    background-image: none !important; /* 移除漸變 */
+    background-color: #3498db; /* 使用純色 */
+    box-shadow: none !important; /* 移除外部陰影 */
+    text-shadow: none !important; /* 移除文字陰影 */
     /* 保持邊框 */
     border: 1px solid rgba(0, 0, 0, 0.1);
-    /* 移除文字陰影 */
-    text-shadow: none !important;
+    /* 確保 Flex 佈局以居中數字 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .puzzle-block:not(.image-block):not(.empty) span {
+    /* 確保 span 填滿 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
   }
 
-  /* 3. 移除圖片塊內部 Div 的 will-change (可能不需要) */
-  /* .puzzle-block.image-block > div {
-    will-change: auto;
-  } */
+  /* 3. 圖片塊內部 Div 保持不變 (will-change 等) */
+  /* .puzzle-block.image-block > div { ... } */
 }
 /* --- Safari 特定優化結束 --- */
 
