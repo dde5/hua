@@ -348,21 +348,24 @@ document.addEventListener('DOMContentLoaded', () => {
       // 重置遊戲按鈕
       document.getElementById('reset-game').addEventListener('click', () => {
           if (!gameInstance) return;
-          // --- 添加：在 resetGame 之前明確停止計時器 ---
+
           console.log("Reset button clicked: Stopping timer explicitly...");
           gameInstance.stopTimer();
-          // ---------------------------------------------
-          gameInstance.resetGame();
-          renderGameBoard();
+
+          gameInstance.resetGame(); // 重置內部狀態 (moves 設為 0)
+          renderGameBoard(); // 完全重繪
+          gameInstance.startTimer(); // 啟動新的計時器
           updateGameStats(); // <--- 添加：立即更新步數顯示為 0
-          gameInstance.startTimer(); // <--- 在重繪後明確啟動計時器
           soundManager.playGameStartSound();
+
+          // 重置作弊按鈕狀態
           if (gameInstance) gameInstance.cheatEnabled = false;
           const cheatButton = document.getElementById('cheat-button');
           if (cheatButton) { cheatButton.classList.remove('active'); cheatButton.style.backgroundColor = '#e74c3c'; }
+          // 清除高亮
           document.querySelectorAll('.puzzle-block.hint, .puzzle-block.cheat-selected').forEach(b => b.classList.remove('hint', 'cheat-selected'));
-          firstSelectedBlock = null;
-          console.log("遊戲已重置並重新計時");
+          let firstSelectedBlock = null;
+          console.log("遊戲已重置，計時器和步數已更新");
       });
 
       // 新遊戲按鈕
@@ -371,6 +374,7 @@ document.addEventListener('DOMContentLoaded', () => {
           document.getElementById('game-board').classList.add('hidden');
           document.getElementById('game-setup').classList.remove('hidden');
           resetGameSettings();
+          updateGameStats(); // 返回菜單時也確保步數歸零顯示
       });
 
       // 靜音按鈕
@@ -420,7 +424,7 @@ document.addEventListener('DOMContentLoaded', () => {
            });
       }
 
-      // 點擊事件處理 (穩定版邏輯)
+      // 點擊事件處理
       const puzzleContainer = document.querySelector('.puzzle-container');
       if (puzzleContainer) {
            puzzleContainer.addEventListener('click', (e) => {
@@ -450,7 +454,7 @@ document.addEventListener('DOMContentLoaded', () => {
                } else {
                    const moveSuccess = gameInstance.moveBlock(row, col);
                    if (moveSuccess) {
-                       updateGameStats();
+                       updateGameStats(); // 移動成功後更新步數
                        soundManager.playMoveSound();
                        renderGameBoard();
                        requestAnimationFrame(() => { if (gameInstance.checkWin()) gameComplete(); });
