@@ -355,6 +355,7 @@ document.addEventListener('DOMContentLoaded', () => {
           gameInstance.resetGame();
           renderGameBoard();
           gameInstance.startTimer(); // <--- 在重繪後明確啟動計時器
+          updateGameStats(); // <--- 添加：立即更新步數顯示為 0
           soundManager.playGameStartSound();
           if (gameInstance) gameInstance.cheatEnabled = false;
           const cheatButton = document.getElementById('cheat-button');
