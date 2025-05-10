@@ -11,19 +11,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 預設圖片
   const presetImages = [
-    { name: 'C1', src: 'images/C1.jpg' }, { name: 'C2', src: 'images/C2.jpg' },
-    { name: 'C3', src: 'images/C3.jpg' }, { name: 'C4', src: 'images/C4.jpg' },
-    { name: 'C5', src: 'images/C5.jpg' }, { name: 'C6', src: 'images/C6.jpg' },
-    { name: 'C7', src: 'images/C7.jpg' }, { name: 'C8', src: 'images/C8.jpg' },
-    { name: 'E1', src: 'images/E1.jpg' }, { name: 'E2', src: 'images/E2.jpg' },
-    { name: 'E3', src: 'images/E3.jpg' }, { name: 'E4', src: 'images/E4.jpg' },
-    { name: 'E5', src: 'images/E5.jpg' }, { name: 'E6', src: 'images/E6.jpg' },
-    { name: 'M1', src: 'images/M1.jpg' }, { name: 'M2', src: 'images/M2.jpg' },
-    { name: 'M3', src: 'images/M3.jpg' }, { name: 'M4', src: 'images/M4.jpg' },
-    { name: 'M5', src: 'images/M5.jpg' }, { name: 'H1', src: 'images/H1.jpg' },
-    { name: 'H2', src: 'images/H2.jpg' }, { name: 'H3', src: 'images/H3.jpg' },
-    { name: 'H4', src: 'images/H4.jpg' }, { name: 'H5', src: 'images/H5.jpg' },
-    { name: 'H6', src: 'images/H6.jpg' }
+    { name: 'C1', src: 'images/C1.webp' }, { name: 'C2', src: 'images/C2.webp' },
+    { name: 'C3', src: 'images/C3.webp' }, { name: 'C4', src: 'images/C4.webp' },
+    { name: 'C5', src: 'images/C5.webp' }, { name: 'C6', src: 'images/C6.webp' },
+    { name: 'C7', src: 'images/C7.webp' }, { name: 'C8', src: 'images/C8.webp' },
+    { name: 'E1', src: 'images/E1.webp' }, { name: 'E2', src: 'images/E2.webp' },
+    { name: 'E3', src: 'images/E3.webp' }, { name: 'E4', src: 'images/E4.webp' },
+    { name: 'E5', src: 'images/E5.webp' }, { name: 'E6', src: 'images/E6.webp' },
+    { name: 'M1', src: 'images/M1.webp' }, { name: 'M2', src: 'images/M2.webp' },
+    { name: 'M3', src: 'images/M3.webp' }, { name: 'M4', src: 'images/M4.webp' },
+    { name: 'M5', src: 'images/M5.webp' }, { name: 'H1', src: 'images/H1.webp' },
+    { name: 'H2', src: 'images/H2.webp' }, { name: 'H3', src: 'images/H3.webp' },
+    { name: 'H4', src: 'images/H4.webp' }, { name: 'H5', src: 'images/H5.webp' },
+    { name: 'H6', src: 'images/H6.webp' }
   ];
   let processedPresetImages = [];
 
