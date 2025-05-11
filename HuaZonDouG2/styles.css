@@ -185,11 +185,8 @@ button.selected {
      vmin = 視口寬度和高度中較小的值的1%。
      例如 80vmin 意味著取寬高較小者的80%。
   */
-  max-width: min(85vmin, 600px); /* 
-                                   85vmin: 嘗試使用視口較小邊的85%作為寬度
-                                   600px:  但最大不超過600px (這個值可以調整)
-                                   min() 函數會取兩者中較小的值。
-                                 */
+  max-width: 740px; /* 直接設定一個較大的、接近父容器極限的 max-width */
+  
   /* 或者，如果你更傾向於只基於寬度，然後用 aspect-ratio 定義高度：
      max-width: min(90vw, 600px); 
   */
@@ -360,6 +357,19 @@ button.selected {
 .no-record { font-style: italic; color: #95a5a6; text-align: center; margin-top: 15px; font-weight: bold; padding: 10px; }
 .cheat-used { color: #e74c3c; font-weight: bold; }
 .cheat-not-used { color: #27ae60; }
+
+
+@media (max-width: 768px) { /* iPad 豎屏寬度斷點 */
+  .puzzle-container {
+    max-width: 94vw; /* 在平板豎屏或更小設備上，使用視口寬度 */
+  }
+}
+
+@media (max-width: 480px) { /* 手機斷點 */
+  .puzzle-container {
+    max-width: 95vw;
+  }
+}
 
 @media (max-width: 600px) { 
   .container { 
