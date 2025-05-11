@@ -169,28 +169,41 @@ button.selected {
   padding: 0 10px;
 }
 
+/* styles.css - 修改 .puzzle-container */
+
 .puzzle-container {
   display: grid;
   gap: 2px;
-  margin: 0 auto 20px; /* 水平居中，上下邊距 */
+  margin: 0 auto 20px;
   
   /* --- 核心調整 --- */
-  width: 100%; /* 嘗試佔滿其父容器的可用寬度 */
-  max-width: 500px; /* 設定一個最大寬度，例如 500px。可以根據設計調整。
-                       或者使用視口單位，例如 max-width: 90vw; (視口寬度的90%)
-                       或者 max-width: min(90vw, 500px); (取較小者) 
-                       這裡我們用一個固定值作為例子。*/
-  aspect-ratio: 1 / 1; /* 保持正方形 */
-  /* contain: layout style; */ /* << 暫時註釋掉 contain 屬性進行測試 */
+  width: 100%; /* 仍然佔滿父容器的可用寬度 */
+  
+  /* 讓最大寬度基於視口寬度和視口高度中的較小者，
+     這樣可以確保在不同方向的屏幕上都能較好地適應，
+     同時不超過一個合理的絕對最大值。
+     vmin = 視口寬度和高度中較小的值的1%。
+     例如 80vmin 意味著取寬高較小者的80%。
+  */
+  max-width: min(85vmin, 600px); /* 
+                                   85vmin: 嘗試使用視口較小邊的85%作為寬度
+                                   600px:  但最大不超過600px (這個值可以調整)
+                                   min() 函數會取兩者中較小的值。
+                                 */
+  /* 或者，如果你更傾向於只基於寬度，然後用 aspect-ratio 定義高度：
+     max-width: min(90vw, 600px); 
+  */
+  
+  aspect-ratio: 1 / 1;
+  /* contain: layout style; */ /* 仍然建議先註釋掉測試，如果佈局穩定再加回 */
   /* --- 結束核心調整 --- */
 
   border: 2px solid #bdc3c7;
   background-color: #ecf0f1;
   padding: 2px;
   border-radius: 4px;
-  position: relative; /* 為了 "顯示原圖" 的 overlay */
+  position: relative;
 }
-
 
 .puzzle-block {
   background-color: #3498db;
