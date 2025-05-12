@@ -1,0 +1,300 @@
+/* 網路搜圖樣式 */
+
+/* 彈出層 */
+.web-image-search-modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+  overflow: auto;
+}
+
+/* 彈出層內容 */
+.web-image-search-modal-content {
+  background-color: #fff;
+  border-radius: 10px;
+  width: 90%;
+  max-width: 800px;
+  max-height: 90vh;
+  overflow: auto;
+  position: relative;
+  padding: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* 關閉按鈕 */
+.web-image-search-close-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 24px;
+  background: none;
+  border: none;
+  color: #333;
+  cursor: pointer;
+  padding: 5px 10px;
+  border-radius: 50%;
+  line-height: 1;
+  transition: background-color 0.3s;
+}
+
+.web-image-search-close-button:hover {
+  background-color: #f0f0f0;
+}
+
+/* 搜索區域 */
+.web-image-search-area {
+  display: flex;
+  margin: 20px 0;
+  gap: 10px;
+}
+
+/* 搜索輸入框 */
+#web-image-search-input {
+  flex: 1;
+  padding: 10px 15px;
+  border: 2px solid #3498db;
+  border-radius: 8px;
+  font-size: 16px;
+  outline: none;
+  transition: border-color 0.3s;
+}
+
+#web-image-search-input:focus {
+  border-color: #2980b9;
+}
+
+/* 搜索按鈕 */
+#web-image-search-button {
+  padding: 10px 20px;
+  background-color: #3498db;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.3s;
+}
+
+#web-image-search-button:hover {
+  background-color: #2980b9;
+}
+
+/* 載入中指示器 */
+.web-image-search-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 30px;
+  text-align: center;
+}
+
+.spinner {
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  border-top: 4px solid #3498db;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin-bottom: 15px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* 搜索結果 */
+.web-image-search-results {
+  margin-top: 20px;
+}
+
+/* 圖片網格 */
+.web-image-search-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 15px;
+  margin-top: 20px;
+}
+
+/* 圖片項目 */
+.web-image-search-item {
+  position: relative;
+  overflow: hidden;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s, box-shadow 0.3s;
+  aspect-ratio: 1;
+}
+
+.web-image-search-item:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.web-image-search-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  cursor: pointer;
+  transition: transform 0.3s;
+}
+
+.web-image-search-item:hover img {
+  transform: scale(1.05);
+}
+
+/* 錯誤和無結果提示 */
+.web-image-search-error,
+.web-image-search-no-results {
+  text-align: center;
+  padding: 20px;
+  color: #e74c3c;
+  font-weight: bold;
+}
+
+/* 網路搜圖按鈕 */
+#web-image-search-btn {
+  background-color: #9b59b6;
+  color: white;
+  border: none;
+  padding: 12px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: bold;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  margin-top: 15px;
+  width: 100%;
+  max-width: 200px;
+}
+
+#web-image-search-btn:hover {
+  background-color: #8e44ad;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* 響應式調整 */
+@media (max-width: 768px) {
+  .web-image-search-modal-content {
+    width: 95%;
+    padding: 15px;
+  }
+  
+  .web-image-search-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 10px;
+  }
+  
+  .web-image-search-area {
+    flex-direction: column;
+  }
+  
+  #web-image-search-button {
+    width: 100%;
+  }
+}
+
+/* 網路搜圖選項區域 */
+.web-search-option {
+  display: flex;
+  justify-content: center;
+  margin-top: 15px;
+}
+
+/* Pixabay 歸屬聲明 */
+.web-image-search-pixabay-attribution {
+  text-align: center;
+  margin-top: 20px;
+  padding: 10px;
+  font-size: 14px;
+  color: #666;
+  background-color: #f9f9f9;
+  border-radius: 5px;
+}
+
+.web-image-search-pixabay-attribution a {
+  color: #3498db;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+/* API Key 設置區域 */
+.api-key-area {
+  margin: 15px 0;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.api-key-input-group {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+#pixabay-api-key-input {
+  flex: 1;
+  padding: 10px 15px;
+  border: 2px solid #3498db;
+  border-radius: 8px;
+  font-size: 16px;
+  outline: none;
+  transition: border-color 0.3s;
+}
+
+#pixabay-api-key-input:focus {
+  border-color: #2980b9;
+}
+
+#pixabay-api-key-save {
+  padding: 10px 20px;
+  background-color: #2ecc71;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.3s;
+}
+
+#pixabay-api-key-save:hover {
+  background-color: #27ae60;
+}
+
+.api-key-link {
+  display: inline-block;
+  margin-top: 5px;
+  color: #3498db;
+  text-decoration: none;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.api-key-link:hover {
+  text-decoration: underline;
+}
+
+.web-image-search-pixabay-attribution a:hover {
+  text-decoration: underline;
+}
+
+/* 圖片來源信息 */
+.web-image-search-attribution {
+  font-size: 12px;
+  color: #666;
+  text-align: center;
+  padding: 5px 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
