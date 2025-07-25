@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 預設圖片
   const presetImages = [
+    { name: 'C9', src: 'images/C9.webp' },
     { name: 'C1', src: 'images/C1.webp' }, { name: 'C2', src: 'images/C2.webp' },
     { name: 'C3', src: 'images/C3.webp' }, { name: 'C4', src: 'images/C4.webp' },
     { name: 'C5', src: 'images/C5.webp' }, { name: 'C6', src: 'images/C6.webp' },
