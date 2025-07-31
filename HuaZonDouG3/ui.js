@@ -29,6 +29,43 @@ document.addEventListener('DOMContentLoaded', () => {
   ];
   let processedPresetImagesCache = []; // 緩存 preprocessPresetImages 的結果
 
+	// 【新增】一個高效的 DOM 更新函數
+	function updateMovedBlocksDOM(oldEmptyPos, newEmptyPos, movedValue) {
+		const puzzleContainer = document.querySelector('.puzzle-container');
+		if (!puzzleContainer) return;
+
+		// 找到移動前是空格的那個元素 (現在它應該包含被移動的方塊了)
+		// 我們透過它的 data-row 和 data-col 來定位
+		const newContentBlock = puzzleContainer.querySelector(`[data-row='${oldEmptyPos.row}'][data-col='${oldEmptyPos.col}']`);
+
+		// 找到移動前有方塊的那個元素 (現在它應該變成空格了)
+		const newEmptyBlock = puzzleContainer.querySelector(`[data-row='${newEmptyPos.row}'][data-col='${newEmptyPos.col}']`);
+
+		if (!newContentBlock || !newEmptyBlock) {
+			console.error("DOM更新失敗：找不到對應的方塊元素。");
+			renderGameBoard(); // 作為備用方案，進行完整重繪
+			return;
+		}
+
+		// 1. 將 newEmptyBlock 的內容 (圖片或數字) 移動到 newContentBlock
+		while (newEmptyBlock.firstChild) {
+			newContentBlock.appendChild(newEmptyBlock.firstChild);
+		}
+
+		// 2. 更新 newContentBlock 的 class 和 data-value
+		newContentBlock.className = 'puzzle-block'; // 重置 class
+		if (gameInstance.mode === 'image') {
+			newContentBlock.classList.add('image-block');
+		}
+		newContentBlock.dataset.value = movedValue;
+
+
+		// 3. 更新 newEmptyBlock 的 class 和 data-value，讓它變成新的空格
+		newEmptyBlock.className = 'puzzle-block'; // 重置 class
+		newEmptyBlock.classList.add('empty', `color-${selectedColor}`);
+		newEmptyBlock.dataset.value = 0;
+	}
+
   function sanitizeFilenameForKey(filename) {
       if (!filename) return 'custom_unknown';
       const baseName = filename.substring(filename.lastIndexOf('/') + 1).substring(filename.lastIndexOf('\\') + 1);
@@ -106,18 +143,17 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.size-options button').forEach(btn => { if(parseInt(btn.dataset.size) === selectedSize) btn.classList.add('selected'); else btn.classList.remove('selected'); });
   }
 
-  function initSizeSelection() {
-    const sizeButtons = document.querySelectorAll('.size-options button');
-    const customSizeInput = document.getElementById('custom-size-input');
-    // 預設選中一個尺寸，比如第一個按鈕或自定義輸入框的值
-    if (sizeButtons.length > 0 && !selectedSize) {
-        const defaultSizeButton = sizeButtons[0];
-        selectedSize = parseInt(defaultSizeButton.dataset.size);
-        defaultSizeButton.classList.add('selected');
-        if (customSizeInput) customSizeInput.value = selectedSize;
-    } else if (customSizeInput && !selectedSize) {
-        selectedSize = parseInt(customSizeInput.value) || 4;
-    }
+	// ui.js - 修改 initSizeSelection
+	function initSizeSelection() {
+		const sizeButtons = document.querySelectorAll('.size-options button');
+		const customSizeInput = document.getElementById('custom-size-input');
+		
+		// 預設選中 4x4 (或 custom input 的值)
+		selectedSize = parseInt(customSizeInput.value) || 4;
+		let defaultButton = document.querySelector(`.size-options button[data-size='${selectedSize}']`);
+		if (defaultButton) {
+			defaultButton.classList.add('selected');
+		}
 
 
     sizeButtons.forEach(button => { button.addEventListener('click', () => { selectedSize = parseInt(button.dataset.size); document.querySelectorAll('.size-options button').forEach(b => b.classList.remove('selected')); button.classList.add('selected'); if(customSizeInput) customSizeInput.value = selectedSize; }); });
@@ -536,13 +572,15 @@ document.addEventListener('DOMContentLoaded', () => {
       if (puzzleContainer) {
            puzzleContainer.addEventListener('click', (e) => {
                if (!gameInstance) return;
-               const blockElement = e.target.closest('.puzzle-block'); // 更可靠地獲取塊元素
-               if (!blockElement) return;
+               const blockElement = e.target.closest('.puzzle-block');
+               if (!blockElement || blockElement.classList.contains('empty')) return; // 直接忽略對空格的點擊
+
                const row = parseInt(blockElement.dataset.row);
                const col = parseInt(blockElement.dataset.col);
                if (isNaN(row) || isNaN(col)) return;
 
-               if (cheatMode && gameInstance.cheatEnabled) { // 使用 ui.js 的 cheatMode
+               if (cheatMode && gameInstance.cheatEnabled) {
+                   // ... 作弊邏輯保持不變 ...
                    if (blockElement.classList.contains('empty')) { alert('作弊模式不能選擇空白方塊'); return; }
                    if (!firstSelectedBlock) {
                        firstSelectedBlock = { row, col, element: blockElement };
@@ -550,28 +588,34 @@ document.addEventListener('DOMContentLoaded', () => {
                    } else {
                        const swapSuccess = gameInstance.cheatSwap(firstSelectedBlock.row, firstSelectedBlock.col, row, col);
                        if (swapSuccess) {
-                           renderGameBoard(); // 重繪棋盤
-                           updateGameStats(); // 更新步數
+                           renderGameBoard(); // 作弊是特殊操作，涉及任意兩塊，重繪是可接受的簡單方案
+                           updateGameStats();
                            soundManager.playCheatSound();
                            requestAnimationFrame(() => { if (gameInstance.checkWin()) gameComplete(); });
                        }
                        if(firstSelectedBlock.element) firstSelectedBlock.element.classList.remove('cheat-selected');
-                       blockElement.classList.remove('cheat-selected'); // 移除當前點擊塊的高亮
+                       blockElement.classList.remove('cheat-selected');
                        firstSelectedBlock = null;
                    }
-               } else { // 非作弊模式
-                   const moveSuccess = gameInstance.moveBlock(row, col);
-                   if (moveSuccess) {
-                       updateGameStats(); // 移動成功後更新步數
+               } else { // --- 非作弊模式的重大修改 ---
+                   const moveResult = gameInstance.moveBlock(row, col);
+
+                   if (moveResult && moveResult.success) {
+                       updateGameStats();
                        soundManager.playMoveSound();
-                       // renderGameBoard(); // moveBlock 內部不直接重繪，依賴外部調用
-                       // 這裡需要一種方式讓 game.js 通知 ui.js 重繪特定塊，或者 ui.js 自己重繪
-                       // 簡單起見，我們還是完整重繪
-                       renderGameBoard();
-                       requestAnimationFrame(() => { if (gameInstance.checkWin()) gameComplete(); });
+
+                       // 【核心】呼叫新的 DOM 更新函數，而不是 renderGameBoard()
+                       updateMovedBlocksDOM(moveResult.oldEmptyPos, moveResult.newEmptyPos, moveResult.movedValue);
+
+                       // 使用 requestAnimationFrame 檢查勝利條件，確保 DOM 更新後再檢查
+                       requestAnimationFrame(() => {
+                           if (gameInstance.checkWin()) {
+                               gameComplete();
+                           }
+                       });
                    }
                }
-           }, true); // 使用捕獲階段以處理嵌套元素（如img）的點擊
+           }, true);
       }
   }
   let firstSelectedBlock = null; // 作弊模式用的，定義在 initGameControls 外層

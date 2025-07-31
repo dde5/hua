@@ -130,12 +130,24 @@ class PuzzleGame {
     return (Math.abs(row - emptyRow) + Math.abs(col - emptyCol) === 1);
    }
 
-  moveBlock(row, col) { /* ...保持原樣... */
-    if (!this.isAdjacent(row, col)) { return false; }
-    this.swapBlocks(row, col);
+  moveBlock(row, col) {
+    if (!this.isAdjacent(row, col)) {
+      return null; // 從返回 false 改為返回 null，表示無效移動
+    }
+    const oldEmptyPos = { ...this.emptyPos }; // 記錄移動前的空格位置
+    const movedValue = this.board[row][col]; // 記錄被移動的方塊的值
+
+    this.swapBlocks(row, col); // 交換內部數據，this.emptyPos 會被更新
     this.moves++;
-    return true;
-   }
+
+    // 返回一個包含所有必要資訊的物件
+    return {
+      success: true,
+      oldEmptyPos: oldEmptyPos,
+      newEmptyPos: { row, col }, // 移動後，被點擊的方塊位置就是新的空格位置
+      movedValue: movedValue
+    };
+  }
 
   checkWin() { /* ...保持原樣... */
     let value = 1;
