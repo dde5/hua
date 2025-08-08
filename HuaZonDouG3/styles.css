@@ -12,9 +12,13 @@ body {
   background-image: linear-gradient(to bottom right, #f0f8ff, #e6f2ff);
   min-height: 100vh;
   -webkit-text-size-adjust: 100%; /* 幫助移動端渲染 */
+  text-size-adjust: 100%;
   display: flex; /* 讓 .container 能更好地垂直居中（如果需要）*/
   flex-direction: column; /* 內容垂直排列 */
   align-items: center; /* 水平居中 .container */
+  /* 防止桌面端選取造成的雙擊延遲或選取高亮 */
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .container {
@@ -198,6 +202,8 @@ button.selected {
   border-radius: 4px;
   position: relative;
   /* contain: layout style; */ /* 保持註釋進行測試 */
+  /* 防止拖曳影響點擊 */
+  -webkit-user-drag: none;
 }
 
 .puzzle-block {
@@ -220,8 +226,8 @@ button.selected {
   padding: 0;
   margin: 0;
   overflow: hidden;
-  transform: translateZ(0);
   -webkit-transform: translateZ(0);
+  transform: translateZ(0);
 }
 
 .puzzle-block.hint { box-shadow: 0 0 15px #f39c12 !important; animation: pulse 1.5s infinite; z-index: 5; }
@@ -288,6 +294,7 @@ button.selected {
   height: 100%;
   object-fit: cover;
   border-radius: inherit; /* puzzle-block has 4px */
+  -webkit-user-drag: none; /* 禁止圖片拖曳 */
 }
 
 /* Safari 特定優化 (保持不變) */

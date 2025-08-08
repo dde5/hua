@@ -332,6 +332,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const imgElement = document.createElement('img');
                 imgElement.src = imagePieces[value - 1];
                 imgElement.alt = `Piece ${value}`;
+                // 防止桌面端拖曳圖片導致點擊被吞
+                imgElement.draggable = false;
                 // 樣式確保圖片填滿塊，可以移到 CSS 的 .image-block img
                 imgElement.style.width = '100%';
                 imgElement.style.height = '100%';
@@ -570,8 +572,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const puzzleContainer = document.querySelector('.puzzle-container');
       if (puzzleContainer) {
-           puzzleContainer.addEventListener('click', (e) => {
+           // 阻止任何拖曳啟動，避免影響點擊
+           puzzleContainer.addEventListener('dragstart', (e) => { e.preventDefault(); }, { capture: true });
+
+           // 使用 pointerdown 以降低拖曳/雙擊對 click 的干擾
+           puzzleContainer.addEventListener('pointerdown', (e) => {
                if (!gameInstance) return;
+                // 僅處理主要按鍵（滑鼠左鍵/觸控/手寫筆）
+                if (e.pointerType === 'mouse' && e.button !== 0) return;
+                // 防止文字選取/圖片拖曳等副作用
+                e.preventDefault();
                const blockElement = e.target.closest('.puzzle-block');
                if (!blockElement || blockElement.classList.contains('empty')) return; // 直接忽略對空格的點擊
 
@@ -615,7 +625,7 @@ document.addEventListener('DOMContentLoaded', () => {
                        });
                    }
                }
-           }, true);
+           });
       }
   }
   let firstSelectedBlock = null; // 作弊模式用的，定義在 initGameControls 外層
